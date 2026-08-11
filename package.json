@@ -1,0 +1,25 @@
+{
+  "name": "skjold-menighet",
+  "private": true,
+  "workspaces": [
+    "delt",
+    "web",
+    "mobil"
+  ],
+  "scripts": {
+    "web": "npm run dev --workspace=web",
+    "mobil": "npm run start --workspace=mobil",
+    "sjekk": "npm run sjekk --workspace=delt && npm run sjekk --workspace=web && npm run sjekk --workspace=mobil",
+    "db:migrer": "npm run db:migrer --workspace=web",
+    "ny-admin": "npm run ny-admin --workspace=web",
+    "bygg": "npm run build --workspace=web",
+    "start": "npm run db:migrer && npm run start --workspace=web"
+  },
+  "overrides": {
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "engines": {
+    "node": ">=20.9"
+  }
+}

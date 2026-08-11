@@ -1,0 +1,3 @@
+# Railway bygger med Node 20; det samme som utviklingsmaskinen.
+[phases.setup]
+nixPkgs = ["nodejs_20"]

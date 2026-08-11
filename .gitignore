@@ -1,0 +1,27 @@
+node_modules
+.next
+out
+dist
+.expo
+ios
+android
+.env
+.env.local
+.DS_Store
+*.tsbuildinfo
+next-env.d.ts
+
+# Expo
+.expo-shared
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Byggresultater
+web/.next
+mobil/dist
+
+# Verktøyoppsett som ikke hører til prosjektet
+.claude/

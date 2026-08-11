@@ -1,0 +1,77 @@
+{
+  "expo": {
+    "name": "Skjold menighet",
+    "slug": "skjold-menighet",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "skjold",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#EFF2EE",
+    "primaryColor": "#16302A",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "no.skjoldmenighet.app",
+      "infoPlist": {
+        "CFBundleLocalizations": [
+          "nb",
+          "en"
+        ],
+        "CFBundleDevelopmentRegion": "nb",
+        "NSCalendarsUsageDescription": "Appen legger arrangementer du melder deg på inn i kalenderen din, hvis du ber om det.",
+        "NSRemindersUsageDescription": "Appen kan legge inn påminnelser om arrangementer du melder deg på."
+      }
+    },
+    "android": {
+      "package": "no.skjoldmenighet.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#16302A"
+      },
+      "permissions": [
+        "READ_CALENDAR",
+        "WRITE_CALENDAR",
+        "RECEIVE_BOOT_COMPLETED",
+        "SCHEDULE_EXACT_ALARM"
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160,
+          "resizeMode": "contain",
+          "backgroundColor": "#EFF2EE"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/adaptive-icon.png",
+          "color": "#16302A",
+          "defaultChannel": "paaminnelser"
+        }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Appen legger arrangementer du melder deg på inn i kalenderen din."
+        }
+      ],
+      "expo-font"
+    ],
+    "extra": {
+      "apiBase": "http://localhost:3000"
+    },
+    "icon": "./assets/icon.png"
+  }
+}

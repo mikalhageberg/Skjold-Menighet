@@ -1,0 +1,1133 @@
+/* ══════════════════════════════════════════════════════════════════════
+   Skjold menighet — designsystem
+
+   Fargene er hentet fra kirkerommet: kalket vegg, gran, messing og
+   de liturgiske fargene på paramentene. Skriftene er Fraunces (utskåret,
+   variabel) til titler og Schibsted Grotesk til alt som skal leses raskt.
+   Grunnstørrelsen er 18px fordi mange av leserne er godt voksne.
+   ══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --kalk: #eff2ee;
+  --kalk-dyp: #e5eae5;
+  --papir: #fafbf8;
+  --gran: #16302a;
+  --gran-myk: #3f5b53;
+  --gran-svak: #748982;
+  --strek: #d3dbd5;
+  --strek-svak: #e3e9e4;
+  --messing: #8f6716;
+  --messing-lys: #ecdfc2;
+
+  /* Liturgiske farger — brukes kun i kirkeårstråden */
+  --fiolett: #59468c;
+  --gull: #a07a1c;
+  --rod: #99332a;
+  --gronn: #3d6b55;
+
+  --t-mega: clamp(2rem, 0.85rem + 5.9vw, 5.75rem);
+  --t-stor: clamp(1.75rem, 1.1rem + 2.4vw, 2.9rem);
+  --t-mellom: clamp(1.35rem, 1.1rem + 1vw, 1.75rem);
+  --t-brod: 1.125rem;
+  --t-liten: 0.9688rem;
+  --t-etikett: 0.8125rem;
+
+  --spalte: 70rem;
+  --rail: 4.25rem;
+  --gutter: 1.5rem;
+  --radius: 3px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--kalk);
+  color: var(--gran);
+  font-family: var(--font-tekst), system-ui, sans-serif;
+  font-size: var(--t-brod);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tabellsifre kun der tall skal stå i kolonner — ellers blir punktum
+   og komma like brede som et siffer, og teksten faller fra hverandre. */
+.kort__dag,
+.kort__plasser,
+.adm__verdi {
+  font-variant-numeric: tabular-nums;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display), Georgia, serif;
+  font-weight: 500;
+  font-variation-settings: "SOFT" 40, "WONK" 1, "opsz" 96;
+  line-height: 1.06;
+  letter-spacing: -0.015em;
+  margin: 0;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+:focus-visible {
+  outline: 2px solid var(--messing);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* ── Sidestruktur ────────────────────────────────────────────────────── */
+
+.side {
+  max-width: var(--spalte);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+.topp {
+  border-bottom: 1px solid var(--strek);
+  background: var(--kalk);
+}
+
+.topp__rad {
+  max-width: var(--spalte);
+  margin: 0 auto;
+  padding: 1.25rem var(--gutter);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.topp__navn {
+  font-family: var(--font-display), Georgia, serif;
+  font-variation-settings: "SOFT" 0, "WONK" 0, "opsz" 20;
+  font-size: 1.25rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+}
+
+.topp__lenker {
+  display: flex;
+  gap: 1.5rem;
+  font-size: var(--t-liten);
+}
+
+.topp__lenke {
+  color: var(--gran-myk);
+  text-decoration: none;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid transparent;
+}
+
+.topp__lenke:hover {
+  color: var(--gran);
+  border-bottom-color: var(--messing);
+}
+
+.bunn {
+  border-top: 1px solid var(--strek);
+  margin-top: 6rem;
+  padding: 2.5rem 0 4rem;
+  color: var(--gran-myk);
+  font-size: var(--t-liten);
+}
+
+.bunn__rad {
+  max-width: var(--spalte);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 2rem;
+  justify-content: space-between;
+}
+
+/* ── Merkelapper og småtekst ─────────────────────────────────────────── */
+
+.merke {
+  font-size: var(--t-etikett);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--gran-myk);
+  font-weight: 500;
+}
+
+.stille {
+  color: var(--gran-myk);
+}
+
+/* ── Arrangementskort ────────────────────────────────────────────────
+   Ett arrangement er ett kort. Kanten til venstre bærer den liturgiske
+   fargen for tiden i kirkeåret — eneste stedet farge brukes i lista.
+   Samme oppsett som i appen, så nettsiden og appen ser like ut.        */
+
+/* Kortene er kompakte — en smalere spalte gir kortere linjer og roligere
+   rytme enn å strekke dem over hele bredden. */
+.forside {
+  max-width: 54rem;
+  padding-top: clamp(2rem, 6vw, 3.5rem);
+}
+
+.neste {
+  display: grid;
+  gap: 0.85rem;
+  margin-bottom: clamp(2rem, 5vw, 3rem);
+}
+
+.liste {
+  display: grid;
+  gap: 1rem;
+}
+
+.liste__post {
+  display: grid;
+  gap: 1rem;
+}
+
+.liste__maned {
+  padding-top: 1.5rem;
+}
+
+.kort--arrangement {
+  display: grid;
+  grid-template-columns: 4px 1fr;
+  padding: 0;
+  overflow: hidden;
+  transition: border-color 0.18s ease;
+}
+
+.kort--arrangement:hover {
+  border-color: var(--gran-svak);
+}
+
+.kort__kant {
+  background: var(--f, var(--gronn));
+}
+
+.kort__innhold {
+  display: grid;
+  gap: 0.85rem;
+  padding: clamp(1.125rem, 3vw, 1.75rem);
+}
+
+.kort__topp {
+  display: grid;
+  grid-template-columns: 3rem 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.kort__dato {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.kort__dag {
+  display: block;
+  font-family: var(--font-display), Georgia, serif;
+  font-variation-settings: "SOFT" 0, "WONK" 0, "opsz" 40;
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.kort__ukedag {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: var(--t-etikett);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gran-myk);
+}
+
+.kort__tittelfelt {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.kort__tittel {
+  font-size: clamp(1.3rem, 1.1rem + 0.9vw, 1.75rem);
+}
+
+.kort__lenke {
+  text-decoration: none;
+  background-image: linear-gradient(var(--messing), var(--messing));
+  background-size: 0 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size 0.3s ease;
+}
+
+.kort__lenke:hover {
+  background-size: 100% 1px;
+}
+
+/* Hele kortet er klikkbart, men lenketeksten beholder fokusrammen. */
+.kort__lenke::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.kort--arrangement {
+  position: relative;
+}
+
+.kort__meta {
+  font-size: var(--t-liten);
+  color: var(--gran-myk);
+}
+
+.kort__ingress {
+  color: var(--gran-myk);
+  max-width: 60ch;
+}
+
+.kort__bunn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.kort__plasser {
+  font-size: var(--t-liten);
+  color: var(--gran-myk);
+  font-variant-numeric: tabular-nums;
+}
+
+.kort__plasser--fullt {
+  color: var(--rod);
+}
+
+/* Knapper og lenker må ligge over flaten som gjør kortet klikkbart. */
+.kort__bunn .knapp,
+.kort__bunn .tekstknapp {
+  position: relative;
+  z-index: 1;
+}
+
+.kort--stort .kort__innhold {
+  gap: 1.1rem;
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.kort--stort .kort__topp {
+  grid-template-columns: 4rem 1fr;
+}
+
+.kort--stort .kort__dag {
+  font-size: 2.5rem;
+}
+
+.kort--stort .kort__tittel {
+  font-size: clamp(1.75rem, 1.2rem + 2.2vw, 3rem);
+}
+
+.kort--stort .kort__ingress {
+  font-size: 1.1875rem;
+}
+
+/* ── Knapper ─────────────────────────────────────────────────────────── */
+
+.knapp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 3.25rem;
+  padding: 0 1.5rem;
+  border: 1px solid var(--gran);
+  border-radius: var(--radius);
+  background: var(--gran);
+  color: var(--papir);
+  font: inherit;
+  font-size: 1.0625rem;
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.knapp:hover {
+  background: #0d211c;
+  border-color: #0d211c;
+}
+
+.knapp[disabled] {
+  background: var(--strek);
+  border-color: var(--strek);
+  color: var(--gran-svak);
+  cursor: not-allowed;
+}
+
+.knapp--stille {
+  background: transparent;
+  color: var(--gran);
+  border-color: var(--strek);
+}
+
+.knapp--stille:hover {
+  background: var(--papir);
+  border-color: var(--gran);
+  color: var(--gran);
+}
+
+.knapp--liten {
+  min-height: 2.5rem;
+  padding: 0 0.9rem;
+  font-size: var(--t-liten);
+}
+
+.knapp--fare {
+  background: transparent;
+  border-color: var(--strek);
+  color: var(--rod);
+}
+
+.knapp--fare:hover {
+  background: var(--rod);
+  border-color: var(--rod);
+  color: var(--papir);
+}
+
+.tekstknapp {
+  background: none;
+  border: none;
+  padding: 0.35rem 0;
+  font: inherit;
+  font-size: var(--t-liten);
+  color: var(--messing);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ── Skjema ──────────────────────────────────────────────────────────── */
+
+.skjema {
+  display: grid;
+  gap: 1.5rem;
+  min-width: 0;
+}
+
+.felt {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.felt__etikett {
+  font-weight: 500;
+  font-size: 1.0625rem;
+}
+
+.felt__hjelp {
+  font-size: var(--t-liten);
+  color: var(--gran-myk);
+  margin-top: -0.15rem;
+}
+
+.felt__inn {
+  font: inherit;
+  font-size: 1.0625rem;
+  color: var(--gran);
+  background: var(--papir);
+  border: 1px solid var(--strek);
+  border-radius: var(--radius);
+  min-height: 3.25rem;
+  padding: 0.6rem 0.85rem;
+  width: 100%;
+}
+
+.felt__inn:hover {
+  border-color: var(--gran-svak);
+}
+
+/* Samme tydelige messingring som alt annet — en svak skygge er ikke nok
+   til å se hvor du er når du bruker tastatur. */
+.felt__inn:focus-visible {
+  outline: 2px solid var(--messing);
+  outline-offset: 2px;
+  border-color: var(--gran);
+}
+
+.felt__inn--omrade {
+  min-height: 7rem;
+  resize: vertical;
+  line-height: 1.55;
+}
+
+.felt--feil .felt__inn {
+  border-color: var(--rod);
+}
+
+.felt__feil {
+  font-size: var(--t-liten);
+  color: var(--rod);
+}
+
+.avkryss {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  cursor: pointer;
+  padding: 0.35rem 0;
+}
+
+.avkryss__boks {
+  appearance: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: none;
+  margin: 0.15rem 0 0;
+  border: 1px solid var(--gran-svak);
+  border-radius: 2px;
+  background: var(--papir);
+  cursor: pointer;
+  position: relative;
+}
+
+.avkryss__boks:checked {
+  background: var(--gran);
+  border-color: var(--gran);
+}
+
+.avkryss__boks:checked::after {
+  content: "";
+  position: absolute;
+  left: 0.45rem;
+  top: 0.15rem;
+  width: 0.35rem;
+  height: 0.7rem;
+  border: solid var(--papir);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.avkryss__tekst {
+  font-size: 1.0625rem;
+}
+
+.rad2 {
+  display: grid;
+  gap: 1.25rem 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+}
+
+.bolk {
+  border-top: 1px solid var(--strek);
+  padding-top: 1.75rem;
+  display: grid;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+/* Første bolk trenger ingen strek — kortets egen kant er skillet. */
+.skjema > .bolk:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.bolk > .knapp {
+  justify-self: start;
+}
+
+.bolk__tittel {
+  font-family: var(--font-display), Georgia, serif;
+  font-variation-settings: "SOFT" 20, "WONK" 1, "opsz" 40;
+  font-size: var(--t-mellom);
+  font-weight: 500;
+}
+
+.kort__tittel {
+  font-size: var(--t-mellom);
+  margin-bottom: 1.5rem;
+}
+
+.bolk > .felt__hjelp {
+  max-width: 46ch;
+  margin-top: -0.6rem;
+}
+
+.skjema__send {
+  display: grid;
+  gap: 0.85rem;
+  justify-items: start;
+  border-top: 1px solid var(--strek);
+  padding-top: 1.75rem;
+}
+
+/* ── Kort og flater ──────────────────────────────────────────────────── */
+
+.kort {
+  background: var(--papir);
+  border: 1px solid var(--strek);
+  border-radius: var(--radius);
+  padding: clamp(1.5rem, 4vw, 2.25rem);
+  scroll-margin-top: 1.5rem;
+}
+
+.notis {
+  border-left: 3px solid var(--messing);
+  background: var(--papir);
+  padding: 1rem 1.25rem;
+  font-size: var(--t-liten);
+}
+
+.notis--fare {
+  border-left-color: var(--rod);
+  color: var(--rod);
+}
+
+.notis--klar {
+  border-left-color: var(--gronn);
+}
+
+/* ── Arrangementsside ────────────────────────────────────────────────── */
+
+/* Tre rutenettsbarn: fakta, påmelding, beskrivelse. På bred skjerm står
+   påmeldingen i egen spalte til høyre; på mobil faller den mellom fakta og
+   beskrivelse, så knappen er nær toppen. */
+.detalj {
+  padding-top: clamp(2.5rem, 6vw, 4rem);
+  display: grid;
+  gap: clamp(2rem, 4vw, 3rem) clamp(2.5rem, 5vw, 4rem);
+  grid-template-columns: minmax(0, 1.15fr) minmax(20rem, 0.85fr);
+  /* Skjemaet spenner over begge radene. Uten fr-raden fordeler nettleseren
+     overskuddshøyden på begge, og beskrivelsen blir dyttet nedover. */
+  grid-template-rows: min-content 1fr;
+  align-items: start;
+}
+
+.detalj__hovud {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.detalj__meldpa {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+.detalj__tekst {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.detalj__hode {
+  display: grid;
+  grid-template-columns: 2px 1fr;
+  column-gap: var(--gutter);
+}
+
+.detalj__trad {
+  background: var(--f, var(--gronn));
+}
+
+.detalj__tittel {
+  font-size: var(--t-stor);
+  margin: 0.4rem 0 1rem;
+}
+
+.detalj__fakta {
+  list-style: none;
+  margin: 1.75rem 0 0;
+  padding: 0;
+  border-top: 1px solid var(--strek);
+}
+
+.detalj__fakta li {
+  display: grid;
+  grid-template-columns: 8.5rem 1fr;
+  gap: 1rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--strek-svak);
+  font-size: var(--t-liten);
+}
+
+.detalj__navn {
+  color: var(--gran-myk);
+}
+
+.detalj__tekst {
+  max-width: 60ch;
+}
+
+.detalj__tekst p {
+  margin-bottom: 1.1rem;
+}
+
+.tilbake {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--t-liten);
+  color: var(--gran-myk);
+  text-decoration: none;
+  padding: 1.5rem 0 0;
+}
+
+.tilbake:hover {
+  color: var(--gran);
+}
+
+/* ── Deltakerliste i skjemaet ────────────────────────────────────────── */
+
+.deltakere {
+  display: grid;
+  gap: 0.85rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.deltaker-post {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.deltaker-post + .deltaker-post {
+  border-top: 1px solid var(--strek-svak);
+  padding-top: 0.85rem;
+}
+
+.deltaker__ekstra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  padding-inline-start: 2.25rem;
+}
+
+.felt__inn--smal {
+  min-height: 2.75rem;
+  font-size: var(--t-liten);
+  width: auto;
+  flex: 1 1 16rem;
+}
+
+.deltaker {
+  display: grid;
+  grid-template-columns: 1.5rem 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.deltaker__nr {
+  font-size: var(--t-liten);
+  color: var(--gran-myk);
+  text-align: right;
+}
+
+.deltaker__fjern {
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  color: var(--gran-myk);
+  cursor: pointer;
+  font-size: 1.25rem;
+  line-height: 1;
+  border-radius: 2px;
+}
+
+.deltaker__fjern:hover {
+  color: var(--rod);
+}
+
+/* ── Kvittering ──────────────────────────────────────────────────────── */
+
+.kvittering {
+  padding: clamp(3rem, 8vw, 5rem) 0;
+  max-width: 34rem;
+}
+
+.kvittering__tittel {
+  font-size: var(--t-mellom);
+  margin: 0.5rem 0 0.75rem;
+}
+
+/* ── Admin ───────────────────────────────────────────────────────────── */
+
+.adm {
+  padding: clamp(2rem, 5vw, 3.5rem) 0 0;
+}
+
+.adm__hode {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--strek);
+}
+
+.adm__tittel {
+  font-size: var(--t-stor);
+  margin-top: 0.4rem;
+}
+
+.adm__tall {
+  display: flex;
+  gap: clamp(1.5rem, 5vw, 3.5rem);
+  flex-wrap: wrap;
+  padding: 1.75rem 0;
+  border-bottom: 1px solid var(--strek);
+}
+
+.adm__tall-post {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.adm__verdi {
+  font-family: var(--font-display), Georgia, serif;
+  font-variation-settings: "SOFT" 0, "WONK" 0, "opsz" 40;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.tabell {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-liten);
+}
+
+.tabell th {
+  text-align: left;
+  font-weight: 500;
+  font-size: var(--t-etikett);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--gran-myk);
+  padding: 1rem 1rem 0.6rem 0;
+  border-bottom: 1px solid var(--strek);
+  white-space: nowrap;
+}
+
+.tabell td {
+  padding: 0.9rem 1rem 0.9rem 0;
+  border-bottom: 1px solid var(--strek-svak);
+  vertical-align: top;
+}
+
+.tabell tr:hover td {
+  background: var(--papir);
+}
+
+.tabell__navn {
+  font-weight: 500;
+}
+
+.rull {
+  overflow-x: auto;
+  margin: 0 calc(var(--gutter) * -1);
+  padding: 0 var(--gutter);
+}
+
+.prikk {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--f, var(--gronn));
+  margin-inline-end: 0.5rem;
+  vertical-align: 0.05em;
+}
+
+.stempel {
+  display: inline-block;
+  font-size: var(--t-etikett);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--strek);
+  border-radius: 2px;
+  color: var(--gran-myk);
+  white-space: nowrap;
+}
+
+.stempel--kladd {
+  border-color: var(--messing);
+  color: var(--messing);
+}
+
+.stempel--full {
+  border-color: var(--rod);
+  color: var(--rod);
+}
+
+.admnav {
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
+  flex-wrap: wrap;
+  padding: 1.5rem 0 0;
+  font-size: var(--t-liten);
+}
+
+.admnav__lenke {
+  color: var(--gran-myk);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  padding-bottom: 0.15rem;
+}
+
+.admnav__lenke:hover {
+  color: var(--gran);
+  border-bottom-color: var(--messing);
+}
+
+.admnav__ut {
+  margin-inline-start: auto;
+}
+
+.adm__handlinger {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.adm__bolk {
+  font-size: var(--t-mellom);
+  margin: 3.5rem 0 1.25rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--strek);
+}
+
+.tabell__tittel {
+  text-align: left;
+  font-size: var(--t-etikett);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--gran-myk);
+  padding-top: 2.5rem;
+}
+
+.tabell__merknad {
+  max-width: 22rem;
+  color: var(--gran-myk);
+}
+
+.navneliste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.3rem;
+}
+
+
+.valg {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.valg__hjelp {
+  margin: 0.1rem 0 0 2.25rem;
+}
+
+.fareombraade {
+  margin-top: 3.5rem;
+  padding: 1.75rem;
+  border: 1px solid var(--strek);
+  border-inline-start: 3px solid var(--rod);
+  border-radius: var(--radius);
+  background: var(--papir);
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.fareombraade__tittel {
+  font-size: 1.1875rem;
+  margin-bottom: 0.35rem;
+}
+
+.tabell__handlinger {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.tekstknapp--fare {
+  color: var(--rod);
+}
+
+.bekreft {
+  display: grid;
+  gap: 0.85rem;
+  justify-items: start;
+  min-width: 13rem;
+}
+
+.bekreft__sporsmal {
+  font-size: var(--t-liten);
+  max-width: 34ch;
+}
+
+.bekreft__valg {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.innlogging {
+  max-width: 26rem;
+  padding: clamp(3rem, 10vw, 6rem) var(--gutter);
+}
+
+.skjult {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.tom {
+  padding: 3rem 0;
+  max-width: 40ch;
+  color: var(--gran-myk);
+}
+
+.tom__tittel {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: var(--t-mellom);
+  color: var(--gran);
+  margin-bottom: 0.5rem;
+}
+
+/* ── Responsivt ──────────────────────────────────────────────────────── */
+
+@media (max-width: 60rem) {
+  .detalj {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .detalj__hovud,
+  .detalj__meldpa,
+  .detalj__tekst {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}
+
+@media (max-width: 40rem) {
+  :root {
+    --rail: 2rem;
+    --gutter: 1rem;
+  }
+
+  .topp__navn {
+    white-space: nowrap;
+  }
+
+  .kort__topp,
+  .kort--stort .kort__topp {
+    grid-template-columns: 2.5rem 1fr;
+    gap: 0.9rem;
+  }
+
+  .kort--stort .kort__dag {
+    font-size: 1.9rem;
+  }
+
+  .rad2 {
+    grid-template-columns: 1fr;
+  }
+
+  .detalj__fakta li {
+    grid-template-columns: 1fr;
+    gap: 0.15rem;
+  }
+
+  .topp__rad {
+    padding: 1rem var(--gutter);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+@media print {
+  .topp,
+  .bunn,
+  .knapp,
+  .tekstknapp {
+    display: none;
+  }
+
+  body {
+    background: #fff;
+    font-size: 11pt;
+  }
+}
+
+.detalj__ingress {
+  font-size: clamp(1.1875rem, 1.05rem + 0.6vw, 1.4375rem);
+  color: var(--gran-myk);
+  line-height: 1.4;
+  max-width: 34ch;
+}
+
+.valg__innledning {
+  max-width: 52ch;
+  margin: -0.5rem 0 0.25rem;
+}
+
+/* Nedtrekksliste skal se ut som de andre feltene, med egen pil. */
+select.felt__inn {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--gran-myk) 50%),
+    linear-gradient(135deg, var(--gran-myk) 50%, transparent 50%);
+  background-position: calc(100% - 1.15rem) 55%, calc(100% - 0.85rem) 55%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  padding-inline-end: 2.5rem;
+  cursor: pointer;
+}

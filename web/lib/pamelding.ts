@@ -1,0 +1,104 @@
+import "server-only";
+import { revalidatePath } from "next/cache";
+import { pameldingsstatus, type PameldingInn, type PameldingSvar } from "@skjold/delt";
+import { hentArrangement, lagreEnhet, opprettPamelding } from "./data";
+import { gyldigToken } from "./push";
+
+const EPOST = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * Registrerer en påmelding. Både skjemaet på nett og appen går gjennom denne,
+ * slik at reglene og varslene er de samme uansett hvor man melder seg på.
+ */
+export async function registrerPamelding(input: PameldingInn): Promise<PameldingSvar> {
+  const arrangement = await hentArrangement(input.slug);
+  if (!arrangement || !arrangement.publisert) {
+    return { ok: false, feil: "Fant ikke arrangementet." };
+  }
+
+  const kontaktNavn = input.kontaktNavn.trim();
+  const kontaktTelefon = (input.kontaktTelefon ?? "").trim();
+  const kontaktEpost = (input.kontaktEpost ?? "").trim();
+  const melding = (input.melding ?? "").trim();
+
+  // Navn er alltid nok. Trenger arrangementet telefon eller e-post, har den
+  // ansvarlige krysset av for det, og da spør vi om akkurat det.
+  const feltfeil: Record<string, string> = {};
+  if (!kontaktNavn) feltfeil.kontakt_navn = "Vi trenger et navn.";
+  if (arrangement.krev_telefon && !kontaktTelefon)
+    feltfeil.kontakt_telefon = "Dette arrangementet trenger et telefonnummer.";
+  if (arrangement.krev_epost && !kontaktEpost)
+    feltfeil.kontakt_epost = "Dette arrangementet trenger en e-postadresse.";
+  if (kontaktEpost && !EPOST.test(kontaktEpost))
+    feltfeil.kontakt_epost = "Sjekk e-postadressen — den mangler noe.";
+
+  const deltakere = input.deltakere
+    .map((d) => ({
+      navn: d.navn.trim(),
+      kosthold: d.kosthold?.trim() || null,
+    }))
+    .filter((d) => d.navn.length > 0);
+
+  if (deltakere.length === 0) feltfeil.deltaker_navn = "Skriv inn minst ett navn.";
+  if (Object.keys(feltfeil).length > 0)
+    return { ok: false, feil: "Noe mangler i skjemaet.", feltfeil };
+
+  const status = pameldingsstatus(arrangement);
+  if (!status.apen) {
+    return {
+      ok: false,
+      feil:
+        status.grunn === "fullt"
+          ? "Arrangementet ble fullt mens du fylte ut. Ring menighetskontoret på 52 76 12 00, så finner vi ut av det."
+          : "Påmeldingen er stengt.",
+    };
+  }
+  if (status.ledige !== null && deltakere.length > status.ledige) {
+    return {
+      ok: false,
+      feil: `Det er ${status.ledige} ${
+        status.ledige === 1 ? "plass" : "plasser"
+      } igjen, og du meldte på ${deltakere.length}. Ta bort noen navn, eller ring 52 76 12 00.`,
+    };
+  }
+
+  // Telefonen kobles til påmeldingen så den kan få påminnelse dagen før.
+  let enhetId: string | null = null;
+  if (input.pushToken && gyldigToken(input.pushToken)) {
+    try {
+      enhetId = await lagreEnhet(input.pushToken, null);
+    } catch (feil) {
+      console.error("Kunne ikke lagre enhet", feil);
+    }
+  }
+
+  let pameldingId: string;
+  try {
+    pameldingId = await opprettPamelding({
+      arrangementId: arrangement.id,
+      enhetId,
+      kontaktNavn,
+      kontaktTelefon: kontaktTelefon || null,
+      kontaktEpost: kontaktEpost || null,
+      melding: melding || null,
+      deltakere,
+    });
+  } catch (feil) {
+    console.error("Kunne ikke lagre påmelding", feil);
+    return {
+      ok: false,
+      feil: "Påmeldingen ble ikke lagret. Prøv igjen, eller ring 52 76 12 00.",
+    };
+  }
+
+  // Ingen e-post sendes her. Den som melder seg på får kvitteringen i appen
+  // med én gang, og den ansvarlige får én samlet oppsummering før
+  // arrangementet i stedet for én melding per påmelding.
+
+  revalidatePath("/");
+  revalidatePath(`/arrangement/${arrangement.slug}`);
+  revalidatePath("/admin");
+  revalidatePath("/admin/arrangementer");
+
+  return { ok: true, pameldingId, antall: deltakere.length };
+}
