@@ -10,12 +10,13 @@
  */
 import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
-import postgres from "postgres";
+import { randomUUID } from "node:crypto";
+import Database from "better-sqlite3";
 import { hash } from "@node-rs/argon2";
 
-const url = process.env.DATABASE_URL;
-if (!url) {
-  console.error("DATABASE_URL mangler. Kjør npm run db:migrer først.");
+const filsti = process.env.DATABASE_PATH;
+if (!filsti) {
+  console.error("DATABASE_PATH mangler. Kjør npm run db:migrer først.");
   process.exit(1);
 }
 
@@ -50,10 +51,8 @@ async function lesSkjult(spørsmål) {
   });
 }
 
-const sql = postgres(url, {
-  ssl: url.includes("localhost") || url.includes("127.0.0.1") ? false : "require",
-  max: 1,
-});
+const db = new Database(filsti);
+db.pragma("foreign_keys = ON");
 
 try {
   const epost = (await les.question("E-post: ")).trim().toLowerCase();
@@ -68,25 +67,28 @@ try {
   if (passord !== igjen) throw new Error("Passordene var ikke like.");
 
   const passordHash = await hash(passord);
+  const na = new Date().toISOString();
 
-  const [rad] = await sql`
-    insert into administratorer (epost, navn, passord_hash)
-    values (${epost}, ${navn || null}, ${passordHash})
-    on conflict (epost) do update
-      set passord_hash = excluded.passord_hash,
-          navn = coalesce(excluded.navn, administratorer.navn)
-    returning epost, (xmax = 0) as ny
-  `;
+  const eksisterende = db.prepare(`select id from administratorer where epost = ?`).get(epost);
 
-  console.log(
-    rad.ny
-      ? `\n${rad.epost} kan nå logge inn på /admin.`
-      : `\nPassordet til ${rad.epost} er endret.`,
-  );
+  if (eksisterende) {
+    db.prepare(`update administratorer set passord_hash = ?, navn = coalesce(?, navn) where epost = ?`).run(
+      passordHash,
+      navn || null,
+      epost,
+    );
+    console.log(`\nPassordet til ${epost} er endret.`);
+  } else {
+    db.prepare(
+      `insert into administratorer (id, epost, navn, passord_hash, opprettet)
+       values (?, ?, ?, ?, ?)`,
+    ).run(randomUUID(), epost, navn || null, passordHash, na);
+    console.log(`\n${epost} kan nå logge inn på /admin.`);
+  }
 } catch (feil) {
   console.error("\n" + feil.message);
   process.exitCode = 1;
 } finally {
   les.close();
-  await sql.end();
+  db.close();
 }

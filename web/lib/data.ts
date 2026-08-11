@@ -1,5 +1,6 @@
 import "server-only";
-import { harDatabase, sql } from "./db";
+import { randomUUID } from "node:crypto";
+import { harDatabase, hentDb } from "./db";
 import { demolager } from "./demo";
 import type {
   Arrangement,
@@ -9,42 +10,101 @@ import type {
 
 export { harDatabase };
 
+/* ── Rå rader fra SQLite ─────────────────────────────────────────────── */
+// SQLite har ingen boolean-type — sant/usant kommer tilbake som 0/1,
+// og må gjøres om ved grensen mot resten av appen.
+
+type ArrangementRad = Omit<
+  Arrangement,
+  "tillat_flere" | "sporr_om_kost" | "krev_telefon" | "krev_epost" | "publisert"
+> & {
+  tillat_flere: number;
+  sporr_om_kost: number;
+  krev_telefon: number;
+  krev_epost: number;
+  publisert: number;
+  oppsummering_sendt: string | null;
+  endret: string;
+};
+
+type PameldingRad = Omit<PameldingMedDeltakere, "deltakere">;
+
+type DeltakerRad = {
+  id: string;
+  pamelding_id: string;
+  navn: string;
+  er_kontakt: number;
+  kosthold: string | null;
+};
+
+function fraArrangementRad(rad: ArrangementRad, antallPameldte: number): ArrangementMedAntall {
+  return {
+    id: rad.id,
+    slug: rad.slug,
+    tittel: rad.tittel,
+    ingress: rad.ingress,
+    beskrivelse: rad.beskrivelse,
+    starter: rad.starter,
+    slutter: rad.slutter,
+    sted: rad.sted,
+    kapasitet: rad.kapasitet,
+    pamelding_stenger: rad.pamelding_stenger,
+    tillat_flere: Boolean(rad.tillat_flere),
+    sporr_om_kost: Boolean(rad.sporr_om_kost),
+    krev_telefon: Boolean(rad.krev_telefon),
+    krev_epost: Boolean(rad.krev_epost),
+    oppsummering_dager_for: rad.oppsummering_dager_for,
+    ansvarlig_navn: rad.ansvarlig_navn,
+    ansvarlig_epost: rad.ansvarlig_epost,
+    publisert: Boolean(rad.publisert),
+    opprettet: rad.opprettet,
+    antall_pameldte: antallPameldte,
+  };
+}
+
+/** Antall påmeldte deltakere per arrangement, i én spørring. */
+function tellDeltakerePerArrangement(ider: string[]): Map<string, number> {
+  const kart = new Map<string, number>();
+  if (ider.length === 0) return kart;
+
+  const plassholdere = ider.map(() => "?").join(",");
+  const rader = hentDb()
+    .prepare(
+      `select p.arrangement_id as arrangement_id, count(*) as antall
+         from deltakere d
+         join pameldinger p on p.id = d.pamelding_id
+        where p.avmeldt is null
+          and p.arrangement_id in (${plassholdere})
+        group by p.arrangement_id`,
+    )
+    .all(...ider) as { arrangement_id: string; antall: number }[];
+
+  for (const r of rader) kart.set(r.arrangement_id, r.antall);
+  return kart;
+}
+
+function medAntall(rader: ArrangementRad[]): ArrangementMedAntall[] {
+  const antallKart = tellDeltakerePerArrangement(rader.map((r) => r.id));
+  return rader.map((r) => fraArrangementRad(r, antallKart.get(r.id) ?? 0));
+}
+
 /* ── Lesing ──────────────────────────────────────────────────────────── */
 
-/**
- * Alle spørringer henter antall påmeldte i samme runde. Uten det ville
- * en liste med tolv arrangementer blitt tretten spørringer.
- */
-const medAntall = () => sql`
-  select a.*,
-         coalesce(t.antall, 0)::int as antall_pameldte
-    from arrangementer a
-    left join (
-      select p.arrangement_id, count(d.id) as antall
-        from pameldinger p
-        join deltakere d on d.pamelding_id = p.id
-       where p.avmeldt is null
-       group by p.arrangement_id
-    ) t on t.arrangement_id = a.id
-`;
-
 export async function hentKommende(): Promise<ArrangementMedAntall[]> {
-  const grense = new Date(Date.now() - 3 * 3600_000);
+  const grense = new Date(Date.now() - 3 * 3600_000).toISOString();
 
   if (!harDatabase()) {
     const { arrangementer, pameldinger } = demolager();
     return arrangementer
-      .filter((a) => a.publisert && new Date(a.starter) >= grense)
+      .filter((a) => a.publisert && a.starter >= grense)
       .sort((a, b) => a.starter.localeCompare(b.starter))
       .map((a) => ({ ...a, antall_pameldte: tellDemo(pameldinger, a.id) }));
   }
 
-  const rader = await sql`
-    ${medAntall()}
-    where a.publisert and a.starter >= ${grense}
-    order by a.starter asc
-  `;
-  return rader as unknown as ArrangementMedAntall[];
+  const rader = hentDb()
+    .prepare(`select * from arrangementer where publisert = 1 and starter >= ? order by starter asc`)
+    .all(grense) as ArrangementRad[];
+  return medAntall(rader);
 }
 
 export async function hentAlle(): Promise<ArrangementMedAntall[]> {
@@ -55,8 +115,10 @@ export async function hentAlle(): Promise<ArrangementMedAntall[]> {
       .map((a) => ({ ...a, antall_pameldte: tellDemo(pameldinger, a.id) }));
   }
 
-  const rader = await sql`${medAntall()} order by a.starter desc`;
-  return rader as unknown as ArrangementMedAntall[];
+  const rader = hentDb()
+    .prepare(`select * from arrangementer order by starter desc`)
+    .all() as ArrangementRad[];
+  return medAntall(rader);
 }
 
 export async function hentArrangement(slug: string): Promise<ArrangementMedAntall | null> {
@@ -66,8 +128,11 @@ export async function hentArrangement(slug: string): Promise<ArrangementMedAntal
     return a ? { ...a, antall_pameldte: tellDemo(pameldinger, a.id) } : null;
   }
 
-  const [rad] = await sql`${medAntall()} where a.slug = ${slug} limit 1`;
-  return (rad as unknown as ArrangementMedAntall) ?? null;
+  const rad = hentDb().prepare(`select * from arrangementer where slug = ?`).get(slug) as
+    | ArrangementRad
+    | undefined;
+  if (!rad) return null;
+  return fraArrangementRad(rad, tellDeltakerePerArrangement([rad.id]).get(rad.id) ?? 0);
 }
 
 export async function hentArrangementMedId(id: string): Promise<ArrangementMedAntall | null> {
@@ -77,8 +142,11 @@ export async function hentArrangementMedId(id: string): Promise<ArrangementMedAn
     return a ? { ...a, antall_pameldte: tellDemo(pameldinger, a.id) } : null;
   }
 
-  const [rad] = await sql`${medAntall()} where a.id = ${id} limit 1`;
-  return (rad as unknown as ArrangementMedAntall) ?? null;
+  const rad = hentDb().prepare(`select * from arrangementer where id = ?`).get(id) as
+    | ArrangementRad
+    | undefined;
+  if (!rad) return null;
+  return fraArrangementRad(rad, tellDeltakerePerArrangement([rad.id]).get(rad.id) ?? 0);
 }
 
 export async function hentPameldinger(arrangementId: string): Promise<PameldingMedDeltakere[]> {
@@ -88,22 +156,34 @@ export async function hentPameldinger(arrangementId: string): Promise<PameldingM
       .sort((a, b) => a.opprettet.localeCompare(b.opprettet));
   }
 
-  // Deltakerne samles til en json-liste i databasen, så vi slipper å sy
-  // sammen to resultatsett her.
-  const rader = await sql`
-    select p.*,
-           coalesce(
-             (select json_agg(d order by d.er_kontakt desc, d.opprettet)
-                from deltakere d
-               where d.pamelding_id = p.id),
-             '[]'::json
-           ) as deltakere
-      from pameldinger p
-     where p.arrangement_id = ${arrangementId}
-       and p.avmeldt is null
-     order by p.opprettet asc
-  `;
-  return rader as unknown as PameldingMedDeltakere[];
+  const db = hentDb();
+  const pameldinger = db
+    .prepare(`select * from pameldinger where arrangement_id = ? and avmeldt is null order by opprettet asc`)
+    .all(arrangementId) as PameldingRad[];
+  if (pameldinger.length === 0) return [];
+
+  const ider = pameldinger.map((p) => p.id);
+  const plassholdere = ider.map(() => "?").join(",");
+  const deltakerrader = db
+    .prepare(
+      `select * from deltakere where pamelding_id in (${plassholdere}) order by er_kontakt desc, opprettet asc`,
+    )
+    .all(...ider) as DeltakerRad[];
+
+  const perPamelding = new Map<string, PameldingMedDeltakere["deltakere"]>();
+  for (const d of deltakerrader) {
+    const liste = perPamelding.get(d.pamelding_id) ?? [];
+    liste.push({
+      id: d.id,
+      pamelding_id: d.pamelding_id,
+      navn: d.navn,
+      er_kontakt: Boolean(d.er_kontakt),
+      kosthold: d.kosthold,
+    });
+    perPamelding.set(d.pamelding_id, liste);
+  }
+
+  return pameldinger.map((p) => ({ ...p, deltakere: perPamelding.get(p.id) ?? [] }));
 }
 
 /* ── Skriving ────────────────────────────────────────────────────────── */
@@ -142,31 +222,39 @@ export async function opprettPamelding(input: NyPamelding): Promise<string> {
     return id;
   }
 
+  const db = hentDb();
+  const id = randomUUID();
+  const na = new Date().toISOString();
+
   // Påmeldingen og deltakerne må komme inn samlet. Går det galt halvveis,
   // skal det ikke ligge igjen en påmelding uten navn på.
-  return sql.begin(async (tx) => {
-    const [pamelding] = await tx`
-      insert into pameldinger
-        (arrangement_id, enhet_id, kontakt_navn, kontakt_telefon, kontakt_epost, melding)
-      values
-        (${input.arrangementId}, ${input.enhetId ?? null}, ${input.kontaktNavn},
-         ${input.kontaktTelefon}, ${input.kontaktEpost}, ${input.melding})
-      returning id
-    `;
+  const settInn = db.transaction(() => {
+    db.prepare(
+      `insert into pameldinger
+         (id, arrangement_id, enhet_id, kontakt_navn, kontakt_telefon, kontakt_epost, melding, opprettet)
+       values (?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      id,
+      input.arrangementId,
+      input.enhetId ?? null,
+      input.kontaktNavn,
+      input.kontaktTelefon,
+      input.kontaktEpost,
+      input.melding,
+      na,
+    );
 
-    await tx`
-      insert into deltakere ${tx(
-        input.deltakere.map((d, i) => ({
-          pamelding_id: pamelding.id as string,
-          navn: d.navn,
-          er_kontakt: i === 0,
-          kosthold: d.kosthold,
-        })),
-      )}
-    `;
+    const settDeltaker = db.prepare(
+      `insert into deltakere (id, pamelding_id, navn, er_kontakt, kosthold, opprettet)
+       values (?, ?, ?, ?, ?, ?)`,
+    );
+    input.deltakere.forEach((d, i) => {
+      settDeltaker.run(randomUUID(), id, d.navn, i === 0 ? 1 : 0, d.kosthold, na);
+    });
+  });
+  settInn();
 
-    return pamelding.id as string;
-  }) as Promise<string>;
+  return id;
 }
 
 export async function slettPamelding(id: string) {
@@ -175,7 +263,7 @@ export async function slettPamelding(id: string) {
     lager.pameldinger = lager.pameldinger.filter((p) => p.id !== id);
     return;
   }
-  await sql`delete from pameldinger where id = ${id}`;
+  hentDb().prepare(`delete from pameldinger where id = ?`).run(id);
 }
 
 export type ArrangementInput = Omit<Arrangement, "id" | "opprettet">;
@@ -193,12 +281,54 @@ export async function lagreArrangement(id: string | null, input: ArrangementInpu
     return nyId;
   }
 
+  const db = hentDb();
+  const na = new Date().toISOString();
+  const verdier = {
+    slug: input.slug,
+    tittel: input.tittel,
+    ingress: input.ingress,
+    beskrivelse: input.beskrivelse,
+    starter: input.starter,
+    slutter: input.slutter,
+    sted: input.sted,
+    kapasitet: input.kapasitet,
+    pamelding_stenger: input.pamelding_stenger,
+    tillat_flere: input.tillat_flere ? 1 : 0,
+    sporr_om_kost: input.sporr_om_kost ? 1 : 0,
+    krev_telefon: input.krev_telefon ? 1 : 0,
+    krev_epost: input.krev_epost ? 1 : 0,
+    oppsummering_dager_for: input.oppsummering_dager_for,
+    ansvarlig_navn: input.ansvarlig_navn,
+    ansvarlig_epost: input.ansvarlig_epost,
+    publisert: input.publisert ? 1 : 0,
+  };
+
   if (id) {
-    await sql`update arrangementer set ${sql(input)} where id = ${id}`;
+    db.prepare(
+      `update arrangementer set
+         slug = @slug, tittel = @tittel, ingress = @ingress, beskrivelse = @beskrivelse,
+         starter = @starter, slutter = @slutter, sted = @sted, kapasitet = @kapasitet,
+         pamelding_stenger = @pamelding_stenger, tillat_flere = @tillat_flere,
+         sporr_om_kost = @sporr_om_kost, krev_telefon = @krev_telefon, krev_epost = @krev_epost,
+         oppsummering_dager_for = @oppsummering_dager_for, ansvarlig_navn = @ansvarlig_navn,
+         ansvarlig_epost = @ansvarlig_epost, publisert = @publisert, endret = @endret
+       where id = @id`,
+    ).run({ ...verdier, endret: na, id });
     return id;
   }
-  const [rad] = await sql`insert into arrangementer ${sql(input)} returning id`;
-  return rad.id as string;
+
+  const nyId = randomUUID();
+  db.prepare(
+    `insert into arrangementer
+       (id, slug, tittel, ingress, beskrivelse, starter, slutter, sted, kapasitet,
+        pamelding_stenger, tillat_flere, sporr_om_kost, krev_telefon, krev_epost,
+        oppsummering_dager_for, ansvarlig_navn, ansvarlig_epost, publisert, opprettet, endret)
+     values
+       (@id, @slug, @tittel, @ingress, @beskrivelse, @starter, @slutter, @sted, @kapasitet,
+        @pamelding_stenger, @tillat_flere, @sporr_om_kost, @krev_telefon, @krev_epost,
+        @oppsummering_dager_for, @ansvarlig_navn, @ansvarlig_epost, @publisert, @opprettet, @endret)`,
+  ).run({ ...verdier, id: nyId, opprettet: na, endret: na });
+  return nyId;
 }
 
 export async function slettArrangement(id: string) {
@@ -208,7 +338,7 @@ export async function slettArrangement(id: string) {
     lager.pameldinger = lager.pameldinger.filter((p) => p.arrangement_id !== id);
     return;
   }
-  await sql`delete from arrangementer where id = ${id}`;
+  hentDb().prepare(`delete from arrangementer where id = ?`).run(id);
 }
 
 /**
@@ -221,8 +351,10 @@ export async function finnLedigSlug(basis: string): Promise<string> {
   if (!harDatabase()) {
     demolager().arrangementer.forEach((a) => brukte.add(a.slug));
   } else {
-    const rader = await sql`select slug from arrangementer where slug like ${basis + "%"}`;
-    rader.forEach((r) => brukte.add(r.slug as string));
+    const rader = hentDb()
+      .prepare(`select slug from arrangementer where slug like ?`)
+      .all(`${basis}%`) as { slug: string }[];
+    rader.forEach((r) => brukte.add(r.slug));
   }
 
   if (!brukte.has(basis)) return basis;
@@ -238,14 +370,18 @@ export async function finnLedigSlug(basis: string): Promise<string> {
 export async function lagreEnhet(token: string, plattform: string | null) {
   if (!harDatabase()) return `demo-enhet-${token.slice(-8)}`;
 
-  const [rad] = await sql`
-    insert into enheter (expo_token, plattform)
-    values (${token}, ${plattform})
-    on conflict (expo_token)
-      do update set sist_sett = now(), plattform = coalesce(${plattform}, enheter.plattform)
-    returning id
-  `;
-  return rad.id as string;
+  const na = new Date().toISOString();
+  const rad = hentDb()
+    .prepare(
+      `insert into enheter (id, expo_token, plattform, opprettet, sist_sett)
+       values (?, ?, ?, ?, ?)
+       on conflict(expo_token) do update set
+         sist_sett = excluded.sist_sett,
+         plattform = coalesce(excluded.plattform, enheter.plattform)
+       returning id`,
+    )
+    .get(randomUUID(), token, plattform, na, na) as { id: string };
+  return rad.id;
 }
 
 export type Paaminnelse = {
@@ -263,34 +399,44 @@ export type Paaminnelse = {
 export async function hentForfaltePaaminnelser(): Promise<Paaminnelse[]> {
   if (!harDatabase()) return [];
 
-  const rader = await sql`
-    select p.id as pamelding_id, e.expo_token, a.tittel, a.starter, a.sted
-      from pameldinger p
-      join enheter e on e.id = p.enhet_id
-      join arrangementer a on a.id = p.arrangement_id
-     where p.avmeldt is null
-       and p.paaminnelse_sendt is null
-       and a.publisert
-       and a.starter between now() + interval '20 hours' and now() + interval '28 hours'
-  `;
-  return rader as unknown as Paaminnelse[];
+  const na = Date.now();
+  const fra = new Date(na + 20 * 3600_000).toISOString();
+  const til = new Date(na + 28 * 3600_000).toISOString();
+
+  return hentDb()
+    .prepare(
+      `select p.id as pamelding_id, e.expo_token, a.tittel, a.starter, a.sted
+         from pameldinger p
+         join enheter e on e.id = p.enhet_id
+         join arrangementer a on a.id = p.arrangement_id
+        where p.avmeldt is null
+          and p.paaminnelse_sendt is null
+          and a.publisert = 1
+          and a.starter between ? and ?`,
+    )
+    .all(fra, til) as Paaminnelse[];
 }
 
 export async function merkPaaminnelseSendt(pameldingIder: string[]) {
   if (!harDatabase() || pameldingIder.length === 0) return;
-  await sql`update pameldinger set paaminnelse_sendt = now() where id in ${sql(pameldingIder)}`;
+  const plassholdere = pameldingIder.map(() => "?").join(",");
+  hentDb()
+    .prepare(`update pameldinger set paaminnelse_sendt = ? where id in (${plassholdere})`)
+    .run(new Date().toISOString(), ...pameldingIder);
 }
 
 /** Push-tokens til alle som er påmeldt et arrangement. */
 export async function hentTokensFor(arrangementId: string): Promise<string[]> {
   if (!harDatabase()) return [];
-  const rader = await sql`
-    select distinct e.expo_token
-      from pameldinger p
-      join enheter e on e.id = p.enhet_id
-     where p.arrangement_id = ${arrangementId} and p.avmeldt is null
-  `;
-  return rader.map((r) => r.expo_token as string);
+  const rader = hentDb()
+    .prepare(
+      `select distinct e.expo_token
+         from pameldinger p
+         join enheter e on e.id = p.enhet_id
+        where p.arrangement_id = ? and p.avmeldt is null`,
+    )
+    .all(arrangementId) as { expo_token: string }[];
+  return rader.map((r) => r.expo_token);
 }
 
 /* ── Oppsummering til ansvarlig ──────────────────────────────────────── */
@@ -303,7 +449,7 @@ const demoSendte = new Set<string>();
  * ikke har vært. Cron-jobben avgjør selv hvilke som er forfalt.
  */
 export async function hentKandidaterForOppsummering(): Promise<ArrangementMedAntall[]> {
-  const grense = new Date(Date.now() - 6 * 3600_000);
+  const grense = new Date(Date.now() - 6 * 3600_000).toISOString();
 
   if (!harDatabase()) {
     const { arrangementer, pameldinger } = demolager();
@@ -313,21 +459,23 @@ export async function hentKandidaterForOppsummering(): Promise<ArrangementMedAnt
           a.publisert &&
           a.oppsummering_dager_for !== null &&
           a.ansvarlig_epost &&
-          new Date(a.starter) >= grense &&
+          a.starter >= grense &&
           !demoSendte.has(a.id),
       )
       .map((a) => ({ ...a, antall_pameldte: tellDemo(pameldinger, a.id) }));
   }
 
-  const rader = await sql`
-    ${medAntall()}
-    where a.publisert
-      and a.oppsummering_dager_for is not null
-      and a.ansvarlig_epost is not null
-      and a.oppsummering_sendt is null
-      and a.starter >= ${grense}
-  `;
-  return rader as unknown as ArrangementMedAntall[];
+  const rader = hentDb()
+    .prepare(
+      `select * from arrangementer
+        where publisert = 1
+          and oppsummering_dager_for is not null
+          and ansvarlig_epost is not null
+          and oppsummering_sendt is null
+          and starter >= ?`,
+    )
+    .all(grense) as ArrangementRad[];
+  return medAntall(rader);
 }
 
 export async function merkOppsummeringSendt(id: string) {
@@ -335,7 +483,9 @@ export async function merkOppsummeringSendt(id: string) {
     demoSendte.add(id);
     return;
   }
-  await sql`update arrangementer set oppsummering_sendt = now() where id = ${id}`;
+  hentDb()
+    .prepare(`update arrangementer set oppsummering_sendt = ? where id = ?`)
+    .run(new Date().toISOString(), id);
 }
 
 /* ── Hjelpere ────────────────────────────────────────────────────────── */

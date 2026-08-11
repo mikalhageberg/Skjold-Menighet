@@ -1,59 +1,61 @@
 -- ═══════════════════════════════════════════════════════════════════════
--- Skjold menighet — databaseoppsett for Postgres
+-- Skjold menighet — databaseoppsett for SQLite
 --
 -- Kjøres med:  npm run db:migrer
--- Trygt å kjøre om igjen; alt er «if not exists» eller «or replace».
+-- Trygt å kjøre om igjen; alt er «if not exists».
 --
--- Sikkerhetsmodellen: bare serveren snakker med databasen, med én
--- tilkobling som ingen andre har. Verken nettleseren eller appen ser
--- databasen, så det finnes ingen vei utenom serveren til påmeldingslistene.
+-- Databasen er én fil, som regel liggende på et Railway-volum. Bare
+-- serveren har tilgang til fila, så det finnes ingen vei utenom serveren
+-- til påmeldingslistene.
+--
+-- SQLite har ingen egen boolean- eller tidssone-type: sant/usant lagres
+-- som 0/1, og tidspunkt som ISO 8601-tekst (f.eks. 2026-08-12T07:00:00.000Z),
+-- alltid generert i koden — aldri av databasen selv.
 -- ═══════════════════════════════════════════════════════════════════════
-
-create extension if not exists "pgcrypto";
 
 -- ── Arrangementer ─────────────────────────────────────────────────────
 
 create table if not exists arrangementer (
-  id                uuid primary key default gen_random_uuid(),
+  id                text primary key,
   slug              text not null unique,
   tittel            text not null,
   ingress           text,
   beskrivelse       text,
-  starter           timestamptz not null,
-  slutter           timestamptz,
+  starter           text not null,
+  slutter           text,
   sted              text not null default 'Skjold kirke',
   kapasitet         integer check (kapasitet is null or kapasitet > 0),
-  pamelding_stenger timestamptz,
-  tillat_flere      boolean not null default true,
-  sporr_om_kost     boolean not null default false,
+  pamelding_stenger text,
+  tillat_flere      integer not null default 1,
+  sporr_om_kost     integer not null default 0,
   -- Påmelding krever bare navn. Trenger arrangementet mer, skrus det på her.
-  krev_telefon      boolean not null default false,
-  krev_epost        boolean not null default false,
+  krev_telefon      integer not null default 0,
+  krev_epost        integer not null default 0,
   -- Oppsummeringen til den ansvarlige: hvor mange dager før start den sendes.
   -- null betyr at den ikke sendes. Sendes kl. 08 den dagen, én gang.
-  oppsummering_dager_for integer check (oppsummering_dager_for between 0 and 60),
-  oppsummering_sendt     timestamptz,
+  oppsummering_dager_for integer check (oppsummering_dager_for is null or oppsummering_dager_for between 0 and 60),
+  oppsummering_sendt     text,
   ansvarlig_navn    text,
   ansvarlig_epost   text,
-  publisert         boolean not null default false,
-  opprettet         timestamptz not null default now(),
-  endret            timestamptz not null default now()
+  publisert         integer not null default 0,
+  opprettet         text not null,
+  endret            text not null
 );
 
 create index if not exists arrangementer_starter_idx
   on arrangementer (starter)
-  where publisert;
+  where publisert = 1;
 
 -- ── Enheter ───────────────────────────────────────────────────────────
 -- Telefoner som har sagt ja til påminnelser. Én rad per installasjon.
 -- Vi lagrer ingenting om personen, bare tokenet Expo bruker for å nå den.
 
 create table if not exists enheter (
-  id         uuid primary key default gen_random_uuid(),
+  id         text primary key,
   expo_token text not null unique,
   plattform  text,
-  opprettet  timestamptz not null default now(),
-  sist_sett  timestamptz not null default now()
+  opprettet  text not null,
+  sist_sett  text not null
 );
 
 -- ── Påmeldinger ───────────────────────────────────────────────────────
@@ -61,28 +63,28 @@ create table if not exists enheter (
 -- Det er dette som gjør at man kan melde på naboen eller hele familien.
 
 create table if not exists pameldinger (
-  id                uuid primary key default gen_random_uuid(),
-  arrangement_id    uuid not null references arrangementer(id) on delete cascade,
-  enhet_id          uuid references enheter(id) on delete set null,
+  id                text primary key,
+  arrangement_id    text not null references arrangementer(id) on delete cascade,
+  enhet_id          text references enheter(id) on delete set null,
   kontakt_navn      text not null,
   kontakt_telefon   text,
   kontakt_epost     text,
   melding           text,
-  avmeldt           timestamptz,
-  paaminnelse_sendt timestamptz,
-  opprettet         timestamptz not null default now()
+  avmeldt           text,
+  paaminnelse_sendt text,
+  opprettet         text not null
 );
 
 create index if not exists pameldinger_arrangement_idx
   on pameldinger (arrangement_id, opprettet);
 
 create table if not exists deltakere (
-  id           uuid primary key default gen_random_uuid(),
-  pamelding_id uuid not null references pameldinger(id) on delete cascade,
+  id           text primary key,
+  pamelding_id text not null references pameldinger(id) on delete cascade,
   navn         text not null,
-  er_kontakt   boolean not null default false,
+  er_kontakt   integer not null default 0,
   kosthold     text,
-  opprettet    timestamptz not null default now()
+  opprettet    text not null
 );
 
 create index if not exists deltakere_pamelding_idx
@@ -98,27 +100,10 @@ create index if not exists pameldinger_paaminnelse_idx
 -- Legg til folk med:  npm run ny-admin
 
 create table if not exists administratorer (
-  id           uuid primary key default gen_random_uuid(),
-  epost        text not null unique,
-  navn         text,
-  passord_hash text not null,
-  opprettet    timestamptz not null default now(),
-  sist_innlogget timestamptz
+  id             text primary key,
+  epost          text not null unique,
+  navn           text,
+  passord_hash   text not null,
+  opprettet      text not null,
+  sist_innlogget text
 );
-
--- ── Automatikk ────────────────────────────────────────────────────────
-
-create or replace function sett_endret()
-returns trigger
-language plpgsql
-as $$
-begin
-  new.endret = now();
-  return new;
-end;
-$$;
-
-drop trigger if exists arrangementer_endret on arrangementer;
-create trigger arrangementer_endret
-  before update on arrangementer
-  for each row execute function sett_endret();

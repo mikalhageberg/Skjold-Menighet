@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { verify } from "@node-rs/argon2";
-import { harDatabase, sql } from "@/lib/db";
+import { harDatabase, hentDb } from "@/lib/db";
 
 /**
  * Innlogging for admin.
@@ -30,29 +30,31 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const passord = String(oppgitt?.passord ?? "");
         if (!epost || !passord) return null;
 
-        const [admin] = await sql`
-          select id, epost, navn, passord_hash
-            from administratorer
-           where lower(epost) = ${epost}
-           limit 1
-        `;
+        const admin = hentDb()
+          .prepare(
+            `select id, epost, navn, passord_hash
+               from administratorer
+              where lower(epost) = ?
+              limit 1`,
+          )
+          .get(epost) as
+          | { id: string; epost: string; navn: string | null; passord_hash: string }
+          | undefined;
         if (!admin) return null;
 
         let riktig = false;
         try {
-          riktig = await verify(admin.passord_hash as string, passord);
+          riktig = await verify(admin.passord_hash, passord);
         } catch {
           return null;
         }
         if (!riktig) return null;
 
-        await sql`update administratorer set sist_innlogget = now() where id = ${admin.id}`;
+        hentDb()
+          .prepare(`update administratorer set sist_innlogget = ? where id = ?`)
+          .run(new Date().toISOString(), admin.id);
 
-        return {
-          id: admin.id as string,
-          email: admin.epost as string,
-          name: (admin.navn as string | null) ?? null,
-        };
+        return { id: admin.id, email: admin.epost, name: admin.navn };
       },
     }),
   ],

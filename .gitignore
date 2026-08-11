@@ -25,3 +25,12 @@ mobil/dist
 
 # Verktøyoppsett som ikke hører til prosjektet
 .claude/
+
+# Lokal SQLite-database
+web/data/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.db
+*.db-wal
+*.db-shm

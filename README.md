@@ -128,18 +128,23 @@ Heter to arrangementer det samme, får det andre et tall bak: `/kirkekaffe-2`.
 
 ### Databasen
 
-Postgres. Ingen Supabase, ingen andre tjenester — bare en `DATABASE_URL`.
+SQLite — én fil, ikke en egen tjeneste å sette opp eller betale for. Fila skal
+ligge på et **volum** (en persistent disk), ikke i selve koden, ellers
+forsvinner den ved hver utrulling.
 
 ```bash
 npm run db:migrer
 ```
 
-Leser `database/schema.sql` og setter opp tabellene. Trygt å kjøre om igjen; alt
-er «if not exists», så data som ligger der blir stående. På Railway kjøres den av
-seg selv ved hver utrulling, så skjemaendringer følger med koden.
+Leser `database/schema.sql` og setter opp tabellene i fila `DATABASE_PATH`
+peker på. Trygt å kjøre om igjen; alt er «if not exists», så data som ligger
+der blir stående. På Railway kjøres den av seg selv ved hver utrulling, så
+skjemaendringer følger med koden.
 
-Uten `DATABASE_URL` kjører appen i **demomodus** med eksempeldata i minnet, og
+Uten `DATABASE_PATH` kjører appen i **demomodus** med eksempeldata i minnet, og
 admin er åpen uten innlogging. Da virker `npm run web` før noe er satt opp.
+Lokalt holder det å peke den på en mappe i prosjektet, f.eks.
+`./data/skjold.db` — mappa opprettes automatisk.
 
 #### Administratorer
 
@@ -156,9 +161,9 @@ som allerede har tilgang til serveren.
 
 #### Om sikkerheten
 
-Bare serveren snakker med databasen. Verken nettleseren eller appen har en
-tilkobling, så det finnes ingen vei utenom serveren til påmeldingslistene.
-Innloggingen er Auth.js med økten i en signert cookie.
+Bare serveren har databasefila. Verken nettleseren eller appen ser den, så det
+finnes ingen vei utenom serveren til påmeldingslistene. Innloggingen er Auth.js
+med økten i en signert cookie.
 
 ### Koble til Brevo
 
@@ -211,26 +216,44 @@ Alt ligger i ett repo. Railway bygger og kjører `web/`; appen i `mobil/` går t
 butikkene og hører ikke hjemme på serveren.
 
 1. **Nytt prosjekt** på [railway.com](https://railway.com) → *Deploy from GitHub
-   repo* → velg dette repoet.
-2. **Legg til Postgres** i samme prosjekt: *New* → *Database* → *Add PostgreSQL*.
-   Railway setter `DATABASE_URL` av seg selv.
-3. **Miljøvariabler** på web-tjenesten:
+   repo* → velg dette repoet. Railway finner flere `package.json`-filer i
+   arbeidsområdet og foreslår én tjeneste per mappe — behold bare **web**, og
+   hopp over `@skjold/delt` (ikke en kjørbar app, bare delt kode) og `mobil`
+   (går til app-butikkene, ikke til Railway).
+2. På **web**-tjenesten: sjekk under *Settings* → *Source* at **Root
+   Directory** er satt til repo-roten (tom, eller `/`) — ikke `web`.
+   Arbeidsområdet krever at `npm install` kjøres fra roten for at `web` skal
+   finne koden den låner fra `delt`.
+3. **Legg til et volum**: samme tjeneste, *Settings* → *Volumes* → *Add
+   Volume*, med *Mount Path* `/data`. Dette er disken databasefila bor på —
+   uten den forsvinner alt ved neste utrulling.
+4. **Miljøvariabler** på web-tjenesten:
 
    | Variabel | Verdi |
    | --- | --- |
+   | `DATABASE_PATH` | `/data/skjold.db` |
    | `AUTH_SECRET` | `openssl rand -base64 32` |
    | `CRON_SECRET` | `openssl rand -base64 32` |
    | `BREVO_API_KEY` | fra Brevo |
    | `BREVO_SENDER_NAME` | Skjold menighet |
    | `BREVO_SENDER_EMAIL` | en **verifisert** avsender i Brevo |
 
-   `DATABASE_URL` og `PORT` settes av Railway. Ikke rør dem.
-4. **Generer en adresse** under *Settings* → *Networking* → *Generate Domain*.
-5. **Første administrator.** Åpne Railway-terminalen på web-tjenesten og kjør
+   `PORT` settes av Railway selv. Ikke rør den.
+5. **Generer en adresse** under *Settings* → *Networking* → *Generate Domain*.
+6. **Første administrator.** Åpne Railway-terminalen på web-tjenesten og kjør
    `npm run ny-admin`.
 
 `railway.json` sier hvordan det bygges og startes. Startkommandoen kjører
 migreringen først, så databasen er i takt med koden ved hver utrulling.
+
+#### Om avbrudd ved deploy
+
+Et volum kan bare festes til én kjørende beholder om gangen, så Railway kan
+ikke gjøre en helt sømløs utrulling av denne tjenesten — den gamle beholderen
+må stoppe før den nye kan feste seg til volumet og starte. I praksis et par
+sekunders avbrudd per deploy, ikke noe en menighet merker. Skulle dere en dag
+trenge flere samtidige instanser av `web`, er det tidspunktet å vurdere en
+ekte databasetjeneste i stedet.
 
 #### Cron-jobben
 

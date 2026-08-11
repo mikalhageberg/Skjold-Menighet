@@ -1,3 +1,4 @@
 # Railway bygger med Node 20; det samme som utviklingsmaskinen.
+# python3/gcc/gnumake trengs for å bygge better-sqlite3 sin native binding.
 [phases.setup]
-nixPkgs = ["nodejs_20"]
+nixPkgs = ["nodejs_20", "python3", "gcc", "gnumake"]

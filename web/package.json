@@ -14,13 +14,14 @@
   "dependencies": {
     "@node-rs/argon2": "^2.0.2",
     "@skjold/delt": "*",
+    "better-sqlite3": "^12.11.1",
     "next": "15.1.6",
     "next-auth": "^5.0.0-beta.32",
-    "postgres": "^3.4.9",
     "react": "19.1.0",
     "react-dom": "19.1.0"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

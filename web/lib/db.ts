@@ -1,46 +1,38 @@
 import "server-only";
-import postgres, { type Sql } from "postgres";
+import Database from "better-sqlite3";
+import { existsSync, mkdirSync } from "node:fs";
+import { dirname } from "node:path";
 
 /**
- * Tilkoblingen til Postgres.
+ * Tilkoblingen til databasen — én SQLite-fil, som ligger på et Railway-volum
+ * slik at den overlever redeploy og restart.
  *
- * På Railway settes DATABASE_URL av seg selv når du legger til en
- * Postgres-tjeneste. Uten den kjører appen i demomodus med data i minnet,
- * så `npm run dev` virker før noe er satt opp.
+ * Uten DATABASE_PATH kjører appen i demomodus med data i minnet, så
+ * `npm run dev` virker før noe er satt opp.
  *
- * Spørringene skrives som `sql\`select ...\``. Alt som settes inn med ${}
- * blir en parameter, ikke tekst, så det finnes ingen vei inn for
- * SQL-innsprøytning.
+ * WAL-modus lar lesing og skriving skje samtidig uten å blokkere hverandre.
+ * Fremmednøkler er skrudd på, så en slettet påmelding tar deltakerne sine
+ * med seg, og en slettet enhet nulles ut i stedet for å knekke noe.
  */
 
 export function harDatabase() {
-  return Boolean(process.env.DATABASE_URL);
+  return Boolean(process.env.DATABASE_PATH);
 }
 
-function lagKlient(): Sql {
-  const url = process.env.DATABASE_URL;
-  if (!url) {
-    // Alle kall er bak harDatabase(). Skulle noe likevel slippe gjennom,
-    // vil vi ha en tydelig feil og ikke en «undefined is not a function».
-    return new Proxy({} as Sql, {
-      get() {
-        throw new Error("DATABASE_URL mangler — appen kjører i demomodus.");
-      },
-      apply() {
-        throw new Error("DATABASE_URL mangler — appen kjører i demomodus.");
-      },
-    });
+let db: Database.Database | null = null;
+
+export function hentDb(): Database.Database {
+  const filsti = process.env.DATABASE_PATH;
+  if (!filsti) {
+    throw new Error("DATABASE_PATH mangler — appen kjører i demomodus.");
   }
+  if (!db) {
+    const mappe = dirname(filsti);
+    if (!existsSync(mappe)) mkdirSync(mappe, { recursive: true });
 
-  return postgres(url, {
-    // Railway og de fleste andre krever TLS, men med eget sertifikat.
-    ssl: url.includes("localhost") || url.includes("127.0.0.1") ? false : "require",
-    max: 5,
-    idle_timeout: 20,
-    connect_timeout: 10,
-    connection: { timezone: "Europe/Oslo" },
-  });
+    db = new Database(filsti);
+    db.pragma("journal_mode = WAL");
+    db.pragma("foreign_keys = ON");
+  }
+  return db;
 }
-
-/** Klienten. postgres.js kobler seg ikke opp før første spørring. */
-export const sql: Sql = lagKlient();
