@@ -7,7 +7,7 @@
  * Trygt å kjøre om igjen — skjemaet er skrevet med «if not exists», så
  * det gjør ingenting med data som allerede ligger der.
  */
-import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { accessSync, constants, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import Database from "better-sqlite3";
@@ -23,10 +23,40 @@ if (!filsti) {
   process.exit(1);
 }
 
-const mappe = dirname(filsti);
-if (!existsSync(mappe)) mkdirSync(mappe, { recursive: true });
+const absoluttSti = resolve(filsti);
+const mappe = dirname(absoluttSti);
 
-const db = new Database(filsti);
+if (!existsSync(mappe)) {
+  try {
+    mkdirSync(mappe, { recursive: true });
+  } catch (feil) {
+    console.error(`Klarte ikke å opprette mappa "${mappe}": ${feil.message}`);
+    console.error("Sjekk at DATABASE_PATH peker inn i volumets monteringssti, og at den er skrivbar.");
+    process.exit(1);
+  }
+}
+
+try {
+  accessSync(mappe, constants.W_OK);
+} catch {
+  console.error(`Mappa "${mappe}" finnes, men er ikke skrivbar for denne prosessen.`);
+  console.error(
+    "På Railway: sjekk at Mount Path på volumet er nøyaktig samme mappe som DATABASE_PATH peker inn i.",
+  );
+  process.exit(1);
+}
+
+let db;
+try {
+  db = new Database(absoluttSti);
+} catch (feil) {
+  console.error(`Klarte ikke å åpne databasefila "${absoluttSti}": ${feil.message}`);
+  console.error(
+    "Vanligste årsak: DATABASE_PATH matcher ikke volumets Mount Path på Railway, " +
+      "eller mappa mangler skrivetilgang.",
+  );
+  process.exit(1);
+}
 db.pragma("journal_mode = WAL");
 db.pragma("foreign_keys = ON");
 

@@ -1,7 +1,7 @@
 import "server-only";
 import Database from "better-sqlite3";
-import { existsSync, mkdirSync } from "node:fs";
-import { dirname } from "node:path";
+import { accessSync, constants, existsSync, mkdirSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 
 /**
  * Tilkoblingen til databasen — én SQLite-fil, som ligger på et Railway-volum
@@ -27,10 +27,29 @@ export function hentDb(): Database.Database {
     throw new Error("DATABASE_PATH mangler — appen kjører i demomodus.");
   }
   if (!db) {
-    const mappe = dirname(filsti);
-    if (!existsSync(mappe)) mkdirSync(mappe, { recursive: true });
+    const absoluttSti = resolve(filsti);
+    const mappe = dirname(absoluttSti);
 
-    db = new Database(filsti);
+    if (!existsSync(mappe)) {
+      mkdirSync(mappe, { recursive: true });
+    }
+    try {
+      accessSync(mappe, constants.W_OK);
+    } catch {
+      throw new Error(
+        `Mappa "${mappe}" er ikke skrivbar. Sjekk at DATABASE_PATH matcher volumets Mount Path på Railway.`,
+      );
+    }
+
+    try {
+      db = new Database(absoluttSti);
+    } catch (feil) {
+      const melding = feil instanceof Error ? feil.message : String(feil);
+      throw new Error(
+        `Klarte ikke å åpne databasefila "${absoluttSti}": ${melding}. ` +
+          `Sjekk at DATABASE_PATH matcher volumets Mount Path på Railway.`,
+      );
+    }
     db.pragma("journal_mode = WAL");
     db.pragma("foreign_keys = ON");
   }
