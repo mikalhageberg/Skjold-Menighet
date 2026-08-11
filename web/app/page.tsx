@@ -1,7 +1,10 @@
 import { hentKommende } from "@/lib/data";
 import { Arrangementsliste, Neste } from "@/components/Arrangementsliste";
 
-export const revalidate = 60;
+// Ikke statisk/ISR: forsiden viser antall påmeldte, som endrer seg fortløpende,
+// og statisk bygging ville prøvd å lese databasen under selve bygget — før
+// migreringen har rukket å opprette tabellene.
+export const dynamic = "force-dynamic";
 
 export default async function Forside() {
   const arrangementer = await hentKommende();

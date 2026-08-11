@@ -6,7 +6,10 @@ import { pameldingsstatus, sesongFor } from "@skjold/delt";
 import { dato, klokka, nartid, plasstekst, tidsrom, ukedag } from "@skjold/delt";
 import { Pameldingsskjema } from "@/components/Pameldingsskjema";
 
-export const revalidate = 30;
+// Ikke statisk/ISR: siden viser plasstall og påmeldingsstatus, som endrer seg
+// fortløpende, og statisk bygging ville prøvd å lese databasen under selve
+// bygget — før migreringen har rukket å opprette tabellene.
+export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ slug: string }> };
 
