@@ -24,6 +24,12 @@ export type Arrangement = {
    * /api/offentlig/bilde/{id} — brukes også som cache-nøkkel i URL-en.
    */
   bilde_generert: string | null;
+  /**
+   * Satt når arrangementet ble opprettet som del av en serie med
+   * gjentakelser — delt av alle forekomstene serien ble laget med. Hver
+   * forekomst er ellers en helt vanlig, selvstendig rad.
+   */
+  serie_id: string | null;
   opprettet: string;
 };
 

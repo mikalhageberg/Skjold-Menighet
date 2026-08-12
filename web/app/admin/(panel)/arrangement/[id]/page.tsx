@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { hentArrangementMedId, hentPameldinger } from "@/lib/data";
+import { hentArrangementMedId, hentArrangementerISerie, hentPameldinger } from "@/lib/data";
 import { krevAdmin } from "@/lib/auth";
 import { harBrevo } from "@/lib/brevo";
 import { oppsummeringstidspunkt, pameldingsstatus, sesongFor } from "@skjold/delt";
@@ -9,23 +9,26 @@ import { ArrangementSkjema } from "@/components/ArrangementSkjema";
 import { MeldingSkjema } from "@/components/MeldingSkjema";
 import { Oppsummeringstest } from "@/components/Oppsummering";
 import { SlettArrangement } from "@/components/SlettArrangement";
+import { SlettSerie } from "@/components/SlettSerie";
 import { MeldAv } from "@/components/MeldAv";
 
 export const dynamic = "force-dynamic";
 
 type Props = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ lagret?: string }>;
+  searchParams: Promise<{ lagret?: string; antall?: string }>;
 };
 
 export default async function AdminArrangement({ params, searchParams }: Props) {
   await krevAdmin();
   const { id } = await params;
-  const { lagret } = await searchParams;
+  const { lagret, antall: antallParam } = await searchParams;
+  const antallForekomster = Number(antallParam ?? "1");
 
   const a = await hentArrangementMedId(id);
   if (!a) notFound();
 
+  const soskenISerien = a.serie_id ? await hentArrangementerISerie(a.serie_id, a.id) : [];
   const pameldinger = await hentPameldinger(id);
   const deltakere = pameldinger.flatMap((p) => p.deltakere);
   const kost = deltakere.filter((d) => d.kosthold);
@@ -72,11 +75,19 @@ export default async function AdminArrangement({ params, searchParams }: Props) 
             </svg>
           </span>
           <div>
-            <p className="bekreftelse__tittel">Arrangementet er opprettet</p>
+            <p className="bekreftelse__tittel">
+              {antallForekomster > 1
+                ? `${antallForekomster} arrangementer er opprettet`
+                : "Arrangementet er opprettet"}
+            </p>
             <p className="bekreftelse__tekst">
-              {a.publisert
-                ? "Det ligger nå på forsiden."
-                : "Det er lagret som kladd — kryss av for publisering nedenfor når det er klart."}
+              {antallForekomster > 1
+                ? a.publisert
+                  ? "Dette er det første — du ser de andre i serien lenger ned."
+                  : "Dette er det første, lagret som kladd — kryss av for publisering nedenfor når de er klare."
+                : a.publisert
+                  ? "Det ligger nå på forsiden."
+                  : "Det er lagret som kladd — kryss av for publisering nedenfor når det er klart."}
             </p>
           </div>
         </div>
@@ -86,6 +97,30 @@ export default async function AdminArrangement({ params, searchParams }: Props) 
         <p className="notis notis--klar" role="status" style={{ marginTop: "1.5rem" }}>
           Endringene er lagret.
         </p>
+      )}
+
+      {a.serie_id && (
+        <div className="serie-boks">
+          <p className="serie-boks__tittel">
+            Del av en serie på {soskenISerien.length + 1} arrangementer
+          </p>
+          {soskenISerien.length > 0 && (
+            <ul className="serie-boks__liste">
+              {soskenISerien.map((s) => (
+                <li key={s.id}>
+                  <Link href={`/admin/arrangement/${s.id}`}>
+                    {ukedag(new Date(s.starter))} {dato(new Date(s.starter))}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+          <SlettSerie
+            serieId={a.serie_id}
+            antall={soskenISerien.length + 1}
+            tittel={a.tittel}
+          />
+        </div>
       )}
 
       <div className="adm__tall">

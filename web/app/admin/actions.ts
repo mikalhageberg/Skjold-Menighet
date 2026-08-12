@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { randomUUID } from "node:crypto";
 import {
   finnLedigSlug,
   hentArrangementMedId,
@@ -9,6 +10,7 @@ import {
   lagreArrangement,
   slettArrangement,
   slettPamelding,
+  slettSerie,
   type ArrangementInput,
   type BildeEndring,
 } from "@/lib/data";
@@ -126,6 +128,55 @@ export async function genererBildeAction(
   };
 }
 
+/** Flytter en «YYYY-MM-DDTHH:mm»-e.l. inputverdi et antall hele dager. */
+function skyvDager(naiv: string, dager: number): string {
+  if (!naiv || dager === 0) return naiv;
+  const [datoDel, resten] = naiv.split("T");
+  const [aar, maned, dag] = datoDel.split("-").map(Number);
+  const ny = new Date(aar, maned - 1, dag + dager);
+  const p = (n: number) => String(n).padStart(2, "0");
+  const nyDatoDel = `${ny.getFullYear()}-${p(ny.getMonth() + 1)}-${p(ny.getDate())}`;
+  return resten ? `${nyDatoDel}T${resten}` : nyDatoDel;
+}
+
+const MAKS_FOREKOMSTER = 52;
+
+/**
+ * Leser gjentakelsesfeltene og regner ut hvor mange dager hver forekomst
+ * skal flyttes fra den første. Selve gjentakelsesregelen lagres aldri —
+ * bare de ferdige datoene, som hver blir en helt vanlig, selvstendig rad.
+ */
+function lesGjentakelse(data: FormData): number[] | string | null {
+  if (data.get("gjenta") !== "på") return null;
+
+  const hverUker = Number(data.get("gjenta_hver_uker") ?? 1);
+  if (!Number.isInteger(hverUker) || hverUker < 1 || hverUker > 52) {
+    return "Ugyldig intervall for gjentakelse.";
+  }
+
+  const til = String(data.get("gjenta_til") ?? "").trim();
+  if (!til) return "Sett en sluttdato for gjentakelsen.";
+
+  const startDatoDel = String(data.get("starter") ?? "").split("T")[0];
+  if (!startDatoDel) return "Sett et starttidspunkt først.";
+
+  const [aar0, maned0, dag0] = startDatoDel.split("-").map(Number);
+  const [aarT, manedT, dagT] = til.split("-").map(Number);
+  const sisteDato = new Date(aarT, manedT - 1, dagT);
+
+  if (sisteDato < new Date(aar0, maned0 - 1, dag0)) {
+    return "Sluttdatoen for gjentakelsen må være etter startdatoen.";
+  }
+
+  const offsets: number[] = [];
+  for (let k = 0; offsets.length < MAKS_FOREKOMSTER; k++) {
+    const dagerOffset = k * hverUker * 7;
+    if (new Date(aar0, maned0 - 1, dag0 + dagerOffset) > sisteDato) break;
+    offsets.push(dagerOffset);
+  }
+  return offsets.length > 0 ? offsets : "Fant ingen datoer innenfor perioden du valgte.";
+}
+
 export async function lagreArrangementAction(_forrige: Svar, data: FormData): Promise<Svar> {
   await krevAdmin();
 
@@ -135,30 +186,85 @@ export async function lagreArrangementAction(_forrige: Svar, data: FormData): Pr
   const id = String(data.get("id") ?? "") || null;
   const bildeEndring = lesBildeEndring(data);
 
-  // Nettadressen lages av tittelen og settes én gang. Den står fast når
-  // tittelen endres senere, ellers ville lenker folk har delt slutte å virke.
-  let slug: string;
-  if (id) {
-    const eksisterende = await hentArrangementMedId(id);
-    if (!eksisterende) return { ok: false, melding: "Fant ikke arrangementet." };
-    slug = eksisterende.slug;
-  } else {
-    slug = await finnLedigSlug(lagSlug(resultat.tittel) || "arrangement");
+  // Gjentakelse er bare et alternativ når man oppretter et helt nytt
+  // arrangement — å gjøre et allerede lagret om til en serie i etterkant
+  // er en annen, mer forvirrende operasjon vi ikke tilbyr.
+  const gjentakelse = id ? null : lesGjentakelse(data);
+  if (typeof gjentakelse === "string") return { ok: false, melding: gjentakelse };
+
+  if (id || !gjentakelse) {
+    // Nettadressen lages av tittelen og settes én gang. Den står fast når
+    // tittelen endres senere, ellers ville lenker folk har delt slutte å virke.
+    let slug: string;
+    if (id) {
+      const eksisterende = await hentArrangementMedId(id);
+      if (!eksisterende) return { ok: false, melding: "Fant ikke arrangementet." };
+      slug = eksisterende.slug;
+    } else {
+      slug = await finnLedigSlug(lagSlug(resultat.tittel) || "arrangement");
+    }
+
+    let lagretId: string;
+    try {
+      lagretId = await lagreArrangement(id, { ...resultat, slug }, bildeEndring);
+    } catch (feil) {
+      console.error("Kunne ikke lagre arrangement", feil);
+      return { ok: false, melding: "Arrangementet ble ikke lagret. Prøv igjen." };
+    }
+
+    revalidatePath("/");
+    revalidatePath("/admin");
+    revalidatePath("/admin/arrangementer");
+    revalidatePath(`/arrangement/${slug}`);
+    redirect(`/admin/arrangement/${lagretId}?lagret=${id ? "endret" : "ny"}`);
   }
 
-  let lagretId: string;
+  // Gjentakelse: samme innhold, én rad per forekomst, delt serie-id.
+  const serieId = randomUUID();
+  const raStarter = String(data.get("starter") ?? "");
+  const raSlutter = String(data.get("slutter") ?? "").trim();
+  const raFrist = String(data.get("pamelding_stenger") ?? "").trim();
+
+  let forsteId: string | null = null;
   try {
-    lagretId = await lagreArrangement(id, { ...resultat, slug }, bildeEndring);
+    for (const dagerOffset of gjentakelse) {
+      const starter = new Date(skyvDager(raStarter, dagerOffset)).toISOString();
+      const slutter = raSlutter
+        ? new Date(skyvDager(raSlutter, dagerOffset)).toISOString()
+        : null;
+      const pameldingStenger = raFrist
+        ? new Date(skyvDager(raFrist, dagerOffset)).toISOString()
+        : null;
+
+      const slug = await finnLedigSlug(lagSlug(resultat.tittel) || "arrangement");
+      const nyId = await lagreArrangement(
+        null,
+        { ...resultat, slug, starter, slutter, pamelding_stenger: pameldingStenger },
+        bildeEndring,
+        serieId,
+      );
+      forsteId ??= nyId;
+    }
   } catch (feil) {
-    console.error("Kunne ikke lagre arrangement", feil);
-    return { ok: false, melding: "Arrangementet ble ikke lagret. Prøv igjen." };
+    console.error("Kunne ikke lagre arrangementserien", feil);
+    return { ok: false, melding: "Serien ble ikke lagret. Prøv igjen." };
   }
 
   revalidatePath("/");
   revalidatePath("/admin");
   revalidatePath("/admin/arrangementer");
-  revalidatePath(`/arrangement/${slug}`);
-  redirect(`/admin/arrangement/${lagretId}?lagret=${id ? "endret" : "ny"}`);
+  redirect(`/admin/arrangement/${forsteId}?lagret=ny&antall=${gjentakelse.length}`);
+}
+
+export async function slettSerieAction(data: FormData) {
+  await krevAdmin();
+  const serieId = String(data.get("serie_id") ?? "");
+  if (!serieId) return;
+  await slettSerie(serieId);
+  revalidatePath("/");
+  revalidatePath("/admin");
+  revalidatePath("/admin/arrangementer");
+  redirect("/admin/arrangementer");
 }
 
 export async function slettArrangementAction(data: FormData) {

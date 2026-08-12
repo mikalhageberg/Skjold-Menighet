@@ -501,6 +501,16 @@ img {
   flex-wrap: wrap;
 }
 
+.gjenta__intervall {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.gjenta__intervall .felt__inn {
+  max-width: 5rem;
+}
+
 .avkryss {
   display: flex;
   align-items: flex-start;
@@ -1048,6 +1058,36 @@ img {
 .fareombraade__tittel {
   font-size: 1.1875rem;
   margin-bottom: 0.35rem;
+}
+
+.serie-boks {
+  margin-top: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--strek);
+  border-inline-start: 3px solid var(--messing);
+  border-radius: var(--radius);
+  background: var(--papir);
+}
+
+.serie-boks__tittel {
+  font-weight: 500;
+}
+
+.serie-boks__liste {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+}
+
+.serie-boks__liste a {
+  color: var(--gran);
+}
+
+.serie-boks form.bekreft {
+  margin-top: 1rem;
 }
 
 .tabell__handlinger {

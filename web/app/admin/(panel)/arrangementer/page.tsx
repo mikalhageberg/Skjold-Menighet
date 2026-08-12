@@ -78,6 +78,12 @@ function Liste({
                     aria-hidden="true"
                   />
                   {a.tittel}
+                  {a.serie_id && (
+                    <span className="stille" title="Del av en serie med gjentakelser">
+                      {" "}
+                      · serie
+                    </span>
+                  )}
                 </td>
                 <td>
                   {ukedag(start)} {dato(start)}

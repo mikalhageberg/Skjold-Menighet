@@ -76,6 +76,15 @@ try {
   leggTilKolonne("bilde", "blob");
   leggTilKolonne("bilde_type", "text");
   leggTilKolonne("bilde_generert", "text");
+  leggTilKolonne("serie_id", "text");
+
+  // Må opprettes her, ikke i schema.sql — den kjører før alter table-steget
+  // over, og ville feilet mot en database som ennå ikke har serie_id.
+  db.exec(`
+    create index if not exists arrangementer_serie_idx
+      on arrangementer (serie_id)
+      where serie_id is not null
+  `);
 
   const tabeller = ["arrangementer", "pameldinger", "deltakere", "enheter", "administratorer"];
   const finnes = tabeller.filter((navn) =>

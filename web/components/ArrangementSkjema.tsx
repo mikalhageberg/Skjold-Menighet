@@ -15,6 +15,22 @@ function delTid(iso: string): [string, string] {
   return [dato ?? "", klokke ?? ""];
 }
 
+/** Samme utregning som lesGjentakelse i actions.ts, til forhåndsvisning. */
+function antallForekomster(starterDato: string, hverUker: number, til: string): number {
+  if (!starterDato || !til || !Number.isInteger(hverUker) || hverUker < 1) return 0;
+  const [aar0, maned0, dag0] = starterDato.split("-").map(Number);
+  const [aarT, manedT, dagT] = til.split("-").map(Number);
+  const siste = new Date(aarT, manedT - 1, dagT);
+  if (Number.isNaN(siste.getTime())) return 0;
+
+  let antall = 0;
+  for (let k = 0; antall < 52; k++) {
+    if (new Date(aar0, maned0 - 1, dag0 + k * hverUker * 7) > siste) break;
+    antall++;
+  }
+  return antall;
+}
+
 export function ArrangementSkjema({ arrangement }: { arrangement?: Arrangement }) {
   const [svar, send] = useActionState(lagreArrangementAction, START);
   const [tittel, settTittel] = useState(arrangement?.tittel ?? "");
@@ -34,6 +50,10 @@ export function ArrangementSkjema({ arrangement }: { arrangement?: Arrangement }
   const [slutterKlokke, settSlutterKlokke] = useState(forhandsSlutterKlokke);
   const [pameldingStengerDato, settPameldingStengerDato] = useState(forhandsFristDato);
   const [pameldingStengerKlokke, settPameldingStengerKlokke] = useState(forhandsFristKlokke);
+
+  const [gjenta, settGjenta] = useState(false);
+  const [gjentaHverUker, settGjentaHverUker] = useState("1");
+  const [gjentaTil, settGjentaTil] = useState("");
 
   // Sluttdatoen følger startdatoen automatisk — de aller fleste
   // arrangementer varer noen timer, ikke over flere dager. Har man først
@@ -145,6 +165,83 @@ export function ArrangementSkjema({ arrangement }: { arrangement?: Arrangement }
           />
         </div>
       </section>
+
+      {!arrangement && (
+        <section className="bolk">
+          <h3 className="bolk__tittel">Gjentakelse</h3>
+
+          <div className="valg__post">
+            <label className="avkryss">
+              <input
+                type="checkbox"
+                className="avkryss__boks"
+                name="gjenta"
+                value="på"
+                checked={gjenta}
+                onChange={(e) => settGjenta(e.target.checked)}
+              />
+              <span className="avkryss__tekst">Gjenta dette arrangementet</span>
+            </label>
+            <p className="felt__hjelp valg__hjelp">
+              Lager flere like arrangementer på rad, med samme innhold og bilde. Hvert ett kan
+              endres eller slettes for seg etterpå.
+            </p>
+          </div>
+
+          {gjenta && (
+            <>
+              <div className="rad2">
+                <div className="felt">
+                  <label className="felt__etikett" htmlFor="gjenta_hver_uker">
+                    Hver
+                  </label>
+                  <div className="gjenta__intervall">
+                    <input
+                      id="gjenta_hver_uker"
+                      name="gjenta_hver_uker"
+                      type="number"
+                      min={1}
+                      max={52}
+                      className="felt__inn"
+                      value={gjentaHverUker}
+                      onChange={(e) => settGjentaHverUker(e.target.value)}
+                    />
+                    <span>uke(r)</span>
+                  </div>
+                </div>
+
+                <div className="felt">
+                  <label className="felt__etikett" htmlFor="gjenta_til">
+                    Til og med
+                  </label>
+                  <input
+                    id="gjenta_til"
+                    name="gjenta_til"
+                    type="date"
+                    className="felt__inn"
+                    value={gjentaTil}
+                    onChange={(e) => settGjentaTil(e.target.value)}
+                    required={gjenta}
+                  />
+                </div>
+              </div>
+
+              <p className="felt__hjelp">
+                {(() => {
+                  const antall = antallForekomster(starterDato, Number(gjentaHverUker), gjentaTil);
+                  if (!gjentaTil) return "Velg en sluttdato for å se hvor mange dette lager.";
+                  if (antall === 0) return "Ingen datoer å lage — sjekk sluttdatoen.";
+                  return antall === 1
+                    ? "Dette lager bare det ene arrangementet — sluttdatoen er før neste gang."
+                    : `Dette lager ${antall} arrangementer, ett hver ${
+                        Number(gjentaHverUker) === 1 ? "uke" : `${gjentaHverUker}. uke`
+                      }.`;
+                })()}
+              </p>
+            </>
+          )}
+        </section>
+      )}
 
       <section className="bolk">
         <h3 className="bolk__tittel">Påmelding</h3>

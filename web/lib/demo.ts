@@ -37,6 +37,7 @@ function lagArrangementer(): Arrangement[] {
       ansvarlig_epost: "marit@skjold-menighet.no",
       publisert: true,
       bilde_generert: null,
+      serie_id: null,
       opprettet: om(-20, 9),
     },
     {
@@ -60,6 +61,7 @@ function lagArrangementer(): Arrangement[] {
       ansvarlig_epost: "olav@skjold-menighet.no",
       publisert: true,
       bilde_generert: null,
+      serie_id: null,
       opprettet: om(-14, 9),
     },
     {
@@ -83,6 +85,7 @@ function lagArrangementer(): Arrangement[] {
       ansvarlig_epost: "hanne@skjold-menighet.no",
       publisert: true,
       bilde_generert: null,
+      serie_id: null,
       opprettet: om(-9, 9),
     },
     {
@@ -106,6 +109,7 @@ function lagArrangementer(): Arrangement[] {
       ansvarlig_epost: "kari@skjold-menighet.no",
       publisert: true,
       bilde_generert: null,
+      serie_id: null,
       opprettet: om(-30, 9),
     },
     {
@@ -129,6 +133,7 @@ function lagArrangementer(): Arrangement[] {
       ansvarlig_epost: "jon@skjold-menighet.no",
       publisert: true,
       bilde_generert: null,
+      serie_id: null,
       opprettet: om(-5, 9),
     },
     {
@@ -151,6 +156,7 @@ function lagArrangementer(): Arrangement[] {
       ansvarlig_epost: "marit@skjold-menighet.no",
       publisert: false,
       bilde_generert: null,
+      serie_id: null,
       opprettet: om(-2, 9),
     },
     {
@@ -174,6 +180,7 @@ function lagArrangementer(): Arrangement[] {
       ansvarlig_epost: "jon@skjold-menighet.no",
       publisert: true,
       bilde_generert: null,
+      serie_id: null,
       opprettet: om(-1, 9),
     },
     {
@@ -197,6 +204,7 @@ function lagArrangementer(): Arrangement[] {
       ansvarlig_epost: "olav@skjold-menighet.no",
       publisert: true,
       bilde_generert: null,
+      serie_id: null,
       opprettet: om(-6, 9),
     },
   ];

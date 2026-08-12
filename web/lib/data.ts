@@ -58,6 +58,7 @@ function fraArrangementRad(rad: ArrangementRad, antallPameldte: number): Arrange
     ansvarlig_epost: rad.ansvarlig_epost,
     publisert: Boolean(rad.publisert),
     bilde_generert: rad.bilde_generert,
+    serie_id: rad.serie_id,
     opprettet: rad.opprettet,
     antall_pameldte: antallPameldte,
   };
@@ -311,7 +312,10 @@ export async function avmeldPamelding(id: string) {
     .run(na, id);
 }
 
-export type ArrangementInput = Omit<Arrangement, "id" | "opprettet" | "bilde_generert">;
+export type ArrangementInput = Omit<
+  Arrangement,
+  "id" | "opprettet" | "bilde_generert" | "serie_id"
+>;
 
 /** undefined = ikke rør bildet, null = fjern det, ellers sett dette bildet. */
 export type BildeEndring = { data: Buffer; mimeType: string } | null | undefined;
@@ -320,6 +324,7 @@ export async function lagreArrangement(
   id: string | null,
   input: ArrangementInput,
   bildeEndring?: BildeEndring,
+  serieId?: string | null,
 ) {
   if (!harDatabase()) {
     const lager = demolager();
@@ -332,6 +337,7 @@ export async function lagreArrangement(
     lager.arrangementer.push({
       ...input,
       bilde_generert: bildeEndring ? new Date().toISOString() : null,
+      serie_id: serieId ?? null,
       id: nyId,
       opprettet: new Date().toISOString(),
     });
@@ -396,20 +402,55 @@ export async function lagreArrangement(
        (id, slug, tittel, ingress, beskrivelse, starter, slutter, sted, kapasitet,
         pamelding_stenger, tillat_flere, sporr_om_kost, krev_telefon, krev_epost,
         oppsummering_dager_for, ansvarlig_navn, ansvarlig_epost, publisert,
-        bilde, bilde_type, bilde_generert, opprettet, endret)
+        bilde, bilde_type, bilde_generert, serie_id, opprettet, endret)
      values
        (@id, @slug, @tittel, @ingress, @beskrivelse, @starter, @slutter, @sted, @kapasitet,
         @pamelding_stenger, @tillat_flere, @sporr_om_kost, @krev_telefon, @krev_epost,
         @oppsummering_dager_for, @ansvarlig_navn, @ansvarlig_epost, @publisert,
-        @bilde, @bilde_type, @bilde_generert, @opprettet, @endret)`,
+        @bilde, @bilde_type, @bilde_generert, @serie_id, @opprettet, @endret)`,
   ).run({
     ...verdier,
     ...(bildeFelt ?? { bilde: null, bilde_type: null, bilde_generert: null }),
+    serie_id: serieId ?? null,
     id: nyId,
     opprettet: na,
     endret: na,
   });
   return nyId;
+}
+
+/** De andre forekomstene i samme serie, til navigering fra én forekomst. */
+export async function hentArrangementerISerie(
+  serieId: string,
+  unntattId?: string,
+): Promise<{ id: string; tittel: string; starter: string }[]> {
+  if (!harDatabase()) {
+    return demolager()
+      .arrangementer.filter((a) => a.serie_id === serieId && a.id !== unntattId)
+      .sort((a, b) => a.starter.localeCompare(b.starter))
+      .map((a) => ({ id: a.id, tittel: a.tittel, starter: a.starter }));
+  }
+  return hentDb()
+    .prepare(
+      `select id, tittel, starter from arrangementer
+        where serie_id = ? and id != ?
+        order by starter asc`,
+    )
+    .all(serieId, unntattId ?? "") as { id: string; tittel: string; starter: string }[];
+}
+
+/** Sletter alle forekomstene i en serie, inkludert påmeldingene deres. */
+export async function slettSerie(serieId: string) {
+  if (!harDatabase()) {
+    const lager = demolager();
+    const ider = new Set(
+      lager.arrangementer.filter((a) => a.serie_id === serieId).map((a) => a.id),
+    );
+    lager.arrangementer = lager.arrangementer.filter((a) => a.serie_id !== serieId);
+    lager.pameldinger = lager.pameldinger.filter((p) => !ider.has(p.arrangement_id));
+    return;
+  }
+  hentDb().prepare(`delete from arrangementer where serie_id = ?`).run(serieId);
 }
 
 /** Bildebytene til et arrangement, til /api/offentlig/bilde/{id}. */

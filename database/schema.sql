@@ -43,6 +43,10 @@ create table if not exists arrangementer (
   bilde             blob,
   bilde_type        text,
   bilde_generert    text,
+  -- Satt når arrangementet ble opprettet som del av en serie med gjentakelser.
+  -- Selve gjentakelsesregelen lagres ikke — hver forekomst er en helt vanlig,
+  -- selvstendig rad etter at serien er opprettet, og kan endres for seg.
+  serie_id          text,
   opprettet         text not null,
   endret            text not null
 );
@@ -50,6 +54,10 @@ create table if not exists arrangementer (
 create index if not exists arrangementer_starter_idx
   on arrangementer (starter)
   where publisert = 1;
+
+-- arrangementer_serie_idx opprettes i migrer.mjs, etter at serie_id-kolonnen
+-- er lagt til — en «create index» her ville feile på en database som ennå
+-- ikke har fått kolonnen fra alter table-steget.
 
 -- ── Enheter ───────────────────────────────────────────────────────────
 -- Telefoner som har sagt ja til påminnelser. Én rad per installasjon.
