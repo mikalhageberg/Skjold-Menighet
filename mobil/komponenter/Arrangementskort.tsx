@@ -49,7 +49,9 @@ export function Arrangementskort({
         <View style={stil.innhold}>
           <View style={stil.topp}>
             <View style={stil.dato}>
-              <Tekst style={stil.datoTall}>{dag(start)}</Tekst>
+              <Tekst style={stil.datoTall} numberOfLines={1}>
+                {dag(start)}
+              </Tekst>
               <Tekst variant="etikett" farget="myk">
                 {ukedag(start).slice(0, 3)}
               </Tekst>
@@ -102,7 +104,7 @@ const stil = StyleSheet.create({
   kant: { width: 4 },
   innhold: { flex: 1, padding: rom.l, gap: rom.m },
   topp: { flexDirection: "row", gap: rom.l, alignItems: "flex-start" },
-  dato: { width: 42, alignItems: "center" },
+  dato: { width: 48, alignItems: "center" },
   datoTall: {
     fontFamily: skrift.display,
     fontSize: 28,
