@@ -1,6 +1,7 @@
 import Constants from "expo-constants";
 import type {
   ArrangementMedAntall,
+  AvmeldingSvar,
   PameldingInn,
   PameldingSvar,
 } from "@skjold/delt";
@@ -70,6 +71,18 @@ export async function meldPa(input: PameldingInn): Promise<PameldingSvar> {
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input),
     });
+  } catch (feil) {
+    if (feil instanceof ApiFeil) return { ok: false, feil: feil.message };
+    throw feil;
+  }
+}
+
+export async function meldAv(pameldingId: string): Promise<AvmeldingSvar> {
+  try {
+    return await hent<AvmeldingSvar>(
+      `/api/offentlig/pameldinger/${encodeURIComponent(pameldingId)}`,
+      { method: "DELETE" },
+    );
   } catch (feil) {
     if (feil instanceof ApiFeil) return { ok: false, feil: feil.message };
     throw feil;

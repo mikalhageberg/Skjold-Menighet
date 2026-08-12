@@ -25,9 +25,12 @@ import { farge, radius, rom, skrift } from "@/design/tema";
 export function Arrangementskort({
   arrangement,
   pameldt,
+  fra = "Hva skjer",
 }: {
   arrangement: ArrangementMedAntall;
   pameldt?: boolean;
+  /** Fanenavnet man kommer fra, så tilbakeknappen på arrangementssiden viser riktig tekst. */
+  fra?: string;
 }) {
   const router = useRouter();
   const start = new Date(arrangement.starter);
@@ -37,7 +40,9 @@ export function Arrangementskort({
 
   return (
     <Pressable
-        onPress={() => router.push(`/arrangement/${arrangement.slug}`)}
+        onPress={() =>
+          router.push(`/arrangement/${arrangement.slug}?fra=${encodeURIComponent(fra)}`)
+        }
         accessibilityRole="button"
         accessibilityLabel={`${arrangement.tittel}, ${ukedag(start)} ${dag(start)}. ${
           maned(start).split(" ")[0]
@@ -61,8 +66,10 @@ export function Arrangementskort({
               <Tekst variant="mellom" halvfet numberOfLines={2}>
                 {arrangement.tittel}
               </Tekst>
-              <Tekst variant="liten" farget="myk">
-                {tidsrom(start, arrangement.slutter ? new Date(arrangement.slutter) : null)} ·{" "}
+              <Tekst variant="liten" farget="myk" numberOfLines={1}>
+                {tidsrom(start, arrangement.slutter ? new Date(arrangement.slutter) : null)}
+              </Tekst>
+              <Tekst variant="liten" farget="myk" numberOfLines={1}>
                 {arrangement.sted}
               </Tekst>
             </View>
@@ -104,7 +111,7 @@ const stil = StyleSheet.create({
   kant: { width: 4 },
   innhold: { flex: 1, padding: rom.l, gap: rom.m },
   topp: { flexDirection: "row", gap: rom.l, alignItems: "flex-start" },
-  dato: { width: 48, alignItems: "center" },
+  dato: { minWidth: 32, alignItems: "center" },
   datoTall: {
     fontFamily: skrift.display,
     fontSize: 28,

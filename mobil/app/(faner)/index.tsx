@@ -69,7 +69,7 @@ export default function HvaSkjer() {
           <Tekst variant="mellom">Ingenting står i kalenderen</Tekst>
           <Tekst farget="myk">
             Når menigheten legger ut kirkekaffe, formiddagstreff og middager, dukker de opp
-            her. Ring menighetskontoret på 52 76 12 00 om du lurer på noe.
+            her.
           </Tekst>
         </View>
       ) : null}

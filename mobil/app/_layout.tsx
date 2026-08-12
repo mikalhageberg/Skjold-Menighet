@@ -66,7 +66,10 @@ export default function Rot() {
         <Stack.Screen name="velkommen" options={{ headerShown: false }} />
         <Stack.Screen
           name="arrangement/[slug]"
-          options={{ title: "", headerBackTitle: "Hva skjer" }}
+          options={({ route }) => ({
+            title: "",
+            headerBackTitle: (route.params as { fra?: string } | undefined)?.fra || "Tilbake",
+          })}
         />
       </Stack>
       {!harProfil && <Redirect href="/velkommen" />}

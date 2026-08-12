@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -20,6 +21,7 @@ import {
   sesongFor,
   tidsrom,
   ukedag,
+  VANLIGE_ALLERGIER,
   type ArrangementMedAntall,
 } from "@skjold/delt";
 import { hentArrangement, meldPa } from "@/lib/api";
@@ -28,9 +30,15 @@ import { hentProfil, lagreProfil } from "@/lib/profil";
 import { hentPushToken } from "@/lib/varsler";
 import { leggIKalender } from "@/lib/kalender";
 import { Avkryss, Felt, Knapp, Notis, Tekst } from "@/design/Grunnelementer";
-import { farge, rom, TREFF } from "@/design/tema";
+import { farge, radius, rom, TREFF } from "@/design/tema";
 
-type Deltaker = { navn: string; kosthold: string };
+type Deltaker = { navn: string; allergier: string[]; annet: string };
+
+/** Slår sammen avkryssede allergier og fritekst til én streng for serveren. */
+function kostholdTekst(d: Deltaker): string | null {
+  const tekst = [...d.allergier, d.annet.trim()].filter(Boolean).join(", ");
+  return tekst || null;
+}
 
 export default function Arrangementsside() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -135,7 +143,7 @@ export default function Arrangementsside() {
               onPameldt={last}
             />
           ) : (
-            <Stengt grunn={status.grunn} ansvarlig={arrangement.ansvarlig_navn} />
+            <Stengt grunn={status.grunn} />
           )}
 
           {arrangement.beskrivelse ? (
@@ -210,6 +218,129 @@ function Kalenderknapp({ arrangement }: { arrangement: ArrangementMedAntall }) {
   );
 }
 
+/* ── Bekreftelse ─────────────────────────────────────────────────────── */
+
+/**
+ * Kvitteringen etter påmelding. Haken tegnes med en fjærende skalering, så
+ * det er tydelig at trykket faktisk ble til noe — viktig når man ikke får
+ * en app-varsling eller e-post å lene seg på.
+ */
+function Bekreftelse({
+  kvittert,
+  vilHaPaaminnelse,
+  children,
+}: {
+  kvittert: number;
+  vilHaPaaminnelse: boolean;
+  children: React.ReactNode;
+}) {
+  const hakeskala = useRef(new Animated.Value(0)).current;
+  const innhold = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.spring(hakeskala, {
+        toValue: 1,
+        friction: 5,
+        tension: 65,
+        useNativeDriver: true,
+      }),
+      Animated.timing(innhold, {
+        toValue: 1,
+        duration: 260,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [hakeskala, innhold]);
+
+  return (
+    <Notis tone="klar">
+      <View style={stil.hakesirkel}>
+        <Animated.View style={{ transform: [{ scale: hakeskala }] }}>
+          <View style={stil.hakestrek} />
+        </Animated.View>
+      </View>
+
+      <Animated.View
+        style={{
+          gap: rom.s,
+          opacity: innhold,
+          transform: [
+            { translateY: innhold.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) },
+          ],
+        }}
+      >
+        <Tekst variant="etikett" farget="myk" style={{ textAlign: "center" }}>
+          Påmeldingen er registrert
+        </Tekst>
+        <Tekst variant="mellom" halvfet style={{ textAlign: "center" }}>
+          {kvittert === 1 ? "Vi har satt av en plass." : `Vi har satt av ${kvittert} plasser.`}
+        </Tekst>
+        <Tekst farget="myk" style={{ textAlign: "center" }}>
+          {vilHaPaaminnelse
+            ? "Du finner den under Mine påmeldinger, og får en påminnelse dagen før."
+            : "Du finner den under Mine påmeldinger."}
+        </Tekst>
+        <View style={{ marginTop: rom.s, alignItems: "center" }}>{children}</View>
+      </Animated.View>
+    </Notis>
+  );
+}
+
+/* ── Allergi ─────────────────────────────────────────────────────────── */
+
+/**
+ * De vanligste hensynene som avkryssbare brikker, pluss fritekst for det
+ * som ikke står på lista. Færre som må skrive noe selv, betyr færre
+ * misforståtte eller uleselige svar for den som skal handle inn.
+ */
+function AllergiVelger({
+  valgt,
+  annet,
+  onEndreValgt,
+  onEndreAnnet,
+}: {
+  valgt: string[];
+  annet: string;
+  onEndreValgt: (valgt: string[]) => void;
+  onEndreAnnet: (annet: string) => void;
+}) {
+  function veksle(navn: string) {
+    onEndreValgt(valgt.includes(navn) ? valgt.filter((v) => v !== navn) : [...valgt, navn]);
+  }
+
+  return (
+    <View style={{ gap: rom.s }}>
+      <Tekst halvfet>Allergi eller kosthold</Tekst>
+      <View style={stil.brikkerad}>
+        {VANLIGE_ALLERGIER.map((navn) => {
+          const erValgt = valgt.includes(navn);
+          return (
+            <Pressable
+              key={navn}
+              onPress={() => veksle(navn)}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: erValgt }}
+              accessibilityLabel={navn}
+              style={[stil.brikke, erValgt && stil.brikkeValgt]}
+            >
+              <Tekst variant="liten" farget={erValgt ? "papir" : "gran"} halvfet={erValgt}>
+                {navn}
+              </Tekst>
+            </Pressable>
+          );
+        })}
+      </View>
+      <Felt
+        etikett="Annet"
+        placeholder="Valgfritt, skriv inn selv"
+        value={annet}
+        onChangeText={onEndreAnnet}
+      />
+    </View>
+  );
+}
+
 /* ── Påmelding ───────────────────────────────────────────────────────── */
 
 function Skjema({
@@ -229,7 +360,7 @@ function Skjema({
   const [epost, settEpost] = useState("");
   const [melding, settMelding] = useState("");
   const [deltakere, settDeltakere] = useState<Deltaker[]>([
-    { navn: "", kosthold: "" },
+    { navn: "", allergier: [], annet: "" },
   ]);
   const [rortForste, settRortForste] = useState(false);
   const [vilHaPaaminnelse, settVilHaPaaminnelse] = useState(true);
@@ -251,8 +382,10 @@ function Skjema({
     }, []),
   );
 
+  // Er man alt påmeldt, skal ikke feltet fylles ut med eget navn igjen —
+  // da ville ett trykk på «Meld på» meldt på deg selv en gang til.
   const effektivtNavn = (d: Deltaker, i: number) =>
-    i === 0 && !rortForste ? navn : d.navn;
+    i === 0 && !rortForste && !alleredePameldt ? navn : d.navn;
   const antall = deltakere.filter((d, i) => effektivtNavn(d, i).trim()).length;
   const kanLeggeTil =
     arrangement.tillat_flere && (ledige === null || deltakere.length < ledige);
@@ -277,7 +410,7 @@ function Skjema({
       pushToken,
       deltakere: deltakere.map((d, i) => ({
         navn: effektivtNavn(d, i),
-        kosthold: d.kosthold || null,
+        kosthold: kostholdTekst(d),
       })),
     });
 
@@ -312,23 +445,9 @@ function Skjema({
 
   if (kvittert !== null) {
     return (
-      <Notis tone="klar">
-        <Tekst variant="etikett" farget="myk">
-          Påmeldingen er registrert
-        </Tekst>
-        <Tekst variant="mellom" halvfet>
-          {kvittert === 1 ? "Vi har satt av en plass." : `Vi har satt av ${kvittert} plasser.`}
-        </Tekst>
-        <Tekst farget="myk">
-          {vilHaPaaminnelse
-            ? "Du finner den under Mine påmeldinger, og får en påminnelse dagen før."
-            : "Du finner den under Mine påmeldinger."}{" "}
-          Blir du forhindret, ring menighetskontoret på 52 76 12 00.
-        </Tekst>
-        <View style={{ marginTop: rom.m }}>
-          <Kalenderknapp arrangement={arrangement} />
-        </View>
-      </Notis>
+      <Bekreftelse kvittert={kvittert} vilHaPaaminnelse={vilHaPaaminnelse}>
+        <Kalenderknapp arrangement={arrangement} />
+      </Bekreftelse>
     );
   }
 
@@ -341,7 +460,7 @@ function Skjema({
       {alleredePameldt ? (
         <Notis>
           <Tekst variant="liten">
-            Du har allerede en påmelding til dette. Melder du på flere, kommer de i tillegg.
+            Du står allerede oppført til dette. Her kan du melde på andre.
           </Tekst>
         </Notis>
       ) : null}
@@ -414,9 +533,13 @@ function Skjema({
 
       <View style={{ gap: rom.l }}>
         <Tekst halvfet variant="mellom">
-          Hvem skal komme?
+          {alleredePameldt ? "Hvem andre skal du melde på?" : "Hvem skal komme?"}
         </Tekst>
-        {arrangement.tillat_flere ? (
+        {alleredePameldt ? (
+          <Tekst variant="liten" farget="myk" style={{ marginTop: -rom.s }}>
+            Deg selv trenger du ikke legge inn — du står allerede oppført.
+          </Tekst>
+        ) : arrangement.tillat_flere ? (
           <Tekst variant="liten" farget="myk" style={{ marginTop: -rom.s }}>
             Du kan melde på hele familien, en nabo eller noen fra bygda som ikke bruker mobil.
           </Tekst>
@@ -428,7 +551,7 @@ function Skjema({
               <View style={{ flex: 1 }}>
                 <Felt
                   etikett={`Deltaker ${i + 1}`}
-                  placeholder={i === 0 ? "Fullt navn" : "Navn"}
+                  placeholder={i === 0 && !alleredePameldt ? "Fullt navn" : "Navn"}
                   value={effektivtNavn(d, i)}
                   onChangeText={(t) => {
                     if (i === 0) settRortForste(true);
@@ -452,11 +575,11 @@ function Skjema({
             </View>
 
             {arrangement.sporr_om_kost ? (
-              <Felt
-                etikett="Allergi eller kosthold"
-                placeholder="Valgfritt"
-                value={d.kosthold}
-                onChangeText={(t) => endre(i, { kosthold: t })}
+              <AllergiVelger
+                valgt={d.allergier}
+                annet={d.annet}
+                onEndreValgt={(allergier) => endre(i, { allergier })}
+                onEndreAnnet={(annet) => endre(i, { annet })}
               />
             ) : null}
           </View>
@@ -473,7 +596,7 @@ function Skjema({
             tittel="Legg til én til"
             variant="stille"
             onPress={() =>
-              settDeltakere((liste) => [...liste, { navn: "", kosthold: "" }])
+              settDeltakere((liste) => [...liste, { navn: "", allergier: [], annet: "" }])
             }
           />
         ) : ledige !== null ? (
@@ -506,9 +629,6 @@ function Skjema({
           travel={sender}
           fyllBredde
         />
-        <Tekst variant="liten" farget="myk">
-          Du kan også ringe menighetskontoret på 52 76 12 00, så melder vi deg på.
-        </Tekst>
       </View>
     </View>
   );
@@ -516,23 +636,15 @@ function Skjema({
 
 /* ── Stengt ──────────────────────────────────────────────────────────── */
 
-function Stengt({
-  grunn,
-  ansvarlig,
-}: {
-  grunn: "stengt" | "fullt" | "over";
-  ansvarlig: string | null;
-}) {
+function Stengt({ grunn }: { grunn: "stengt" | "fullt" | "over" }) {
   const tekst = {
     fullt: {
       tittel: "Det er fullt",
-      brod: "Alle plassene er tatt. Ring menighetskontoret på 52 76 12 00 — vi setter deg på venteliste og gir beskjed hvis noen melder avbud.",
+      brod: "Alle plassene er tatt. Sjekk gjerne igjen senere — det hender noen melder avbud.",
     },
     stengt: {
       tittel: "Påmeldingen er stengt",
-      brod: `Fristen har gått ut, men det er ofte plass likevel. Ta kontakt med ${
-        ansvarlig ?? "menighetskontoret"
-      } på 52 76 12 00.`,
+      brod: "Fristen har gått ut, men det er ofte plass likevel. Sjekk gjerne igjen senere.",
     },
     over: {
       tittel: "Dette har vært",
@@ -565,7 +677,37 @@ const stil = StyleSheet.create({
   faktanavn: { width: 120 },
   faktaverdi: { flexDirection: "row", alignItems: "center", gap: rom.s },
   prikk: { width: 8, height: 8, borderRadius: 4 },
+  hakesirkel: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: farge.gran,
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
+    marginBottom: rom.s,
+  },
+  hakestrek: {
+    width: 16,
+    height: 28,
+    borderRightWidth: 3.5,
+    borderBottomWidth: 3.5,
+    borderColor: farge.papir,
+    transform: [{ rotate: "45deg" }],
+    marginTop: -6,
+  },
   skille: { height: 1, backgroundColor: farge.strek },
+  brikkerad: { flexDirection: "row", flexWrap: "wrap", gap: rom.s },
+  brikke: {
+    minHeight: TREFF,
+    paddingHorizontal: rom.m,
+    justifyContent: "center",
+    borderRadius: radius.knapp,
+    borderWidth: 1,
+    borderColor: farge.strek,
+    backgroundColor: farge.papir,
+  },
+  brikkeValgt: { backgroundColor: farge.gran, borderColor: farge.gran },
   deltaker: {
     gap: rom.m,
     paddingBottom: rom.m,

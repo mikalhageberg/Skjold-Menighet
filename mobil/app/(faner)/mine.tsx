@@ -1,11 +1,12 @@
 import { useCallback, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { dag, klokka, maned, nartid, sesongFor, ukedag } from "@skjold/delt";
-import { hentMine, type MinPamelding } from "@/lib/lager";
+import { meldAv } from "@/lib/api";
+import { glem, hentMine, type MinPamelding } from "@/lib/lager";
 import { hentProfil, type Profil } from "@/lib/profil";
 import { Tekst } from "@/design/Grunnelementer";
-import { farge, radius, rom } from "@/design/tema";
+import { farge, radius, rom, TREFF } from "@/design/tema";
 
 /**
  * Det telefonen husker at du har sagt ja til. Ingen innlogging — lista bor
@@ -15,6 +16,7 @@ export default function Mine() {
   const router = useRouter();
   const [mine, settMine] = useState<MinPamelding[] | null>(null);
   const [profil, settProfil] = useState<Profil | null>(null);
+  const [avmelder, settAvmelder] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -22,6 +24,31 @@ export default function Mine() {
       hentProfil().then(settProfil);
     }, []),
   );
+
+  function sporAvmelding(p: MinPamelding) {
+    Alert.alert(
+      "Meld av?",
+      `Du blir meldt av «${p.tittel}». Det kan du ikke gjøre om selv i appen etterpå.`,
+      [
+        { text: "Avbryt", style: "cancel" },
+        { text: "Meld av", style: "destructive", onPress: () => utforAvmelding(p) },
+      ],
+    );
+  }
+
+  async function utforAvmelding(p: MinPamelding) {
+    settAvmelder(p.pameldingId);
+    const svar = await meldAv(p.pameldingId);
+    settAvmelder(null);
+
+    if (!svar.ok) {
+      Alert.alert("Fikk det ikke til", svar.feil);
+      return;
+    }
+
+    await glem(p.pameldingId);
+    settMine((liste) => liste?.filter((x) => x.pameldingId !== p.pameldingId) ?? liste);
+  }
 
   // Raden som svarer «hvem er jeg i denne appen», og lar deg rette det.
   const megrad = (
@@ -73,15 +100,19 @@ export default function Mine() {
         const start = new Date(p.starter);
         const sesong = sesongFor(start);
         return (
-          <Pressable
-              key={p.pameldingId}
-              onPress={() => router.push(`/arrangement/${p.slug}`)}
-              accessibilityRole="button"
-              accessibilityLabel={`${p.tittel}, ${nartid(start)}`}
-              style={({ pressed }) => [stil.kort, pressed && { backgroundColor: farge.kalkDyp }]}
-            >
-              <View style={[stil.kant, { backgroundColor: sesong.farge }]} />
-              <View style={stil.kropp}>
+          <View key={p.pameldingId} style={stil.kort}>
+            <View style={[stil.kant, { backgroundColor: sesong.farge }]} />
+            <View style={stil.kropp}>
+              <Pressable
+                onPress={() =>
+                  router.push(
+                    `/arrangement/${p.slug}?fra=${encodeURIComponent("Mine påmeldinger")}`,
+                  )
+                }
+                accessibilityRole="button"
+                accessibilityLabel={`${p.tittel}, ${nartid(start)}`}
+                style={({ pressed }) => [stil.kortinnhold, pressed && { opacity: 0.6 }]}
+              >
                 <Tekst variant="etikett" farget="myk">
                   {nartid(start)}
                 </Tekst>
@@ -99,15 +130,28 @@ export default function Mine() {
                   </Tekst>
                   <Tekst variant="liten">{p.deltakere.join(", ")}</Tekst>
                 </View>
-              </View>
-            </Pressable>
+              </Pressable>
+
+              <Pressable
+                onPress={() => sporAvmelding(p)}
+                disabled={avmelder === p.pameldingId}
+                accessibilityRole="button"
+                accessibilityLabel={`Meld av ${p.tittel}`}
+                style={stil.avmeld}
+                hitSlop={8}
+              >
+                <Tekst variant="liten" farget="rod">
+                  {avmelder === p.pameldingId ? "Melder av …" : "Meld av"}
+                </Tekst>
+              </Pressable>
+            </View>
+          </View>
         );
       })}
 
       {mine && mine.length > 0 ? (
         <Tekst variant="liten" farget="svak" style={{ marginTop: rom.m }}>
-          Lista ligger på denne telefonen. Blir du forhindret, ring menighetskontoret på 52 76
-          12 00, så stryker vi deg.
+          Lista ligger på denne telefonen. Blir du forhindret, kan du melde deg av over.
         </Tekst>
       ) : null}
     </ScrollView>
@@ -139,12 +183,19 @@ const stil = StyleSheet.create({
     overflow: "hidden",
   },
   kant: { width: 4 },
-  kropp: { flex: 1, padding: rom.l, gap: rom.xs },
+  kropp: { flex: 1, padding: rom.l },
+  kortinnhold: { gap: rom.xs },
   navn: {
     marginTop: rom.s,
     paddingTop: rom.s,
     borderTopWidth: 1,
     borderTopColor: farge.strekSvak,
     gap: 2,
+  },
+  avmeld: {
+    marginTop: rom.s,
+    alignSelf: "flex-start",
+    minHeight: TREFF,
+    justifyContent: "center",
   },
 });
