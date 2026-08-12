@@ -18,7 +18,7 @@ export default async function Forside() {
           <h1 className="tom__tittel">Ingenting er lagt ut ennå</h1>
           <p>
             Når menigheten legger ut kirkekaffe, formiddagstreff og middager, dukker de opp
-            her. Ring menighetskontoret på 52 76 12 00 om du lurer på noe.
+            her.
           </p>
         </div>
       </div>

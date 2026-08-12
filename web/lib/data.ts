@@ -186,6 +186,34 @@ export async function hentPameldinger(arrangementId: string): Promise<PameldingM
   return pameldinger.map((p) => ({ ...p, deltakere: perPamelding.get(p.id) ?? [] }));
 }
 
+/** Én påmelding med deltakere, uansett om den er avmeldt eller ikke — brukes til avmelding. */
+export async function hentPameldingMedId(id: string): Promise<PameldingMedDeltakere | null> {
+  if (!harDatabase()) {
+    return demolager().pameldinger.find((p) => p.id === id) ?? null;
+  }
+
+  const db = hentDb();
+  const rad = db.prepare(`select * from pameldinger where id = ?`).get(id) as
+    | PameldingRad
+    | undefined;
+  if (!rad) return null;
+
+  const deltakerrader = db
+    .prepare(`select * from deltakere where pamelding_id = ? order by er_kontakt desc, opprettet asc`)
+    .all(id) as DeltakerRad[];
+
+  return {
+    ...rad,
+    deltakere: deltakerrader.map((d) => ({
+      id: d.id,
+      pamelding_id: d.pamelding_id,
+      navn: d.navn,
+      er_kontakt: Boolean(d.er_kontakt),
+      kosthold: d.kosthold,
+    })),
+  };
+}
+
 /* ── Skriving ────────────────────────────────────────────────────────── */
 
 export type NyPamelding = {
@@ -264,6 +292,22 @@ export async function slettPamelding(id: string) {
     return;
   }
   hentDb().prepare(`delete from pameldinger where id = ?`).run(id);
+}
+
+/**
+ * Avmelder uten å slette. Den som var påmeldt skal fortsatt kunne finnes
+ * igjen i historikken til den ansvarlige, selv om plassen er frigjort.
+ */
+export async function avmeldPamelding(id: string) {
+  const na = new Date().toISOString();
+  if (!harDatabase()) {
+    const pamelding = demolager().pameldinger.find((p) => p.id === id);
+    if (pamelding) pamelding.avmeldt = na;
+    return;
+  }
+  hentDb()
+    .prepare(`update pameldinger set avmeldt = ? where id = ? and avmeldt is null`)
+    .run(na, id);
 }
 
 export type ArrangementInput = Omit<Arrangement, "id" | "opprettet">;

@@ -22,7 +22,7 @@ function lagArrangementer(): Arrangement[] {
       tittel: "Formiddagstreff",
       ingress: "Vafler, allsang og et kåseri om Skjold-slekter.",
       beskrivelse:
-        "Formiddagstreffet er for alle som har tid på formiddagen. Vi begynner med kaffe og vafler, synger noen kjente sanger, og denne gangen kommer Ingrid Bruvik for å fortelle om slektene i Skjold.\n\nTreffet varer omtrent to timer. Det koster ingenting, men vi setter ut en kollektkurv til dekning av bevertningen.\n\nTrenger du skyss, ring menighetskontoret på 52 76 12 00, så ordner vi det.",
+        "Formiddagstreffet er for alle som har tid på formiddagen. Vi begynner med kaffe og vafler, synger noen kjente sanger, og denne gangen kommer Ingrid Bruvik for å fortelle om slektene i Skjold.\n\nTreffet varer omtrent to timer. Det koster ingenting, men vi setter ut en kollektkurv til dekning av bevertningen.\n\nTrenger du skyss, si fra så ordner vi det.",
       starter: om(3, 11, 0),
       slutter: om(3, 13, 0),
       sted: "Menighetssalen",
@@ -88,7 +88,7 @@ function lagArrangementer(): Arrangement[] {
       tittel: "Babysang",
       ingress: "Ti torsdager fra september. For barn fra 0 til 1 år med en voksen.",
       beskrivelse:
-        "Sang, rim og regler i kirkerommet, etterfulgt av lunsj og god tid til å prate.\n\nPåmeldingen gjelder hele høstsemesteret. Har du spørsmål, ring Kari på 52 76 12 00.",
+        "Sang, rim og regler i kirkerommet, etterfulgt av lunsj og god tid til å prate.\n\nPåmeldingen gjelder hele høstsemesteret. Har du spørsmål, ta kontakt med Kari.",
       starter: om(26, 11, 0),
       slutter: om(26, 13, 0),
       sted: "Skjold kirke",

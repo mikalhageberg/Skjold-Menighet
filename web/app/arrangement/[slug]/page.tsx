@@ -108,7 +108,7 @@ export default async function Arrangementsside({ params }: Props) {
               <Pameldingsskjema arrangement={a} ledige={status.ledige} />
             </>
           ) : (
-            <Stengt grunn={status.grunn} arrangement={a} />
+            <Stengt grunn={status.grunn} />
           )}
         </aside>
 
@@ -124,23 +124,15 @@ export default async function Arrangementsside({ params }: Props) {
   );
 }
 
-function Stengt({
-  grunn,
-  arrangement,
-}: {
-  grunn: "stengt" | "fullt" | "over";
-  arrangement: { ansvarlig_navn: string | null };
-}) {
+function Stengt({ grunn }: { grunn: "stengt" | "fullt" | "over" }) {
   const tekst = {
     fullt: {
       tittel: "Det er fullt",
-      brod: "Alle plassene er tatt. Ring menighetskontoret på 52 76 12 00 — vi setter deg på venteliste og gir beskjed hvis noen melder avbud.",
+      brod: "Alle plassene er tatt. Sjekk gjerne igjen senere — det hender noen melder avbud.",
     },
     stengt: {
       tittel: "Påmeldingen er stengt",
-      brod: `Fristen har gått ut, men det er ofte plass likevel. Ta kontakt med ${
-        arrangement.ansvarlig_navn ?? "menighetskontoret"
-      } på 52 76 12 00.`,
+      brod: "Fristen har gått ut, men det er ofte plass likevel. Sjekk gjerne igjen senere.",
     },
     over: {
       tittel: "Dette har vært",

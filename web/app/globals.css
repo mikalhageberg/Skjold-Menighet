@@ -104,7 +104,7 @@ img {
 .side {
   max-width: var(--spalte);
   margin: 0 auto;
-  padding: 0 var(--gutter);
+  padding: 0 var(--gutter) 4rem;
 }
 
 .topp {
@@ -147,24 +147,6 @@ img {
 .topp__lenke:hover {
   color: var(--gran);
   border-bottom-color: var(--messing);
-}
-
-.bunn {
-  border-top: 1px solid var(--strek);
-  margin-top: 6rem;
-  padding: 2.5rem 0 4rem;
-  color: var(--gran-myk);
-  font-size: var(--t-liten);
-}
-
-.bunn__rad {
-  max-width: var(--spalte);
-  margin: 0 auto;
-  padding: 0 var(--gutter);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 2rem;
-  justify-content: space-between;
 }
 
 /* ── Merkelapper og småtekst ─────────────────────────────────────────── */

@@ -44,13 +44,6 @@ export default function RotLayout({ children }: { children: React.ReactNode }) {
         </header>
 
         <main>{children}</main>
-
-        <footer className="bunn">
-          <div className="bunn__rad">
-            <p>Skjold kirke · Kyrkjevegen 12 · 5574 Skjold</p>
-            <p>Menighetskontoret: 52 76 12 00</p>
-          </div>
-        </footer>
       </body>
     </html>
   );

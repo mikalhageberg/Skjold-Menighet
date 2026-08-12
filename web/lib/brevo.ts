@@ -182,6 +182,40 @@ export async function sendOppsummering(
   });
 }
 
+/**
+ * Varsel til den ansvarlige når noen med et kosthold- eller allergihensyn
+ * melder seg av. Uten dette kunne et hensyn den ansvarlige har planlagt
+ * rundt — et glutenfritt bord, en nøttefri rett — bli stående uoppdaget.
+ */
+export async function sendAvmeldingsvarsel(
+  arrangement: ArrangementMedAntall,
+  pamelding: PameldingMedDeltakere,
+) {
+  if (!arrangement.ansvarlig_epost) return { sendt: false, grunn: "ingen ansvarlig" as const };
+
+  const kosthold = pamelding.deltakere.filter((d) => d.kosthold);
+  const navneliste = kosthold
+    .map((d) => `<li style="margin-bottom:4px">${esc(d.navn)} — <strong>${esc(d.kosthold!)}</strong></li>`)
+    .join("");
+
+  return sendEpost({
+    til: [{ email: arrangement.ansvarlig_epost, name: arrangement.ansvarlig_navn ?? undefined }],
+    emne: `${arrangement.tittel}: Avmelding med kosthold å ta hensyn til`,
+    html: ramme(`
+      <p style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#3E5B53;margin:0 0 8px;font-family:Helvetica,Arial,sans-serif">Avmelding</p>
+      <h1 style="font-size:24px;margin:0 0 4px;font-weight:600">${esc(arrangement.tittel)}</h1>
+      <p style="margin:0 0 24px;color:#3E5B53">${esc(langDato(new Date(arrangement.starter)))} · ${esc(
+        arrangement.sted,
+      )}</p>
+      <p style="margin:0 0 16px">
+        <strong>${esc(pamelding.kontakt_navn)}</strong> har meldt av, og noen av dem hadde et
+        kosthold- eller allergihensyn du kanskje har planlagt rundt:
+      </p>
+      <ul style="margin:0;padding-left:20px">${navneliste}</ul>
+    `),
+  });
+}
+
 export async function sendTilPameldte(
   arrangement: ArrangementMedAntall,
   mottakere: Mottaker[],

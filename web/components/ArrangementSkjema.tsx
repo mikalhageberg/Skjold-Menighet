@@ -74,31 +74,19 @@ export function ArrangementSkjema({ arrangement }: { arrangement?: Arrangement }
         <h3 className="bolk__tittel">Når og hvor</h3>
 
         <div className="rad2">
-          <div className="felt">
-            <label className="felt__etikett" htmlFor="starter">
-              Starter
-            </label>
-            <input
-              id="starter"
-              name="starter"
-              type="datetime-local"
-              className="felt__inn"
-              defaultValue={tilInputVerdi(arrangement?.starter ?? null)}
-              required
-            />
-          </div>
-          <div className="felt">
-            <label className="felt__etikett" htmlFor="slutter">
-              Slutter
-            </label>
-            <input
-              id="slutter"
-              name="slutter"
-              type="datetime-local"
-              className="felt__inn"
-              defaultValue={tilInputVerdi(arrangement?.slutter ?? null)}
-            />
-          </div>
+          <DatoKlokkeFelt
+            id="starter"
+            navn="starter"
+            etikett="Starter"
+            standardverdi={tilInputVerdi(arrangement?.starter ?? null)}
+            pakrevd
+          />
+          <DatoKlokkeFelt
+            id="slutter"
+            navn="slutter"
+            etikett="Slutter"
+            standardverdi={tilInputVerdi(arrangement?.slutter ?? null)}
+          />
         </div>
 
         <div className="felt">
@@ -132,19 +120,13 @@ export function ArrangementSkjema({ arrangement }: { arrangement?: Arrangement }
               defaultValue={arrangement?.kapasitet ?? ""}
             />
           </div>
-          <div className="felt">
-            <label className="felt__etikett" htmlFor="pamelding_stenger">
-              Påmeldingsfrist
-            </label>
-            <p className="felt__hjelp">La stå tomt for åpen påmelding fram til start.</p>
-            <input
-              id="pamelding_stenger"
-              name="pamelding_stenger"
-              type="datetime-local"
-              className="felt__inn"
-              defaultValue={tilInputVerdi(arrangement?.pamelding_stenger ?? null)}
-            />
-          </div>
+          <DatoKlokkeFelt
+            id="pamelding_stenger"
+            navn="pamelding_stenger"
+            etikett="Påmeldingsfrist"
+            hjelp="La stå tomt for åpen påmelding fram til start."
+            standardverdi={tilInputVerdi(arrangement?.pamelding_stenger ?? null)}
+          />
         </div>
 
         <div className="valg">
@@ -261,6 +243,60 @@ export function ArrangementSkjema({ arrangement }: { arrangement?: Arrangement }
 
       <Lagre nytt={!arrangement} />
     </form>
+  );
+}
+
+/**
+ * Dato og klokkeslett som to felt i stedet for ett `datetime-local`-felt.
+ * Den innebygde kombi-velgeren er treg å styre med mus — man må klikke inn i
+ * akkurat riktig delfelt og bla med små piler. Egne, native dato- og
+ * klokkeslett-felt har hver sin modne kalender-/tidsvelger i nettleseren.
+ */
+function DatoKlokkeFelt({
+  id,
+  navn,
+  etikett,
+  hjelp,
+  standardverdi,
+  pakrevd,
+}: {
+  id: string;
+  navn: string;
+  etikett: string;
+  hjelp?: string;
+  standardverdi: string;
+  pakrevd?: boolean;
+}) {
+  const [forhandsDato, forhandsKlokke] = standardverdi ? standardverdi.split("T") : ["", ""];
+  const [dato, settDato] = useState(forhandsDato ?? "");
+  const [klokke, settKlokke] = useState(forhandsKlokke ?? "");
+
+  return (
+    <div className="felt">
+      <label className="felt__etikett" htmlFor={`${id}-dato`}>
+        {etikett}
+      </label>
+      {hjelp ? <p className="felt__hjelp">{hjelp}</p> : null}
+      <div className="rad2">
+        <input
+          id={`${id}-dato`}
+          type="date"
+          className="felt__inn"
+          value={dato}
+          onChange={(e) => settDato(e.target.value)}
+          required={pakrevd}
+        />
+        <input
+          id={`${id}-klokke`}
+          type="time"
+          className="felt__inn"
+          value={klokke}
+          onChange={(e) => settKlokke(e.target.value)}
+          required={pakrevd}
+        />
+      </div>
+      <input type="hidden" name={navn} value={dato && klokke ? `${dato}T${klokke}` : ""} />
+    </div>
   );
 }
 

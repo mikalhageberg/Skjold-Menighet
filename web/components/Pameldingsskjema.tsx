@@ -208,9 +208,6 @@ function Send({ antall }: { antall: number }) {
       <button type="submit" className="knapp" disabled={pending}>
         {pending ? "Sender …" : antall > 1 ? `Meld på ${antall} personer` : "Meld på"}
       </button>
-      <p className="felt__hjelp">
-        Du kan også ringe menighetskontoret på 52 76 12 00, så melder vi deg på.
-      </p>
     </div>
   );
 }
@@ -230,10 +227,7 @@ function Kvittering({
           ? "Vi har satt av en plass."
           : `Vi har satt av ${status.antall} plasser.`}
       </h3>
-      <p>
-        Vi ses på {arrangement.tittel.toLowerCase()}. Blir du forhindret, ring{" "}
-        {arrangement.ansvarlig_navn ?? "menighetskontoret"} på 52 76 12 00.
-      </p>
+      <p>Vi ses på {arrangement.tittel.toLowerCase()}.</p>
     </div>
   );
 }

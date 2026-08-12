@@ -1,8 +1,21 @@
 import "server-only";
 import { revalidatePath } from "next/cache";
-import { pameldingsstatus, type PameldingInn, type PameldingSvar } from "@skjold/delt";
-import { hentArrangement, lagreEnhet, opprettPamelding } from "./data";
+import {
+  pameldingsstatus,
+  type AvmeldingSvar,
+  type PameldingInn,
+  type PameldingSvar,
+} from "@skjold/delt";
+import {
+  avmeldPamelding,
+  hentArrangementMedId,
+  hentArrangement,
+  hentPameldingMedId,
+  lagreEnhet,
+  opprettPamelding,
+} from "./data";
 import { gyldigToken } from "./push";
+import { sendAvmeldingsvarsel } from "./brevo";
 
 const EPOST = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -49,7 +62,7 @@ export async function registrerPamelding(input: PameldingInn): Promise<Pamelding
       ok: false,
       feil:
         status.grunn === "fullt"
-          ? "Arrangementet ble fullt mens du fylte ut. Ring menighetskontoret på 52 76 12 00, så finner vi ut av det."
+          ? "Arrangementet ble fullt mens du fylte ut. Prøv igjen senere."
           : "Påmeldingen er stengt.",
     };
   }
@@ -58,7 +71,7 @@ export async function registrerPamelding(input: PameldingInn): Promise<Pamelding
       ok: false,
       feil: `Det er ${status.ledige} ${
         status.ledige === 1 ? "plass" : "plasser"
-      } igjen, og du meldte på ${deltakere.length}. Ta bort noen navn, eller ring 52 76 12 00.`,
+      } igjen, og du meldte på ${deltakere.length}. Ta bort noen navn og prøv igjen.`,
     };
   }
 
@@ -87,7 +100,7 @@ export async function registrerPamelding(input: PameldingInn): Promise<Pamelding
     console.error("Kunne ikke lagre påmelding", feil);
     return {
       ok: false,
-      feil: "Påmeldingen ble ikke lagret. Prøv igjen, eller ring 52 76 12 00.",
+      feil: "Påmeldingen ble ikke lagret. Prøv igjen.",
     };
   }
 
@@ -101,4 +114,39 @@ export async function registrerPamelding(input: PameldingInn): Promise<Pamelding
   revalidatePath("/admin/arrangementer");
 
   return { ok: true, pameldingId, antall: deltakere.length };
+}
+
+/**
+ * Avmelder fra appen. Samme vei tilbake er ikke mulig via nettskjemaet — det
+ * er bare telefonen som husker påmeldings-IDen.
+ *
+ * Hadde noen av deltakerne et kosthold- eller allergihensyn, varsler vi den
+ * ansvarlige med én gang, i stedet for at hensynet blir stående uoppdaget
+ * til oppsummeringen — den kommer jo ikke før arrangementet uansett.
+ */
+export async function meldAv(pameldingId: string): Promise<AvmeldingSvar> {
+  const pamelding = await hentPameldingMedId(pameldingId);
+  if (!pamelding) return { ok: false, feil: "Fant ikke påmeldingen." };
+  if (pamelding.avmeldt) return { ok: true };
+
+  const arrangement = await hentArrangementMedId(pamelding.arrangement_id);
+
+  await avmeldPamelding(pameldingId);
+
+  if (arrangement && pamelding.deltakere.some((d) => d.kosthold)) {
+    try {
+      await sendAvmeldingsvarsel(arrangement, pamelding);
+    } catch (feil) {
+      console.error("Kunne ikke sende avmeldingsvarsel", feil);
+    }
+  }
+
+  if (arrangement) {
+    revalidatePath("/");
+    revalidatePath(`/arrangement/${arrangement.slug}`);
+    revalidatePath("/admin");
+    revalidatePath("/admin/arrangementer");
+  }
+
+  return { ok: true };
 }
