@@ -70,7 +70,7 @@
       "expo-font"
     ],
     "extra": {
-      "apiBase": "http://localhost:3000"
+      "apiBase": "https://skjold-menighet-production-2765.up.railway.app"
     },
     "icon": "./assets/icon.png"
   }
