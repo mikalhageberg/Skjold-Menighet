@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, View } from "react-native";
+import { Image, Pressable, StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
 import {
   dag,
@@ -13,6 +13,7 @@ import {
 } from "@skjold/delt";
 import { Tekst } from "@/design/Grunnelementer";
 import { farge, radius, rom, skrift } from "@/design/tema";
+import { API_BASE } from "@/lib/api";
 
 /**
  * Ett arrangement som ett kort.
@@ -52,6 +53,16 @@ export function Arrangementskort({
         <View style={[stil.kant, { backgroundColor: sesong.farge }]} />
 
         <View style={stil.innhold}>
+          {arrangement.bilde_generert ? (
+            <Image
+              source={{
+                uri: `${API_BASE}/api/offentlig/bilde/${arrangement.id}?v=${encodeURIComponent(arrangement.bilde_generert)}`,
+              }}
+              style={stil.bilde}
+              accessibilityIgnoresInvertColors
+            />
+          ) : null}
+
           <View style={stil.topp}>
             <View style={stil.dato}>
               <Tekst style={stil.datoTall} numberOfLines={1}>
@@ -110,6 +121,12 @@ const stil = StyleSheet.create({
   trykket: { backgroundColor: farge.kalkDyp },
   kant: { width: 4 },
   innhold: { flex: 1, padding: rom.l, gap: rom.m },
+  bilde: {
+    width: "100%",
+    aspectRatio: 16 / 9,
+    borderRadius: radius.liten,
+    backgroundColor: farge.kalkDyp,
+  },
   topp: { flexDirection: "row", gap: rom.l, alignItems: "flex-start" },
   dato: { minWidth: 32, alignItems: "center" },
   datoTall: {

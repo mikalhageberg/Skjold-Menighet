@@ -10,8 +10,10 @@ import {
   slettArrangement,
   slettPamelding,
   type ArrangementInput,
+  type BildeEndring,
 } from "@/lib/data";
 import { sendOppsummering, sendTilPameldte } from "@/lib/brevo";
+import { genererBilde } from "@/lib/gemini";
 import { krevAdmin, demomodus } from "@/lib/auth";
 import { signIn, signOut } from "@/auth";
 import { AuthError } from "next-auth";
@@ -95,6 +97,35 @@ function lesArrangement(data: FormData): ArrangementUtenSlug | string {
   };
 }
 
+/** Tolker de skjulte feltene fra BildeVelger. */
+function lesBildeEndring(data: FormData): BildeEndring {
+  if (data.get("bilde_fjern") === "på") return null;
+  const dataUrl = String(data.get("bilde_data") ?? "");
+  const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+  if (!match) return undefined;
+  return { mimeType: match[1], data: Buffer.from(match[2], "base64") };
+}
+
+/**
+ * Genererer et headline-bilde til bruk i BildeVelger, uten å lagre noe —
+ * arrangementet finnes kanskje ikke i databasen ennå. Selve bytene sendes
+ * tilbake som en data-URL og følger med resten av skjemaet ved lagring.
+ */
+export async function genererBildeAction(
+  tittel: string,
+): Promise<{ ok: true; dataUrl: string } | { ok: false; feil: string }> {
+  await krevAdmin();
+  if (!tittel.trim()) return { ok: false, feil: "Skriv inn et navn på arrangementet først." };
+
+  const svar = await genererBilde(tittel.trim());
+  if (!svar.ok) return { ok: false, feil: svar.grunn };
+
+  return {
+    ok: true,
+    dataUrl: `data:${svar.bilde.mimeType};base64,${svar.bilde.data.toString("base64")}`,
+  };
+}
+
 export async function lagreArrangementAction(_forrige: Svar, data: FormData): Promise<Svar> {
   await krevAdmin();
 
@@ -102,6 +133,7 @@ export async function lagreArrangementAction(_forrige: Svar, data: FormData): Pr
   if (typeof resultat === "string") return { ok: false, melding: resultat };
 
   const id = String(data.get("id") ?? "") || null;
+  const bildeEndring = lesBildeEndring(data);
 
   // Nettadressen lages av tittelen og settes én gang. Den står fast når
   // tittelen endres senere, ellers ville lenker folk har delt slutte å virke.
@@ -116,7 +148,7 @@ export async function lagreArrangementAction(_forrige: Svar, data: FormData): Pr
 
   let lagretId: string;
   try {
-    lagretId = await lagreArrangement(id, { ...resultat, slug });
+    lagretId = await lagreArrangement(id, { ...resultat, slug }, bildeEndring);
   } catch (feil) {
     console.error("Kunne ikke lagre arrangement", feil);
     return { ok: false, melding: "Arrangementet ble ikke lagret. Prøv igjen." };

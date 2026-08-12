@@ -64,6 +64,19 @@ try {
   const skjema = readFileSync(skjemafil, "utf8");
   db.exec(skjema);
 
+  // «create table if not exists» oppretter ikke nye kolonner på en tabell
+  // som alt finnes — det må gjøres med egne alter table-setninger her,
+  // én gang per kolonne som er lagt til etter at databasen først ble satt opp.
+  const kolonner = db.prepare(`pragma table_info(arrangementer)`).all().map((k) => k.name);
+  const leggTilKolonne = (navn, type) => {
+    if (kolonner.includes(navn)) return;
+    db.exec(`alter table arrangementer add column ${navn} ${type}`);
+    console.log(`La til kolonnen "${navn}" i arrangementer.`);
+  };
+  leggTilKolonne("bilde", "blob");
+  leggTilKolonne("bilde_type", "text");
+  leggTilKolonne("bilde_generert", "text");
+
   const tabeller = ["arrangementer", "pameldinger", "deltakere", "enheter", "administratorer"];
   const finnes = tabeller.filter((navn) =>
     db.prepare(`select 1 from sqlite_master where type = 'table' and name = ?`).get(navn),

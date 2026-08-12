@@ -38,6 +38,11 @@ create table if not exists arrangementer (
   ansvarlig_navn    text,
   ansvarlig_epost   text,
   publisert         integer not null default 0,
+  -- AI-generert headline-bilde. bilde_generert er null når det ikke finnes
+  -- noe bilde; ellers tidspunktet det sist ble satt, brukt som cache-nøkkel.
+  bilde             blob,
+  bilde_type        text,
+  bilde_generert    text,
   opprettet         text not null,
   endret            text not null
 );

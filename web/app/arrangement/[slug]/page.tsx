@@ -17,7 +17,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const a = await hentArrangement(slug);
   if (!a) return { title: "Fant ikke arrangementet" };
-  return { title: a.tittel, description: a.ingress ?? undefined };
+  return {
+    title: a.tittel,
+    description: a.ingress ?? undefined,
+    openGraph: a.bilde_generert
+      ? { images: [bildeUrl(a.id, a.bilde_generert)] }
+      : undefined,
+  };
+}
+
+function bildeUrl(id: string, bildeGenerert: string) {
+  return `/api/offentlig/bilde/${id}?v=${encodeURIComponent(bildeGenerert)}`;
 }
 
 export default async function Arrangementsside({ params }: Props) {
@@ -38,6 +48,14 @@ export default async function Arrangementsside({ params }: Props) {
 
       <article className="detalj">
         <div className="detalj__hovud">
+          {a.bilde_generert && (
+            <img
+              src={bildeUrl(a.id, a.bilde_generert)}
+              alt=""
+              className="detalj__bilde"
+            />
+          )}
+
           <header className="detalj__hode" style={{ ["--f" as string]: s.farge }}>
             <span className="detalj__trad" aria-hidden="true" />
             <div>

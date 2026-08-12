@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { lagreArrangementAction, type Svar } from "@/app/admin/actions";
+import { BildeVelger } from "@/components/BildeVelger";
 import type { Arrangement } from "@skjold/delt";
 import { OPPSUMMERINGSVALG, tilInputVerdi } from "@skjold/delt";
 
@@ -69,6 +70,12 @@ export function ArrangementSkjema({ arrangement }: { arrangement?: Arrangement }
             required
           />
         </div>
+
+        <BildeVelger
+          arrangementId={arrangement?.id}
+          tittel={tittel}
+          eksisterendeBildeGenerert={arrangement?.bilde_generert}
+        />
 
         <div className="felt">
           <label className="felt__etikett" htmlFor="ingress">

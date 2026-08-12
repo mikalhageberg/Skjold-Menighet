@@ -18,6 +18,12 @@ export type Arrangement = {
   ansvarlig_navn: string | null;
   ansvarlig_epost: string | null;
   publisert: boolean;
+  /**
+   * Tidspunktet et AI-generert headline-bilde sist ble satt, eller null om
+   * arrangementet ikke har noe. Selve bildet hentes separat via
+   * /api/offentlig/bilde/{id} — brukes også som cache-nøkkel i URL-en.
+   */
+  bilde_generert: string | null;
   opprettet: string;
 };
 

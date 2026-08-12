@@ -217,6 +217,14 @@ img {
   padding: clamp(1.125rem, 3vw, 1.75rem);
 }
 
+.kort__bilde {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: var(--radius);
+}
+
 .kort__topp {
   display: grid;
   grid-template-columns: 3rem 1fr;
@@ -476,6 +484,23 @@ img {
   color: var(--rod);
 }
 
+.bildevelger__bilde {
+  display: block;
+  width: 100%;
+  max-width: 28rem;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border: 1px solid var(--strek);
+  border-radius: var(--radius);
+  background: var(--kalk-dyp);
+}
+
+.bildevelger__knapper {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
 .avkryss {
   display: flex;
   align-items: flex-start;
@@ -681,6 +706,15 @@ img {
 .detalj__tekst {
   grid-column: 1;
   grid-row: 2;
+}
+
+.detalj__bilde {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: var(--radius);
+  margin-bottom: 1.75rem;
 }
 
 .detalj__hode {

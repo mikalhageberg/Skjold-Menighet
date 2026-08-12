@@ -57,6 +57,7 @@ function fraArrangementRad(rad: ArrangementRad, antallPameldte: number): Arrange
     ansvarlig_navn: rad.ansvarlig_navn,
     ansvarlig_epost: rad.ansvarlig_epost,
     publisert: Boolean(rad.publisert),
+    bilde_generert: rad.bilde_generert,
     opprettet: rad.opprettet,
     antall_pameldte: antallPameldte,
   };
@@ -310,9 +311,16 @@ export async function avmeldPamelding(id: string) {
     .run(na, id);
 }
 
-export type ArrangementInput = Omit<Arrangement, "id" | "opprettet">;
+export type ArrangementInput = Omit<Arrangement, "id" | "opprettet" | "bilde_generert">;
 
-export async function lagreArrangement(id: string | null, input: ArrangementInput) {
+/** undefined = ikke rør bildet, null = fjern det, ellers sett dette bildet. */
+export type BildeEndring = { data: Buffer; mimeType: string } | null | undefined;
+
+export async function lagreArrangement(
+  id: string | null,
+  input: ArrangementInput,
+  bildeEndring?: BildeEndring,
+) {
   if (!harDatabase()) {
     const lager = demolager();
     if (id) {
@@ -321,7 +329,12 @@ export async function lagreArrangement(id: string | null, input: ArrangementInpu
       return id;
     }
     const nyId = `d${Date.now()}`;
-    lager.arrangementer.push({ ...input, id: nyId, opprettet: new Date().toISOString() });
+    lager.arrangementer.push({
+      ...input,
+      bilde_generert: bildeEndring ? new Date().toISOString() : null,
+      id: nyId,
+      opprettet: new Date().toISOString(),
+    });
     return nyId;
   }
 
@@ -347,6 +360,15 @@ export async function lagreArrangement(id: string | null, input: ArrangementInpu
     publisert: input.publisert ? 1 : 0,
   };
 
+  // Bildet er tungt, og de aller fleste lagringer rører det ikke i det
+  // hele tatt — derfor egen håndtering i stedet for å alltid skrive over.
+  const bildeFelt =
+    bildeEndring === undefined
+      ? null
+      : bildeEndring === null
+        ? { bilde: null, bilde_type: null, bilde_generert: null }
+        : { bilde: bildeEndring.data, bilde_type: bildeEndring.mimeType, bilde_generert: na };
+
   if (id) {
     db.prepare(
       `update arrangementer set
@@ -358,6 +380,13 @@ export async function lagreArrangement(id: string | null, input: ArrangementInpu
          ansvarlig_epost = @ansvarlig_epost, publisert = @publisert, endret = @endret
        where id = @id`,
     ).run({ ...verdier, endret: na, id });
+
+    if (bildeFelt) {
+      db.prepare(
+        `update arrangementer set bilde = @bilde, bilde_type = @bilde_type, bilde_generert = @bilde_generert
+         where id = @id`,
+      ).run({ ...bildeFelt, id });
+    }
     return id;
   }
 
@@ -366,14 +395,34 @@ export async function lagreArrangement(id: string | null, input: ArrangementInpu
     `insert into arrangementer
        (id, slug, tittel, ingress, beskrivelse, starter, slutter, sted, kapasitet,
         pamelding_stenger, tillat_flere, sporr_om_kost, krev_telefon, krev_epost,
-        oppsummering_dager_for, ansvarlig_navn, ansvarlig_epost, publisert, opprettet, endret)
+        oppsummering_dager_for, ansvarlig_navn, ansvarlig_epost, publisert,
+        bilde, bilde_type, bilde_generert, opprettet, endret)
      values
        (@id, @slug, @tittel, @ingress, @beskrivelse, @starter, @slutter, @sted, @kapasitet,
         @pamelding_stenger, @tillat_flere, @sporr_om_kost, @krev_telefon, @krev_epost,
-        @oppsummering_dager_for, @ansvarlig_navn, @ansvarlig_epost, @publisert, @opprettet, @endret)`,
-  ).run({ ...verdier, id: nyId, opprettet: na, endret: na });
+        @oppsummering_dager_for, @ansvarlig_navn, @ansvarlig_epost, @publisert,
+        @bilde, @bilde_type, @bilde_generert, @opprettet, @endret)`,
+  ).run({
+    ...verdier,
+    ...(bildeFelt ?? { bilde: null, bilde_type: null, bilde_generert: null }),
+    id: nyId,
+    opprettet: na,
+    endret: na,
+  });
   return nyId;
 }
+
+/** Bildebytene til et arrangement, til /api/offentlig/bilde/{id}. */
+export async function hentBilde(id: string): Promise<GenerertBildeRad | null> {
+  if (!harDatabase()) return null;
+  const rad = hentDb()
+    .prepare(`select bilde, bilde_type from arrangementer where id = ?`)
+    .get(id) as { bilde: Buffer | null; bilde_type: string | null } | undefined;
+  if (!rad?.bilde || !rad.bilde_type) return null;
+  return { data: rad.bilde, mimeType: rad.bilde_type };
+}
+
+type GenerertBildeRad = { data: Buffer; mimeType: string };
 
 export async function slettArrangement(id: string) {
   if (!harDatabase()) {

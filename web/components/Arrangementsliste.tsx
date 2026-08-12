@@ -63,6 +63,14 @@ export function Arrangementskort({
       <div className="kort__kant" aria-hidden="true" />
 
       <div className="kort__innhold">
+        {arrangement.bilde_generert && (
+          <img
+            src={`/api/offentlig/bilde/${arrangement.id}?v=${encodeURIComponent(arrangement.bilde_generert)}`}
+            alt=""
+            className="kort__bilde"
+          />
+        )}
+
         <div className="kort__topp">
           <p className="kort__dato">
             <span className="kort__dag">{dag(start)}</span>
@@ -115,11 +123,7 @@ function Handling({
 
   return (
     <Link href={url} className="tekstknapp">
-      {status.grunn === "fullt"
-        ? "Venteliste"
-        : status.grunn === "stengt"
-          ? "Ta kontakt"
-          : "Les mer"}
+      {status.grunn === "fullt" ? "Venteliste" : "Les mer"}
     </Link>
   );
 }

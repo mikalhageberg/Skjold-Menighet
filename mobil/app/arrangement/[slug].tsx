@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -24,7 +25,7 @@ import {
   VANLIGE_ALLERGIER,
   type ArrangementMedAntall,
 } from "@skjold/delt";
-import { hentArrangement, meldPa } from "@/lib/api";
+import { API_BASE, hentArrangement, meldPa } from "@/lib/api";
 import { husk, erPameldt } from "@/lib/lager";
 import { hentProfil, lagreProfil } from "@/lib/profil";
 import { hentPushToken } from "@/lib/varsler";
@@ -98,6 +99,16 @@ export default function Arrangementsside() {
         keyboardVerticalOffset={96}
       >
         <ScrollView contentContainerStyle={stil.innhold} keyboardShouldPersistTaps="handled">
+          {arrangement.bilde_generert ? (
+            <Image
+              source={{
+                uri: `${API_BASE}/api/offentlig/bilde/${arrangement.id}?v=${encodeURIComponent(arrangement.bilde_generert)}`,
+              }}
+              style={stil.bilde}
+              accessibilityIgnoresInvertColors
+            />
+          ) : null}
+
           <View style={stil.hode}>
             <View style={[stil.hodekant, { backgroundColor: sesong.farge }]} />
             <View style={{ flex: 1, gap: rom.s }}>
@@ -665,6 +676,12 @@ function Stengt({ grunn }: { grunn: "stengt" | "fullt" | "over" }) {
 const stil = StyleSheet.create({
   innhold: { padding: rom.l, paddingBottom: rom.xxxl * 2, gap: rom.xl },
   midt: { flex: 1, alignItems: "center", justifyContent: "center", padding: rom.l },
+  bilde: {
+    width: "100%",
+    aspectRatio: 16 / 9,
+    borderRadius: radius.kort,
+    backgroundColor: farge.kalkDyp,
+  },
   hode: { flexDirection: "row", gap: rom.l },
   hodekant: { width: 3, borderRadius: 2 },
   fakta: { borderTopWidth: 1, borderTopColor: farge.strek },

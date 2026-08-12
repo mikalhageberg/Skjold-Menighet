@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
  * Appen kjører fra en annen origin enn nettsiden. På telefonen spiller CORS
  * ingen rolle, men under utvikling kjører Expo i nettleser — derfor headerne.
  */
-const CORS = {
+export const CORS = {
   "access-control-allow-origin": "*",
   "access-control-allow-methods": "GET, POST, DELETE, OPTIONS",
   "access-control-allow-headers": "content-type",
