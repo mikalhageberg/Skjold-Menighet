@@ -58,13 +58,33 @@ export default async function AdminArrangement({ params, searchParams }: Props) 
         </div>
       </header>
 
-      {lagret && (
+      {lagret === "ny" && (
+        <div className="bekreftelse" role="status">
+          <span className="bekreftelse__hake" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+              <path
+                d="M5 13l4 4L19 7"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
+          <div>
+            <p className="bekreftelse__tittel">Arrangementet er opprettet</p>
+            <p className="bekreftelse__tekst">
+              {a.publisert
+                ? "Det ligger nå på forsiden."
+                : "Det er lagret som kladd — kryss av for publisering nedenfor når det er klart."}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {lagret === "endret" && (
         <p className="notis notis--klar" role="status" style={{ marginTop: "1.5rem" }}>
-          {lagret === "ny"
-            ? a.publisert
-              ? "Arrangementet er opprettet og ligger nå på forsiden."
-              : "Arrangementet er opprettet som kladd. Kryss av for publisering nedenfor når det er klart."
-            : "Endringene er lagret."}
+          Endringene er lagret.
         </p>
       )}
 

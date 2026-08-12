@@ -8,9 +8,40 @@ import { OPPSUMMERINGSVALG, tilInputVerdi } from "@skjold/delt";
 
 const START: Svar = { ok: true };
 
+/** Splitter et `tilInputVerdi`-resultat i dato- og klokkeslettdel. */
+function delTid(iso: string): [string, string] {
+  const [dato, klokke] = iso ? iso.split("T") : ["", ""];
+  return [dato ?? "", klokke ?? ""];
+}
+
 export function ArrangementSkjema({ arrangement }: { arrangement?: Arrangement }) {
   const [svar, send] = useActionState(lagreArrangementAction, START);
   const [tittel, settTittel] = useState(arrangement?.tittel ?? "");
+
+  const [forhandsStarterDato, forhandsStarterKlokke] = delTid(
+    tilInputVerdi(arrangement?.starter ?? null),
+  );
+  const [forhandsSlutterDato, forhandsSlutterKlokke] = delTid(
+    tilInputVerdi(arrangement?.slutter ?? null),
+  );
+  const [forhandsFristDato, forhandsFristKlokke] = delTid(
+    tilInputVerdi(arrangement?.pamelding_stenger ?? null),
+  );
+  const [starterDato, settStarterDato] = useState(forhandsStarterDato);
+  const [starterKlokke, settStarterKlokke] = useState(forhandsStarterKlokke);
+  const [slutterDato, settSlutterDato] = useState(forhandsSlutterDato);
+  const [slutterKlokke, settSlutterKlokke] = useState(forhandsSlutterKlokke);
+  const [pameldingStengerDato, settPameldingStengerDato] = useState(forhandsFristDato);
+  const [pameldingStengerKlokke, settPameldingStengerKlokke] = useState(forhandsFristKlokke);
+
+  // Sluttdatoen følger startdatoen automatisk — de aller fleste
+  // arrangementer varer noen timer, ikke over flere dager. Har man først
+  // satt en annen sluttdato selv, slutter den å følge etter.
+  function endreStarterDato(ny: string) {
+    const folgerEtter = slutterDato === "" || slutterDato === starterDato;
+    settStarterDato(ny);
+    if (folgerEtter) settSlutterDato(ny);
+  }
 
   return (
     <form action={send} className="skjema">
@@ -78,14 +109,20 @@ export function ArrangementSkjema({ arrangement }: { arrangement?: Arrangement }
             id="starter"
             navn="starter"
             etikett="Starter"
-            standardverdi={tilInputVerdi(arrangement?.starter ?? null)}
+            dato={starterDato}
+            klokke={starterKlokke}
+            onEndreDato={endreStarterDato}
+            onEndreKlokke={settStarterKlokke}
             pakrevd
           />
           <DatoKlokkeFelt
             id="slutter"
             navn="slutter"
             etikett="Slutter"
-            standardverdi={tilInputVerdi(arrangement?.slutter ?? null)}
+            dato={slutterDato}
+            klokke={slutterKlokke}
+            onEndreDato={settSlutterDato}
+            onEndreKlokke={settSlutterKlokke}
           />
         </div>
 
@@ -125,7 +162,10 @@ export function ArrangementSkjema({ arrangement }: { arrangement?: Arrangement }
             navn="pamelding_stenger"
             etikett="Påmeldingsfrist"
             hjelp="La stå tomt for åpen påmelding fram til start."
-            standardverdi={tilInputVerdi(arrangement?.pamelding_stenger ?? null)}
+            dato={pameldingStengerDato}
+            klokke={pameldingStengerKlokke}
+            onEndreDato={settPameldingStengerDato}
+            onEndreKlokke={settPameldingStengerKlokke}
           />
         </div>
 
@@ -234,7 +274,7 @@ export function ArrangementSkjema({ arrangement }: { arrangement?: Arrangement }
 
         <Avkryss
           navn="publisert"
-          merket={arrangement?.publisert ?? false}
+          merket={arrangement?.publisert ?? true}
           tekst="Vis arrangementet på forsiden"
           hjelp="Kladder er bare synlige her inne."
         />
@@ -257,20 +297,22 @@ function DatoKlokkeFelt({
   navn,
   etikett,
   hjelp,
-  standardverdi,
+  dato,
+  klokke,
+  onEndreDato,
+  onEndreKlokke,
   pakrevd,
 }: {
   id: string;
   navn: string;
   etikett: string;
   hjelp?: string;
-  standardverdi: string;
+  dato: string;
+  klokke: string;
+  onEndreDato: (verdi: string) => void;
+  onEndreKlokke: (verdi: string) => void;
   pakrevd?: boolean;
 }) {
-  const [forhandsDato, forhandsKlokke] = standardverdi ? standardverdi.split("T") : ["", ""];
-  const [dato, settDato] = useState(forhandsDato ?? "");
-  const [klokke, settKlokke] = useState(forhandsKlokke ?? "");
-
   return (
     <div className="felt">
       <label className="felt__etikett" htmlFor={`${id}-dato`}>
@@ -283,7 +325,7 @@ function DatoKlokkeFelt({
           type="date"
           className="felt__inn"
           value={dato}
-          onChange={(e) => settDato(e.target.value)}
+          onChange={(e) => onEndreDato(e.target.value)}
           required={pakrevd}
         />
         <input
@@ -291,7 +333,7 @@ function DatoKlokkeFelt({
           type="time"
           className="felt__inn"
           value={klokke}
-          onChange={(e) => settKlokke(e.target.value)}
+          onChange={(e) => onEndreKlokke(e.target.value)}
           required={pakrevd}
         />
       </div>

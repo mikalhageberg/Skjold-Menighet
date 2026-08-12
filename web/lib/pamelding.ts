@@ -30,8 +30,10 @@ export async function registrerPamelding(input: PameldingInn): Promise<Pamelding
   }
 
   const kontaktNavn = input.kontaktNavn.trim();
-  const kontaktTelefon = (input.kontaktTelefon ?? "").trim();
-  const kontaktEpost = (input.kontaktEpost ?? "").trim();
+  // Trenger arrangementet ikke telefon eller e-post, skal det heller ikke
+  // være mulig å levere det — uansett hva klienten måtte sende med.
+  const kontaktTelefon = arrangement.krev_telefon ? (input.kontaktTelefon ?? "").trim() : "";
+  const kontaktEpost = arrangement.krev_epost ? (input.kontaktEpost ?? "").trim() : "";
   const melding = (input.melding ?? "").trim();
 
   // Navn er alltid nok. Trenger arrangementet telefon eller e-post, har den

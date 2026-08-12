@@ -70,42 +70,48 @@ export function Pameldingsskjema({
           {feltfeil.kontakt_navn && <p className="felt__feil">{feltfeil.kontakt_navn}</p>}
         </div>
 
-        <div className="rad2">
-          <div className={`felt${feltfeil.kontakt_telefon ? " felt--feil" : ""}`}>
-            <label className="felt__etikett" htmlFor="kontakt_telefon">
-              Telefon{arrangement.krev_telefon ? "" : " (valgfritt)"}
-            </label>
-            <input
-              id="kontakt_telefon"
-              name="kontakt_telefon"
-              type="tel"
-              inputMode="tel"
-              className="felt__inn"
-              autoComplete="tel"
-              required={arrangement.krev_telefon}
-            />
-            {feltfeil.kontakt_telefon && (
-              <p className="felt__feil">{feltfeil.kontakt_telefon}</p>
+        {(arrangement.krev_telefon || arrangement.krev_epost) && (
+          <div className="rad2">
+            {arrangement.krev_telefon && (
+              <div className={`felt${feltfeil.kontakt_telefon ? " felt--feil" : ""}`}>
+                <label className="felt__etikett" htmlFor="kontakt_telefon">
+                  Telefon
+                </label>
+                <input
+                  id="kontakt_telefon"
+                  name="kontakt_telefon"
+                  type="tel"
+                  inputMode="tel"
+                  className="felt__inn"
+                  autoComplete="tel"
+                  required
+                />
+                {feltfeil.kontakt_telefon && (
+                  <p className="felt__feil">{feltfeil.kontakt_telefon}</p>
+                )}
+              </div>
+            )}
+
+            {arrangement.krev_epost && (
+              <div className={`felt${feltfeil.kontakt_epost ? " felt--feil" : ""}`}>
+                <label className="felt__etikett" htmlFor="kontakt_epost">
+                  E-post
+                </label>
+                <input
+                  id="kontakt_epost"
+                  name="kontakt_epost"
+                  type="email"
+                  inputMode="email"
+                  className="felt__inn"
+                  autoComplete="email"
+                  required
+                />
+                <p className="felt__hjelp">Brukes hvis den ansvarlige må sende ut noe.</p>
+                {feltfeil.kontakt_epost && <p className="felt__feil">{feltfeil.kontakt_epost}</p>}
+              </div>
             )}
           </div>
-
-          <div className={`felt${feltfeil.kontakt_epost ? " felt--feil" : ""}`}>
-            <label className="felt__etikett" htmlFor="kontakt_epost">
-              E-post{arrangement.krev_epost ? "" : " (valgfritt)"}
-            </label>
-            <input
-              id="kontakt_epost"
-              name="kontakt_epost"
-              type="email"
-              inputMode="email"
-              className="felt__inn"
-              autoComplete="email"
-              required={arrangement.krev_epost}
-            />
-            <p className="felt__hjelp">Brukes hvis den ansvarlige må sende ut noe.</p>
-            {feltfeil.kontakt_epost && <p className="felt__feil">{feltfeil.kontakt_epost}</p>}
-          </div>
-        </div>
+        )}
       </section>
 
       <section className="bolk">

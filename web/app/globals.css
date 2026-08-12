@@ -593,6 +593,65 @@ img {
   border-left-color: var(--gronn);
 }
 
+/* Bekreftelsen når et arrangement er opprettet for første gang — tydelig
+   nok til at man ikke er i tvil om at det faktisk gikk gjennom. */
+.bekreftelse {
+  margin-top: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--papir);
+  border: 1px solid var(--gronn);
+  border-radius: var(--radius);
+  animation: bekreftelse-inn 0.4s ease-out;
+}
+
+.bekreftelse__hake {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  background: var(--gronn);
+  color: var(--papir);
+  animation: hake-inn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s backwards;
+}
+
+.bekreftelse__tittel {
+  margin: 0 0 0.15rem;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 1.1875rem;
+  font-weight: 600;
+}
+
+.bekreftelse__tekst {
+  margin: 0;
+  color: var(--gran-myk);
+}
+
+@keyframes bekreftelse-inn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hake-inn {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
 /* ── Arrangementsside ────────────────────────────────────────────────── */
 
 /* Tre rutenettsbarn: fakta, påmelding, beskrivelse. På bred skjerm står
