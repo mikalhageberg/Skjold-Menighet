@@ -101,3 +101,15 @@ export const OPPSUMMERINGSVALG: { verdi: number; tekst: string }[] = [
   { verdi: 3, tekst: "Tre dager før" },
   { verdi: 7, tekst: "En uke før" },
 ];
+
+/** De vanligste allergiene og kostholdshensynene, til avkrysning i påmeldingsskjemaet. */
+export const VANLIGE_ALLERGIER: string[] = [
+  "Melk/laktose",
+  "Egg",
+  "Gluten",
+  "Nøtter",
+  "Fisk",
+  "Skalldyr",
+  "Vegetar",
+  "Vegansk",
+];

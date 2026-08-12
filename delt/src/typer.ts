@@ -69,3 +69,5 @@ export type PameldingInn = {
 export type PameldingSvar =
   | { ok: true; pameldingId: string; antall: number }
   | { ok: false; feil: string; feltfeil?: Record<string, string> };
+
+export type AvmeldingSvar = { ok: true } | { ok: false; feil: string };
