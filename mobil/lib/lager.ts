@@ -3,8 +3,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 /**
  * Det telefonen husker mellom øktene.
  *
- * Uten innlogging er dette eneste måten «Mine påmeldinger» kan finnes: vi
- * lagrer en kopi på telefonen når man melder seg på. Hvem telefonen tilhører
+ * Uten innlogging er dette eneste måten «Mine vakter» kan finnes: vi lagrer
+ * en kopi på telefonen når man sier ja til noe. Hvem telefonen tilhører
  * ligger i profil.ts.
  */
 
@@ -16,7 +16,8 @@ export type MinPamelding = {
   tittel: string;
   starter: string;
   sted: string;
-  deltakere: string[];
+  /** «Jeg bidrar med», slik man skrev det. Vises i lista på telefonen. */
+  bidrag: string | null;
   meldtPa: string;
 };
 

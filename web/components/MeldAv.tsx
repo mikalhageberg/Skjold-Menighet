@@ -1,19 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { slettPameldingAction } from "@/app/admin/actions";
+import { meldAvAction } from "@/app/admin/actions";
 
-/** Å fjerne noen fra lista kan ikke angres, så vi spør én gang først. */
+/**
+ * Avbud på vegne av en som har ringt. Det sender samme varsel til de andre
+ * som når hun trykker selv i appen, så vi spør én gang først.
+ */
 export function MeldAv({
   pameldingId,
   arrangementId,
-  kontaktNavn,
-  antall,
+  navn,
 }: {
   pameldingId: string;
   arrangementId: string;
-  kontaktNavn: string;
-  antall: number;
+  navn: string;
 }) {
   const [sporr, settSporr] = useState(false);
 
@@ -26,11 +27,11 @@ export function MeldAv({
   }
 
   return (
-    <form action={slettPameldingAction} className="bekreft">
+    <form action={meldAvAction} className="bekreft">
       <input type="hidden" name="pamelding_id" value={pameldingId} />
       <input type="hidden" name="arrangement_id" value={arrangementId} />
       <p className="bekreft__sporsmal">
-        Fjerne {kontaktNavn} og {antall === 1 ? "påmeldingen" : `de ${antall} plassene`}?
+        Melde av {navn}? De andre med appen får beskjed om at det er blitt en ledig plass.
       </p>
       <div className="bekreft__valg">
         <button type="submit" className="knapp knapp--fare knapp--liten">

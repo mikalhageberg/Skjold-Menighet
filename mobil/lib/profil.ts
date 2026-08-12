@@ -5,7 +5,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
  *
  * Dette er ingen konto — ingenting sendes til serveren, ingen passord, ingen
  * kode på SMS. Man skriver navnet sitt én gang når appen åpnes første gang,
- * og slipper å skrive det om igjen for hver påmelding. Telefon og e-post er
+ * og slipper å skrive det om igjen hver gang man sier ja til noe. Telefon og e-post er
  * frivillig, og spørres bare om når et arrangement faktisk krever det.
  */
 

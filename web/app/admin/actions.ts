@@ -9,12 +9,13 @@ import {
   hentPameldinger,
   lagreArrangement,
   slettArrangement,
-  slettPamelding,
   slettSerie,
   type ArrangementInput,
   type BildeEndring,
 } from "@/lib/data";
-import { sendOppsummering, sendTilPameldte } from "@/lib/brevo";
+import { meldAv } from "@/lib/pamelding";
+import { varsleOmNyeOppgaver } from "@/lib/varsling";
+import { sendTilFrivillige } from "@/lib/brevo";
 import { genererBilde } from "@/lib/gemini";
 import { krevAdmin, demomodus } from "@/lib/auth";
 import { signIn, signOut } from "@/auth";
@@ -72,9 +73,9 @@ function lesArrangement(data: FormData): ArrangementUtenSlug | string {
     return v === "" ? null : new Date(v).toISOString();
   };
 
-  const kapasitet = tall("kapasitet");
-  if (kapasitet !== null && (!Number.isInteger(kapasitet) || kapasitet < 1))
-    return "Antall plasser må være et helt tall, eller stå tomt for ubegrenset.";
+  const trengs = tall("trengs");
+  if (trengs !== null && (!Number.isInteger(trengs) || trengs < 1))
+    return "Antall frivillige må være et helt tall, eller stå tomt for ingen øvre grense.";
 
   return {
     tittel,
@@ -83,16 +84,10 @@ function lesArrangement(data: FormData): ArrangementUtenSlug | string {
     starter: new Date(starter).toISOString(),
     slutter: tid("slutter"),
     sted: String(data.get("sted") ?? "").trim() || "Skjold kirke",
-    kapasitet,
+    trengs,
     pamelding_stenger: tid("pamelding_stenger"),
-    tillat_flere: data.get("tillat_flere") === "på",
-    sporr_om_kost: data.get("sporr_om_kost") === "på",
     krev_telefon: data.get("krev_telefon") === "på",
     krev_epost: data.get("krev_epost") === "på",
-    oppsummering_dager_for:
-      data.get("oppsummering_dager_for") === "av"
-        ? null
-        : Number(data.get("oppsummering_dager_for") ?? 1),
     ansvarlig_navn: tekst("ansvarlig_navn"),
     ansvarlig_epost: tekst("ansvarlig_epost"),
     publisert: data.get("publisert") === "på",
@@ -212,6 +207,10 @@ export async function lagreArrangementAction(_forrige: Svar, data: FormData): Pr
       return { ok: false, melding: "Arrangementet ble ikke lagret. Prøv igjen." };
     }
 
+    // Er det nettopp blitt publisert, skal alle med appen få vite at det
+    // trengs folk. Varselet går bare én gang per arrangement — se varsling.ts.
+    await varsleOmNyeOppgaver();
+
     revalidatePath("/");
     revalidatePath("/admin");
     revalidatePath("/admin/arrangementer");
@@ -250,6 +249,9 @@ export async function lagreArrangementAction(_forrige: Svar, data: FormData): Pr
     return { ok: false, melding: "Serien ble ikke lagret. Prøv igjen." };
   }
 
+  // Hele serien deler ett varsel, ikke ett per forekomst.
+  await varsleOmNyeOppgaver();
+
   revalidatePath("/");
   revalidatePath("/admin");
   revalidatePath("/admin/arrangementer");
@@ -278,18 +280,21 @@ export async function slettArrangementAction(data: FormData) {
   redirect("/admin/arrangementer");
 }
 
-export async function slettPameldingAction(data: FormData) {
+/**
+ * Avbud på vegne av noen som har ringt i stedet for å trykke i appen.
+ * Går gjennom samme vei som appen, så de andre får det samme varselet om
+ * at det er blitt en ledig plass.
+ */
+export async function meldAvAction(data: FormData) {
   await krevAdmin();
   const id = String(data.get("pamelding_id") ?? "");
   const arrangementId = String(data.get("arrangement_id") ?? "");
   if (!id) return;
-  await slettPamelding(id);
-  revalidatePath("/");
-  revalidatePath("/admin");
+  await meldAv(id);
   revalidatePath(`/admin/arrangement/${arrangementId}`);
 }
 
-/* ── Melding til påmeldte ────────────────────────────────────────────── */
+/* ── Melding til de frivillige ───────────────────────────────────────── */
 
 export async function sendMeldingAction(_forrige: Svar, data: FormData): Promise<Svar> {
   await krevAdmin();
@@ -305,11 +310,11 @@ export async function sendMeldingAction(_forrige: Svar, data: FormData): Promise
 
   const pameldinger = await hentPameldinger(arrangementId);
   const mottakere = pameldinger
-    .filter((p) => p.kontakt_epost)
-    .map((p) => ({ email: p.kontakt_epost!, name: p.kontakt_navn }));
+    .filter((p) => p.epost)
+    .map((p) => ({ email: p.epost!, name: p.navn }));
 
   if (mottakere.length === 0)
-    return { ok: false, melding: "Ingen av de påmeldte har oppgitt e-postadresse." };
+    return { ok: false, melding: "Ingen av de frivillige har oppgitt e-postadresse." };
 
   if (demomodus())
     return {
@@ -317,7 +322,7 @@ export async function sendMeldingAction(_forrige: Svar, data: FormData): Promise
       melding: `Demovisning: meldingen ville gått til ${mottakere.length} mottakere.`,
     };
 
-  const svar = await sendTilPameldte(arrangement, mottakere, emne, tekst);
+  const svar = await sendTilFrivillige(arrangement, mottakere, emne, tekst);
   if (!svar.sendt)
     return {
       ok: false,
@@ -331,40 +336,4 @@ export async function sendMeldingAction(_forrige: Svar, data: FormData): Promise
     ok: true,
     melding: `Sendt til ${mottakere.length} ${mottakere.length === 1 ? "mottaker" : "mottakere"}.`,
   };
-}
-
-/* ── Oppsummering til ansvarlig ──────────────────────────────────────── */
-
-/** Sender oppsummeringen slik den ser ut akkurat nå, så man kan se den før den går. */
-export async function sendTestoppsummeringAction(
-  _forrige: Svar,
-  data: FormData,
-): Promise<Svar> {
-  await krevAdmin();
-
-  const arrangementId = String(data.get("arrangement_id") ?? "");
-  const arrangement = await hentArrangementMedId(arrangementId);
-  if (!arrangement) return { ok: false, melding: "Fant ikke arrangementet." };
-
-  if (!arrangement.ansvarlig_epost)
-    return {
-      ok: false,
-      melding: "Arrangementet har ingen ansvarlig med e-postadresse. Fyll inn det først.",
-    };
-
-  const pameldinger = await hentPameldinger(arrangementId);
-
-  // Ingen demosperre her: hele poenget med knappen er at e-posten faktisk
-  // sendes, og adressen er den ansvarlige man selv har lagt inn.
-  const svar = await sendOppsummering(arrangement, pameldinger, { test: true });
-  if (!svar.sendt)
-    return {
-      ok: false,
-      melding:
-        svar.grunn === "ikke konfigurert"
-          ? "Brevo er ikke satt opp. Legg inn BREVO_API_KEY i miljøvariablene."
-          : `Testen ble ikke sendt (${svar.grunn}).`,
-    };
-
-  return { ok: true, melding: `Testutgave sendt til ${arrangement.ansvarlig_epost}.` };
 }

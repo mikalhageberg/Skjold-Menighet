@@ -1,14 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { hentArrangement } from "@/lib/data";
-import { pameldingsstatus, sesongFor } from "@skjold/delt";
-import { dato, klokka, nartid, plasstekst, tidsrom, ukedag } from "@skjold/delt";
+import { hentArrangement, hentFrivillige } from "@/lib/data";
+import { frivilligtekst, pameldingsstatus, sesongFor } from "@skjold/delt";
+import { dato, klokka, nartid, tidsrom, ukedag } from "@skjold/delt";
 import { Pameldingsskjema } from "@/components/Pameldingsskjema";
 
-// Ikke statisk/ISR: siden viser plasstall og påmeldingsstatus, som endrer seg
-// fortløpende, og statisk bygging ville prøvd å lese databasen under selve
-// bygget — før migreringen har rukket å opprette tabellene.
+// Ikke statisk/ISR: siden viser hvem som har meldt seg, og det endrer seg
+// fortløpende. Statisk bygging ville dessuten prøvd å lese databasen under
+// selve bygget — før migreringen har rukket å opprette tabellene.
 export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -35,6 +35,7 @@ export default async function Arrangementsside({ params }: Props) {
   const a = await hentArrangement(slug);
   if (!a || !a.publisert) notFound();
 
+  const frivillige = await hentFrivillige(a.id);
   const start = new Date(a.starter);
   const slutt = a.slutter ? new Date(a.slutter) : null;
   const s = sesongFor(start);
@@ -43,7 +44,7 @@ export default async function Arrangementsside({ params }: Props) {
   return (
     <div className="side">
       <Link href="/" className="tilbake">
-        ← Alt som skjer
+        ← Alt som trenger folk
       </Link>
 
       <article className="detalj">
@@ -80,7 +81,7 @@ export default async function Arrangementsside({ params }: Props) {
             </li>
             {a.pamelding_stenger && (
               <li>
-                <span className="detalj__navn">Påmeldingsfrist</span>
+                <span className="detalj__navn">Frist</span>
                 <span>
                   {ukedag(new Date(a.pamelding_stenger))} {dato(new Date(a.pamelding_stenger))}{" "}
                   kl. {klokka(new Date(a.pamelding_stenger)).replace(":", ".")}
@@ -88,8 +89,8 @@ export default async function Arrangementsside({ params }: Props) {
               </li>
             )}
             <li>
-              <span className="detalj__navn">Plasser</span>
-              <span>{plasstekst(a)}</span>
+              <span className="detalj__navn">Frivillige</span>
+              <span>{frivilligtekst(a)}</span>
             </li>
             {a.ansvarlig_navn && (
               <li>
@@ -114,6 +115,7 @@ export default async function Arrangementsside({ params }: Props) {
             </li>
           </ul>
 
+          <Frivilligliste frivillige={frivillige} />
         </div>
 
         {/* Skjemaet er et eget rutenettsbarn, så det havner over teksten på
@@ -122,8 +124,8 @@ export default async function Arrangementsside({ params }: Props) {
         <aside className="kort detalj__meldpa" id="meld-pa">
           {status.apen ? (
             <>
-              <h2 className="kort__tittel">Meld på</h2>
-              <Pameldingsskjema arrangement={a} ledige={status.ledige} />
+              <h2 className="kort__tittel">Jeg kan hjelpe</h2>
+              <Pameldingsskjema arrangement={a} />
             </>
           ) : (
             <Stengt grunn={status.grunn} />
@@ -142,19 +144,54 @@ export default async function Arrangementsside({ params }: Props) {
   );
 }
 
-function Stengt({ grunn }: { grunn: "stengt" | "fullt" | "over" }) {
+/**
+ * Hvem som alt har sagt ja. Den står åpent — det er lettere å melde seg
+ * når man ser at naboen har gjort det, og lettere å se at det trengs én
+ * til når lista er kort. Bare navn og bidrag; kontaktopplysningene ligger
+ * hos den ansvarlige.
+ */
+function Frivilligliste({
+  frivillige,
+}: {
+  frivillige: { navn: string; bidrag: string | null }[];
+}) {
+  if (frivillige.length === 0) {
+    return (
+      <div className="frivillige">
+        <h2 className="frivillige__tittel">Hvem har meldt seg</h2>
+        <p className="stille">Ingen ennå. Du kan bli den første.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="frivillige">
+      <h2 className="frivillige__tittel">Hvem har meldt seg</h2>
+      <ul className="frivillige__liste">
+        {frivillige.map((f, i) => (
+          <li key={i} className="frivillige__post">
+            <span className="frivillige__navn">{f.navn}</span>
+            {f.bidrag && <span className="frivillige__bidrag">{f.bidrag}</span>}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function Stengt({ grunn }: { grunn: "stengt" | "nok" | "over" }) {
   const tekst = {
-    fullt: {
-      tittel: "Det er fullt",
+    nok: {
+      tittel: "Vi har folk nok",
       brod: "Alle plassene er tatt. Sjekk gjerne igjen senere — det hender noen melder avbud.",
     },
     stengt: {
-      tittel: "Påmeldingen er stengt",
-      brod: "Fristen har gått ut, men det er ofte plass likevel. Sjekk gjerne igjen senere.",
+      tittel: "Fristen har gått ut",
+      brod: "Vil du hjelpe likevel, ta kontakt med den ansvarlige.",
     },
     over: {
       tittel: "Dette har vært",
-      brod: "Arrangementet er over. Se forsiden for det som kommer.",
+      brod: "Se forsiden for det som trenger folk framover.",
     },
   }[grunn];
 

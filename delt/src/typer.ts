@@ -7,14 +7,12 @@ export type Arrangement = {
   starter: string;
   slutter: string | null;
   sted: string;
-  kapasitet: number | null;
+  /** Hvor mange frivillige oppgaven trenger. null = ingen øvre grense. */
+  trengs: number | null;
   pamelding_stenger: string | null;
-  tillat_flere: boolean;
-  sporr_om_kost: boolean;
+  /** Påmelding krever bare navn. Trenger oppgaven mer, skrus det på her. */
   krev_telefon: boolean;
   krev_epost: boolean;
-  /** Antall dager før start oppsummeringen til ansvarlig sendes. null = ikke send. */
-  oppsummering_dager_for: number | null;
   ansvarlig_navn: string | null;
   ansvarlig_epost: string | null;
   publisert: boolean;
@@ -34,52 +32,44 @@ export type Arrangement = {
 };
 
 export type ArrangementMedAntall = Arrangement & {
-  antall_pameldte: number;
+  antall_frivillige: number;
 };
 
-export type Deltaker = {
-  id: string;
-  pamelding_id: string;
+/**
+ * Én frivillig som har meldt seg. Dette er alt appen viser om andre —
+ * navn og hva de sa de skulle bidra med, aldri telefon eller e-post.
+ */
+export type Frivillig = {
   navn: string;
-  er_kontakt: boolean;
-  kosthold: string | null;
+  bidrag: string | null;
 };
 
 export type Pamelding = {
   id: string;
   arrangement_id: string;
-  kontakt_navn: string;
-  kontakt_telefon: string | null;
-  kontakt_epost: string | null;
-  melding: string | null;
+  navn: string;
+  telefon: string | null;
+  epost: string | null;
+  /** «Jeg bidrar med» — hva den frivillige har sagt at hun tar. */
+  bidrag: string | null;
   avmeldt: string | null;
   opprettet: string;
 };
 
-export type PameldingMedDeltakere = Pamelding & {
-  deltakere: Deltaker[];
-};
-
 /* ── Det appen sender og får tilbake ─────────────────────────────────── */
-
-export type DeltakerInn = {
-  navn: string;
-  kosthold: string | null;
-};
 
 export type PameldingInn = {
   slug: string;
-  kontaktNavn: string;
-  kontaktTelefon: string | null;
-  kontaktEpost: string | null;
-  melding: string | null;
-  deltakere: DeltakerInn[];
-  /** Expo-push-token, hvis brukeren har sagt ja til påminnelser. */
+  navn: string;
+  telefon: string | null;
+  epost: string | null;
+  bidrag: string | null;
+  /** Expo-push-token, så telefonen kan få påminnelsen dagen før. */
   pushToken?: string | null;
 };
 
 export type PameldingSvar =
-  | { ok: true; pameldingId: string; antall: number }
+  | { ok: true; pameldingId: string }
   | { ok: false; feil: string; feltfeil?: Record<string, string> };
 
 export type AvmeldingSvar = { ok: true } | { ok: false; feil: string };

@@ -4,14 +4,19 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Felt, Knapp, Tekst } from "@/design/Grunnelementer";
 import { farge, rom } from "@/design/tema";
 import { hentProfil, lagreProfil } from "@/lib/profil";
+import { meldInnEnhet } from "@/lib/varsler";
 
 /**
  * Det første man møter. Ett spørsmål — hva heter du — og så er man i gang.
  *
  * Ingen konto, ingen kode, ingen passord. Hensikten er ikke å vite hvem folk
- * er, men å slippe å spørre om det samme hver eneste gang de melder seg på.
- * Telefon og e-post er frivillig her; vi maser bare hvis et arrangement
+ * er, men å slippe å spørre om det samme hver eneste gang de sier ja til en
+ * oppgave. Telefon og e-post er frivillig her; vi maser bare hvis en oppgave
  * faktisk trenger det.
+ *
+ * Her spør vi også om lov til å sende varsler. Det er det eneste stedet det
+ * gir mening: det viktigste varselet — «kan noen steppe inn?» — går jo til
+ * dem som ennå ikke har sagt ja til noe.
  */
 export default function Velkommen() {
   const router = useRouter();
@@ -40,6 +45,9 @@ export default function Velkommen() {
     }
     settLagrer(true);
     await lagreProfil({ navn, telefon, epost });
+    // Bare første gang. Den som redigerer navnet sitt skal ikke få
+    // spørsmålet om varsler slengt i ansiktet på nytt.
+    if (!redigerer) await meldInnEnhet({ spor: true });
     settLagrer(false);
     if (redigerer && router.canGoBack()) router.back();
     else router.replace("/");
@@ -74,8 +82,8 @@ export default function Velkommen() {
                 Skjold menighet
               </Tekst>
               <Tekst farget="myk">
-                Her ser du hva som skjer i kirken, og melder på deg selv eller noen du
-                kjenner. Skriv navnet ditt én gang, så slipper du å fylle ut det samme hver
+                Her ser du hva menigheten trenger hjelp til, og sier ja til det som passer
+                for deg. Skriv navnet ditt én gang, så slipper du å fylle ut det samme hver
                 gang.
               </Tekst>
             </View>
@@ -98,7 +106,7 @@ export default function Velkommen() {
 
             <Felt
               etikett="Telefon (valgfritt)"
-              hjelp="Noen arrangementer trenger et nummer. Da er det allerede utfylt."
+              hjelp="Noen oppgaver trenger et nummer den ansvarlige kan ringe. Da er det allerede utfylt."
               value={telefon}
               onChangeText={settTelefon}
               placeholder="900 00 000"
@@ -109,7 +117,7 @@ export default function Velkommen() {
 
             <Felt
               etikett="E-post (valgfritt)"
-              hjelp="Brukes bare hvis den ansvarlige må sende ut noe før et arrangement."
+              hjelp="Brukes bare hvis den ansvarlige må sende ut noe i forkant."
               value={epost}
               onChangeText={settEpost}
               placeholder="navn@eksempel.no"
@@ -130,7 +138,8 @@ export default function Velkommen() {
             {!redigerer && (
               <Tekst variant="liten" farget="svak">
                 Alt du skriver her blir liggende på telefonen din. Vi sender ingenting til
-                menigheten før du melder deg på noe.
+                menigheten før du sier ja til noe. Etterpå spør vi om lov til å varsle deg
+                når det trengs folk — du kan si nei, og likevel bruke appen.
               </Tekst>
             )}
           </View>

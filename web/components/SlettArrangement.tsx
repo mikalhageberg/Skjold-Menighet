@@ -12,12 +12,12 @@ import { slettArrangementAction } from "@/app/admin/actions";
 export function SlettArrangement({
   id,
   tittel,
-  antallPameldte,
+  antallFrivillige,
   variant = "knapp",
 }: {
   id: string;
   tittel: string;
-  antallPameldte: number;
+  antallFrivillige: number;
   /** «lenke» er den kompakte varianten som passer i en tabellrad. */
   variant?: "knapp" | "lenke";
 }) {
@@ -40,7 +40,8 @@ export function SlettArrangement({
       <input type="hidden" name="id" value={id} />
       <p className="bekreft__sporsmal">
         Slette «{tittel}»
-        {antallPameldte > 0 && ` og ${antallPameldte} påmeldinger`}? Dette kan ikke angres.
+        {antallFrivillige > 0 &&
+          ` og lista over ${antallFrivillige} frivillige`}? Dette kan ikke angres.
       </p>
       <div className="bekreft__valg">
         <Bekreft />

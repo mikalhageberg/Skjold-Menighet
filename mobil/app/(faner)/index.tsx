@@ -66,10 +66,10 @@ export default function HvaSkjer() {
 
       {arrangementer && arrangementer.length === 0 ? (
         <View style={stil.tomt}>
-          <Tekst variant="mellom">Ingenting står i kalenderen</Tekst>
+          <Tekst variant="mellom">Ingenting trenger folk nå</Tekst>
           <Tekst farget="myk">
-            Når menigheten legger ut kirkekaffe, formiddagstreff og middager, dukker de opp
-            her.
+            Når menigheten trenger frivillige til kirkekaffe, formiddagstreff eller
+            middager, dukker det opp her — og du får et varsel.
           </Tekst>
         </View>
       ) : null}

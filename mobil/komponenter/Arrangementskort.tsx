@@ -2,10 +2,10 @@ import { Image, Pressable, StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
 import {
   dag,
+  frivilligtekst,
   klokka,
   maned,
   pameldingsstatus,
-  plasstekst,
   sesongFor,
   tidsrom,
   ukedag,
@@ -16,7 +16,7 @@ import { farge, radius, rom, skrift } from "@/design/tema";
 import { API_BASE } from "@/lib/api";
 
 /**
- * Ett arrangement som ett kort.
+ * Én oppgave som trenger folk, som ett kort.
  *
  * Kanten til venstre har den liturgiske fargen for tiden i kirkeåret
  * arrangementet faller i — grønn i treenighetstiden, fiolett i advent og
@@ -26,9 +26,10 @@ import { API_BASE } from "@/lib/api";
 export function Arrangementskort({
   arrangement,
   pameldt,
-  fra = "Hva skjer",
+  fra = "Vi trenger deg",
 }: {
   arrangement: ArrangementMedAntall;
+  /** Om du selv står på lista til denne. */
   pameldt?: boolean;
   /** Fanenavnet man kommer fra, så tilbakeknappen på arrangementssiden viser riktig tekst. */
   fra?: string;
@@ -37,7 +38,12 @@ export function Arrangementskort({
   const start = new Date(arrangement.starter);
   const sesong = sesongFor(start);
   const status = pameldingsstatus(arrangement);
-  const fullt = !status.apen && status.grunn === "fullt";
+  // Rødt bare når noe nært i tid fortsatt mangler folk. Var alt som manglet
+  // noen rødt, ville hele lista lyse, og da sier fargen ingenting.
+  const haster =
+    status.apen &&
+    status.mangler !== null &&
+    start.getTime() < Date.now() + 7 * 86400000;
 
   return (
     <Pressable
@@ -47,7 +53,7 @@ export function Arrangementskort({
         accessibilityRole="button"
         accessibilityLabel={`${arrangement.tittel}, ${ukedag(start)} ${dag(start)}. ${
           maned(start).split(" ")[0]
-        } klokka ${klokka(start)}. ${plasstekst(arrangement)}`}
+        } klokka ${klokka(start)}. ${frivilligtekst(arrangement)}`}
         style={({ pressed }) => [stil.kort, pressed && stil.trykket]}
       >
         <View style={[stil.kant, { backgroundColor: sesong.farge }]} />
@@ -93,13 +99,13 @@ export function Arrangementskort({
           ) : null}
 
           <View style={stil.bunn}>
-            <Tekst variant="liten" farget={fullt ? "rod" : "myk"}>
-              {plasstekst(arrangement)}
+            <Tekst variant="liten" farget={haster ? "rod" : "myk"}>
+              {frivilligtekst(arrangement)}
             </Tekst>
             {pameldt ? (
               <View style={stil.merke}>
                 <Tekst variant="etikett" farget="messing">
-                  Du er påmeldt
+                  Du har sagt ja
                 </Tekst>
               </View>
             ) : null}

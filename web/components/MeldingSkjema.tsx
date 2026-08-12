@@ -9,12 +9,12 @@ const START: Svar = { ok: true };
 export function MeldingSkjema({
   arrangementId,
   antallMottakere,
-  antallPameldinger,
+  antallFrivillige,
   tittel,
 }: {
   arrangementId: string;
   antallMottakere: number;
-  antallPameldinger: number;
+  antallFrivillige: number;
   tittel: string;
 }) {
   const [svar, send] = useActionState(sendMeldingAction, START);
@@ -22,9 +22,9 @@ export function MeldingSkjema({
   if (antallMottakere === 0) {
     return (
       <p className="stille">
-        {antallPameldinger === 0
-          ? "Så snart noen har meldt seg på og lagt igjen e-postadressen sin, kan du sende dem en melding herfra."
-          : "Ingen av de påmeldte har oppgitt e-postadresse, så det er ingen å sende til herfra. Telefonnumrene står i lista over."}
+        {antallFrivillige === 0
+          ? "Så snart noen har meldt seg og lagt igjen e-postadressen sin, kan du sende dem en melding herfra."
+          : "Ingen av de frivillige har oppgitt e-postadresse, så det er ingen å sende til herfra. Telefonnumrene står i lista over."}
       </p>
     );
   }

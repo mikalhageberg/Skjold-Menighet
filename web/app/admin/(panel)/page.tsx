@@ -10,13 +10,13 @@ export default async function AdminOversikt() {
   const admin = await krevAdmin();
   const kommende = await hentKommende();
 
-  const totalt = kommende.reduce((sum, a) => sum + a.antall_pameldte, 0);
+  const totalt = kommende.reduce((sum, a) => sum + a.antall_frivillige, 0);
   const denneUka = kommende.filter(
     (a) => new Date(a.starter).getTime() < Date.now() + 7 * 86400000,
   );
-  const fulle = kommende.filter((a) => {
+  const dekket = kommende.filter((a) => {
     const s = pameldingsstatus(a);
-    return !s.apen && s.grunn === "fullt";
+    return !s.apen && s.grunn === "nok";
   });
 
   return (
@@ -38,18 +38,18 @@ export default async function AdminOversikt() {
         </p>
         <p className="adm__tall-post">
           <span className="adm__verdi">{totalt}</span>
-          <span className="merke">Påmeldte til sammen</span>
+          <span className="merke">Frivillige til sammen</span>
         </p>
         <p className="adm__tall-post">
           <span className="adm__verdi">{denneUka.length}</span>
           <span className="merke">Innen sju dager</span>
         </p>
-        {fulle.length > 0 && (
+        {dekket.length > 0 && (
           <p className="adm__tall-post">
             <span className="adm__verdi" style={{ color: "var(--rod)" }}>
-              {fulle.length}
+              {dekket.length}
             </span>
-            <span className="merke">Fullbooket</span>
+            <span className="merke">Har nok folk</span>
           </p>
         )}
       </div>
@@ -75,7 +75,7 @@ export default async function AdminOversikt() {
               <tr>
                 <th scope="col">Arrangement</th>
                 <th scope="col">Når</th>
-                <th scope="col">Påmeldte</th>
+                <th scope="col">Frivillige</th>
                 <th scope="col">Ansvarlig</th>
                 <th scope="col">
                   <span className="skjult">Handling</span>
@@ -103,19 +103,19 @@ export default async function AdminOversikt() {
                       <span className="stille">{nartid(start)}</span>
                     </td>
                     <td>
-                      {a.antall_pameldte}
-                      {a.kapasitet ? ` / ${a.kapasitet}` : ""}
-                      {!status.apen && status.grunn === "fullt" && (
+                      {a.antall_frivillige}
+                      {a.trengs ? ` / ${a.trengs}` : ""}
+                      {!status.apen && status.grunn === "nok" && (
                         <>
                           {" "}
-                          <span className="stempel stempel--full">Fullt</span>
+                          <span className="stempel stempel--full">Nok folk</span>
                         </>
                       )}
                     </td>
                     <td>{a.ansvarlig_navn ?? "—"}</td>
                     <td>
                       <Link href={`/admin/arrangement/${a.id}`} className="tekstknapp">
-                        Se påmeldte
+                        Se frivillige
                       </Link>
                     </td>
                   </tr>

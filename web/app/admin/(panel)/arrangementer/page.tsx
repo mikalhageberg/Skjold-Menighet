@@ -57,7 +57,7 @@ function Liste({
           <tr>
             <th scope="col">Arrangement</th>
             <th scope="col">Når</th>
-            <th scope="col">Påmeldte</th>
+            <th scope="col">Frivillige</th>
             <th scope="col">Status</th>
             <th scope="col">
               <span className="skjult">Handling</span>
@@ -91,14 +91,14 @@ function Liste({
                   <span className="stille">kl. {klokka(start).replace(":", ".")}</span>
                 </td>
                 <td>
-                  {a.antall_pameldte}
-                  {a.kapasitet ? ` / ${a.kapasitet}` : ""}
+                  {a.antall_frivillige}
+                  {a.trengs ? ` / ${a.trengs}` : ""}
                 </td>
                 <td>
                   {!a.publisert ? (
                     <span className="stempel stempel--kladd">Kladd</span>
-                  ) : !status.apen && status.grunn === "fullt" ? (
-                    <span className="stempel stempel--full">Fullt</span>
+                  ) : !status.apen && status.grunn === "nok" ? (
+                    <span className="stempel stempel--full">Nok folk</span>
                   ) : !status.apen && status.grunn === "stengt" ? (
                     <span className="stempel">Stengt</span>
                   ) : (
@@ -113,7 +113,7 @@ function Liste({
                     <SlettArrangement
                       id={a.id}
                       tittel={a.tittel}
-                      antallPameldte={a.antall_pameldte}
+                      antallFrivillige={a.antall_frivillige}
                       variant="lenke"
                     />
                   </div>

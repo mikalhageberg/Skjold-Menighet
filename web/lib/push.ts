@@ -1,10 +1,15 @@
 import "server-only";
+import { klokka, ukedag } from "@skjold/delt";
 
 /**
  * Push-varsler via Expo. Vi sender til Expos tjeneste, som videresender til
  * Apple og Google. Ingen nøkler trengs her — tokenet identifiserer telefonen.
  *
- * Som med e-post: en feilet utsending skal aldri velte det som utløste den.
+ * Dette er den eneste veien menigheten når de frivillige av seg selv. Det
+ * er også grunnen til at det er få og korte varsler: én påminnelse dagen
+ * før, beskjed når det kommer noe nytt, og beskjed når noen melder avbud.
+ *
+ * En feilet utsending skal aldri velte det som utløste den.
  */
 
 const API = "https://exp.host/--/api/v2/push/send";
@@ -69,4 +74,74 @@ export async function sendVarsel({ til, tittel, tekst, data }: Varsel) {
   }
 
   return { sendt, feilet };
+}
+
+/* ── De tre varslene ─────────────────────────────────────────────────── */
+
+type Oppgave = {
+  slug: string;
+  tittel: string;
+  starter: string;
+  sted: string;
+};
+
+/** «torsdag kl. 11.00» — samme innmat i alle tre varslene. */
+function nar(starter: string) {
+  const start = new Date(starter);
+  return `${ukedag(start)} kl. ${klokka(start).replace(":", ".")}`;
+}
+
+/** Påminnelsen dagen før, til dem som har sagt ja. */
+export function varslePaaminnelse(oppgave: Oppgave, tokens: string[]) {
+  return sendVarsel({
+    til: tokens,
+    tittel: `I morgen: ${oppgave.tittel}`,
+    tekst: `${nar(oppgave.starter)} i ${oppgave.sted}. Takk for at du stiller!`,
+    data: { type: "paaminnelse", slug: oppgave.slug },
+  });
+}
+
+/**
+ * Beskjed til alle med appen om at det er lagt ut noe nytt som trenger
+ * folk. Går én gang per arrangement — eller én gang for en hel serie.
+ */
+export function varsleNyOppgave(
+  oppgave: Oppgave,
+  tokens: string[],
+  { antallISerie = 1 }: { antallISerie?: number } = {},
+) {
+  return sendVarsel({
+    til: tokens,
+    tittel: "Det trengs frivillige",
+    tekst:
+      antallISerie > 1
+        ? `${oppgave.tittel} — ${antallISerie} ganger framover, første gang ${nar(
+            oppgave.starter,
+          )}. Se om det passer for deg.`
+        : `${oppgave.tittel}, ${nar(oppgave.starter)} i ${oppgave.sted}. Se om det passer for deg.`,
+    data: { type: "ny-oppgave", slug: oppgave.slug },
+  });
+}
+
+/**
+ * Beskjed når noen har meldt avbud. Den som melder avbud skal slippe å
+ * ringe rundt selv — det er hele grunnen til at avbud er en knapp og ikke
+ * en telefonsamtale.
+ */
+export function varsleAvbud(
+  oppgave: Oppgave,
+  tokens: string[],
+  { mangler }: { mangler: number | null },
+) {
+  return sendVarsel({
+    til: tokens,
+    tittel: "En frivillig har meldt avbud",
+    tekst:
+      mangler === null
+        ? `${oppgave.tittel}, ${nar(oppgave.starter)}. Kan du steppe inn?`
+        : `${oppgave.tittel}, ${nar(oppgave.starter)}. Det mangler nå ${mangler} ${
+            mangler === 1 ? "frivillig" : "frivillige"
+          }.`,
+    data: { type: "avbud", slug: oppgave.slug },
+  });
 }

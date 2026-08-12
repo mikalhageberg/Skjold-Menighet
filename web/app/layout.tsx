@@ -18,11 +18,11 @@ const tekst = Schibsted_Grotesk({
 
 export const metadata: Metadata = {
   title: {
-    default: "Skjold menighet — arrangementer og påmelding",
+    default: "Skjold menighet — frivillige",
     template: "%s — Skjold menighet",
   },
   description:
-    "Se hva som skjer i Skjold kirke, og meld på deg selv eller noen du kjenner.",
+    "Se hva Skjold kirke trenger hjelp til, og meld deg som frivillig til det som passer.",
 };
 
 export default function RotLayout({ children }: { children: React.ReactNode }) {

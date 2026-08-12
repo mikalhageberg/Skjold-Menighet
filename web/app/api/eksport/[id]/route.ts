@@ -4,7 +4,7 @@ import { demomodus } from "@/lib/auth";
 import { auth } from "@/auth";
 import { dato, klokka, lagSlug } from "@skjold/delt";
 
-/** Deltakerliste som CSV — én rad per deltaker, klar for utskrift eller regneark. */
+/** Frivilliglista som CSV — én rad per frivillig, klar for utskrift eller regneark. */
 export async function GET(
   _forespørsel: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -20,18 +20,14 @@ export async function GET(
   const pameldinger = await hentPameldinger(id);
 
   const rader = [
-    ["Navn", "Kosthold", "Meldt på av", "Telefon", "E-post", "Merknad", "Påmeldt"],
-    ...pameldinger.flatMap((p) =>
-      p.deltakere.map((d) => [
-        d.navn,
-        d.kosthold ?? "",
-        p.kontakt_navn,
-        p.kontakt_telefon ?? "",
-        p.kontakt_epost ?? "",
-        p.melding ?? "",
-        `${dato(new Date(p.opprettet))} ${klokka(new Date(p.opprettet))}`,
-      ]),
-    ),
+    ["Navn", "Bidrar med", "Telefon", "E-post", "Meldte seg"],
+    ...pameldinger.map((p) => [
+      p.navn,
+      p.bidrag ?? "",
+      p.telefon ?? "",
+      p.epost ?? "",
+      `${dato(new Date(p.opprettet))} ${klokka(new Date(p.opprettet))}`,
+    ]),
   ];
 
   const csv = rader

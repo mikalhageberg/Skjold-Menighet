@@ -3,7 +3,7 @@ import { StyleSheet, View, type ColorValue } from "react-native";
 import { farge, skrift, storrelse } from "@/design/tema";
 
 /**
- * To faner er nok: det som skjer, og det du har sagt ja til.
+ * To faner er nok: det som trenger folk, og det du har sagt ja til.
  * Ikonene er enkle former i stedet for et ikonbibliotek — en fylt sirkel
  * (kirkeårets knute) og en hake.
  */
@@ -37,7 +37,7 @@ export default function Faner() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Hva skjer",
+          title: "Vi trenger deg",
           headerTitle: "Skjold menighet",
           tabBarIcon: ({ color }) => <Ring farge={color} />,
         }}
@@ -45,8 +45,8 @@ export default function Faner() {
       <Tabs.Screen
         name="mine"
         options={{
-          title: "Mine påmeldinger",
-          headerTitle: "Mine påmeldinger",
+          title: "Mine vakter",
+          headerTitle: "Mine vakter",
           tabBarIcon: ({ color }) => <Hake farge={color} />,
         }}
       />

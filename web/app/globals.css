@@ -62,7 +62,7 @@ body {
 /* Tabellsifre kun der tall skal stå i kolonner — ellers blir punktum
    og komma like brede som et siffer, og teksten faller fra hverandre. */
 .kort__dag,
-.kort__plasser,
+.kort__dekning,
 .adm__verdi {
   font-variant-numeric: tabular-nums;
 }
@@ -306,13 +306,16 @@ img {
   flex-wrap: wrap;
 }
 
-.kort__plasser {
+.kort__dekning {
   font-size: var(--t-liten);
   color: var(--gran-myk);
   font-variant-numeric: tabular-nums;
 }
 
-.kort__plasser--fullt {
+/* Rødt bare når det haster: oppgaven mangler folk og er nær i tid.
+   Hadde alt som mangler noen vært rødt, ville hele lista lyst rødt, og
+   da sier fargen ingenting. */
+.kort__dekning--haster {
   color: var(--rod);
 }
 
@@ -784,67 +787,41 @@ img {
   color: var(--gran);
 }
 
-/* ── Deltakerliste i skjemaet ────────────────────────────────────────── */
+/* ── Hvem har meldt seg ──────────────────────────────────────────────── */
 
-.deltakere {
-  display: grid;
-  gap: 0.85rem;
+.frivillige {
+  border-top: 1px solid var(--strek);
+  padding-top: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.frivillige__tittel {
+  font-size: 1.0625rem;
+  margin-bottom: 0.85rem;
+}
+
+.frivillige__liste {
+  list-style: none;
   margin: 0;
   padding: 0;
-  list-style: none;
-}
-
-.deltaker-post {
   display: grid;
-  gap: 0.6rem;
+  gap: 0.7rem;
 }
 
-.deltaker-post + .deltaker-post {
-  border-top: 1px solid var(--strek-svak);
-  padding-top: 0.85rem;
-}
-
-.deltaker__ekstra {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem 1.25rem;
-  padding-inline-start: 2.25rem;
-}
-
-.felt__inn--smal {
-  min-height: 2.75rem;
-  font-size: var(--t-liten);
-  width: auto;
-  flex: 1 1 16rem;
-}
-
-.deltaker {
+.frivillige__post {
   display: grid;
-  grid-template-columns: 1.5rem 1fr auto;
-  align-items: center;
-  gap: 0.75rem;
+  gap: 0.15rem;
+  padding-inline-start: 0.9rem;
+  border-inline-start: 2px solid var(--strek);
 }
 
-.deltaker__nr {
+.frivillige__navn {
+  font-weight: 500;
+}
+
+.frivillige__bidrag {
   font-size: var(--t-liten);
   color: var(--gran-myk);
-  text-align: right;
-}
-
-.deltaker__fjern {
-  background: none;
-  border: none;
-  padding: 0.5rem;
-  color: var(--gran-myk);
-  cursor: pointer;
-  font-size: 1.25rem;
-  line-height: 1;
-  border-radius: 2px;
-}
-
-.deltaker__fjern:hover {
-  color: var(--rod);
 }
 
 /* ── Kvittering ──────────────────────────────────────────────────────── */

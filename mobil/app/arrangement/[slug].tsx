@@ -14,43 +14,37 @@ import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from "expo-rou
 import {
   dag,
   dato,
+  frivilligtekst,
   klokka,
   maned,
   nartid,
   pameldingsstatus,
-  plasstekst,
   sesongFor,
   tidsrom,
   ukedag,
-  VANLIGE_ALLERGIER,
   type ArrangementMedAntall,
+  type Frivillig,
 } from "@skjold/delt";
 import { API_BASE, hentArrangement, meldPa } from "@/lib/api";
 import { husk, erPameldt } from "@/lib/lager";
 import { hentProfil, lagreProfil } from "@/lib/profil";
 import { hentPushToken } from "@/lib/varsler";
 import { leggIKalender } from "@/lib/kalender";
-import { Avkryss, Felt, Knapp, Notis, Tekst } from "@/design/Grunnelementer";
+import { Felt, Knapp, Notis, Tekst } from "@/design/Grunnelementer";
 import { farge, radius, rom, TREFF } from "@/design/tema";
-
-type Deltaker = { navn: string; allergier: string[]; annet: string };
-
-/** Slår sammen avkryssede allergier og fritekst til én streng for serveren. */
-function kostholdTekst(d: Deltaker): string | null {
-  const tekst = [...d.allergier, d.annet.trim()].filter(Boolean).join(", ");
-  return tekst || null;
-}
 
 export default function Arrangementsside() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const [arrangement, settArrangement] = useState<ArrangementMedAntall | null>(null);
+  const [frivillige, settFrivillige] = useState<Frivillig[]>([]);
   const [lastefeil, settLastefeil] = useState<string | null>(null);
   const [alleredePameldt, settAlleredePameldt] = useState(false);
 
   const last = useCallback(async () => {
     try {
-      const [a, pameldt] = await Promise.all([hentArrangement(slug), erPameldt(slug)]);
-      settArrangement(a);
+      const [svar, pameldt] = await Promise.all([hentArrangement(slug), erPameldt(slug)]);
+      settArrangement(svar.arrangement);
+      settFrivillige(svar.frivillige);
       settAlleredePameldt(pameldt);
       settLastefeil(null);
     } catch (f) {
@@ -135,7 +129,7 @@ export default function Arrangementsside() {
                 {klokka(new Date(arrangement.pamelding_stenger)).replace(":", ".")}
               </Fakta>
             ) : null}
-            <Fakta navn="Plasser">{plasstekst(arrangement)}</Fakta>
+            <Fakta navn="Frivillige">{frivilligtekst(arrangement)}</Fakta>
             {arrangement.ansvarlig_navn ? (
               <Fakta navn="Ansvarlig">{arrangement.ansvarlig_navn}</Fakta>
             ) : null}
@@ -146,16 +140,15 @@ export default function Arrangementsside() {
 
           {/* Påmeldingen står over beskrivelsen. Den som bare skal si ja,
               skal slippe å bla gjennom hele teksten for å finne knappen. */}
-          {status.apen ? (
-            <Skjema
-              arrangement={arrangement}
-              ledige={status.ledige}
-              alleredePameldt={alleredePameldt}
-              onPameldt={last}
-            />
+          {alleredePameldt ? (
+            <AlleredeMed arrangement={arrangement} />
+          ) : status.apen ? (
+            <Skjema arrangement={arrangement} onPameldt={last} />
           ) : (
             <Stengt grunn={status.grunn} />
           )}
+
+          <Frivilligliste frivillige={frivillige} />
 
           {arrangement.beskrivelse ? (
             <>
@@ -199,6 +192,40 @@ function Fakta({
   );
 }
 
+/* ── Hvem har meldt seg ──────────────────────────────────────────────── */
+
+/**
+ * Lista over dem som alt har sagt ja. Den står åpent for alle, hele tiden:
+ * det er lettere å melde seg når man ser at naboen har gjort det, og man
+ * slipper å bli tre om det samme når det står hva hver enkelt tar.
+ */
+function Frivilligliste({ frivillige }: { frivillige: Frivillig[] }) {
+  return (
+    <View style={{ gap: rom.m }}>
+      <Tekst variant="mellom" halvfet>
+        Hvem har meldt seg
+      </Tekst>
+
+      {frivillige.length === 0 ? (
+        <Tekst farget="myk">Ingen ennå. Du kan bli den første.</Tekst>
+      ) : (
+        <View style={{ gap: rom.m }}>
+          {frivillige.map((f, i) => (
+            <View key={i} style={stil.frivillig}>
+              <Tekst halvfet>{f.navn}</Tekst>
+              {f.bidrag ? (
+                <Tekst variant="liten" farget="myk">
+                  {f.bidrag}
+                </Tekst>
+              ) : null}
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
 /* ── Legg i kalenderen ───────────────────────────────────────────────── */
 
 function Kalenderknapp({ arrangement }: { arrangement: ArrangementMedAntall }) {
@@ -232,17 +259,15 @@ function Kalenderknapp({ arrangement }: { arrangement: ArrangementMedAntall }) {
 /* ── Bekreftelse ─────────────────────────────────────────────────────── */
 
 /**
- * Kvitteringen etter påmelding. Haken tegnes med en fjærende skalering, så
- * det er tydelig at trykket faktisk ble til noe — viktig når man ikke får
- * en app-varsling eller e-post å lene seg på.
+ * Kvitteringen etter at man har sagt ja. Haken tegnes med en fjærende
+ * skalering, så det er tydelig at trykket faktisk ble til noe — viktig når
+ * man ikke får en e-post å lene seg på.
  */
 function Bekreftelse({
-  kvittert,
-  vilHaPaaminnelse,
+  varsler,
   children,
 }: {
-  kvittert: number;
-  vilHaPaaminnelse: boolean;
+  varsler: boolean;
   children: React.ReactNode;
 }) {
   const hakeskala = useRef(new Animated.Value(0)).current;
@@ -282,15 +307,15 @@ function Bekreftelse({
         }}
       >
         <Tekst variant="etikett" farget="myk" style={{ textAlign: "center" }}>
-          Påmeldingen er registrert
+          Du står på lista
         </Tekst>
         <Tekst variant="mellom" halvfet style={{ textAlign: "center" }}>
-          {kvittert === 1 ? "Vi har satt av en plass." : `Vi har satt av ${kvittert} plasser.`}
+          Takk for at du stiller.
         </Tekst>
         <Tekst farget="myk" style={{ textAlign: "center" }}>
-          {vilHaPaaminnelse
-            ? "Du finner den under Mine påmeldinger, og får en påminnelse dagen før."
-            : "Du finner den under Mine påmeldinger."}
+          {varsler
+            ? "Du finner vakta under Mine vakter, og får en påminnelse dagen før."
+            : "Du finner vakta under Mine vakter. Skru på varsler om du vil ha påminnelse dagen før."}
         </Tekst>
         <View style={{ marginTop: rom.s, alignItems: "center" }}>{children}</View>
       </Animated.View>
@@ -298,87 +323,49 @@ function Bekreftelse({
   );
 }
 
-/* ── Allergi ─────────────────────────────────────────────────────────── */
+/* ── Står allerede på lista ──────────────────────────────────────────── */
 
-/**
- * De vanligste hensynene som avkryssbare brikker, pluss fritekst for det
- * som ikke står på lista. Færre som må skrive noe selv, betyr færre
- * misforståtte eller uleselige svar for den som skal handle inn.
- */
-function AllergiVelger({
-  valgt,
-  annet,
-  onEndreValgt,
-  onEndreAnnet,
-}: {
-  valgt: string[];
-  annet: string;
-  onEndreValgt: (valgt: string[]) => void;
-  onEndreAnnet: (annet: string) => void;
-}) {
-  function veksle(navn: string) {
-    onEndreValgt(valgt.includes(navn) ? valgt.filter((v) => v !== navn) : [...valgt, navn]);
-  }
+function AlleredeMed({ arrangement }: { arrangement: ArrangementMedAntall }) {
+  const router = useRouter();
 
   return (
-    <View style={{ gap: rom.s }}>
-      <Tekst halvfet>Allergi eller kosthold</Tekst>
-      <View style={stil.brikkerad}>
-        {VANLIGE_ALLERGIER.map((navn) => {
-          const erValgt = valgt.includes(navn);
-          return (
-            <Pressable
-              key={navn}
-              onPress={() => veksle(navn)}
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: erValgt }}
-              accessibilityLabel={navn}
-              style={[stil.brikke, erValgt && stil.brikkeValgt]}
-            >
-              <Tekst variant="liten" farget={erValgt ? "papir" : "gran"} halvfet={erValgt}>
-                {navn}
-              </Tekst>
-            </Pressable>
-          );
-        })}
+    <Notis tone="klar">
+      <Tekst variant="mellom" halvfet>
+        Du har sagt ja til dette
+      </Tekst>
+      <Tekst farget="myk">
+        Blir du forhindret, melder du avbud under Mine vakter. Da får de andre med appen
+        beskjed om at det trengs en avløser — du slipper å ringe rundt selv.
+      </Tekst>
+      <View style={{ marginTop: rom.s, alignItems: "flex-start", gap: rom.m }}>
+        <Knapp
+          tittel="Gå til Mine vakter"
+          variant="stille"
+          onPress={() => router.push("/mine")}
+        />
       </View>
-      <Felt
-        etikett="Annet"
-        placeholder="Valgfritt, skriv inn selv"
-        value={annet}
-        onChangeText={onEndreAnnet}
-      />
-    </View>
+    </Notis>
   );
 }
 
-/* ── Påmelding ───────────────────────────────────────────────────────── */
+/* ── Å si ja ─────────────────────────────────────────────────────────── */
 
 function Skjema({
   arrangement,
-  ledige,
-  alleredePameldt,
   onPameldt,
 }: {
   arrangement: ArrangementMedAntall;
-  ledige: number | null;
-  alleredePameldt: boolean;
   onPameldt: () => void;
 }) {
   const router = useRouter();
   const [navn, settNavn] = useState("");
   const [telefon, settTelefon] = useState("");
   const [epost, settEpost] = useState("");
-  const [melding, settMelding] = useState("");
-  const [deltakere, settDeltakere] = useState<Deltaker[]>([
-    { navn: "", allergier: [], annet: "" },
-  ]);
-  const [rortForste, settRortForste] = useState(false);
-  const [vilHaPaaminnelse, settVilHaPaaminnelse] = useState(true);
+  const [bidrag, settBidrag] = useState("");
   const [sender, settSender] = useState(false);
   const [feil, settFeil] = useState<string | null>(null);
   const [feltfeil, settFeltfeil] = useState<Record<string, string>>({});
-  const [kvittert, settKvittert] = useState<number | null>(null);
+  const [kvittert, settKvittert] = useState<{ varsler: boolean } | null>(null);
 
   // Profilen fyller ut skjemaet. useFocusEffect og ikke useEffect, slik at
   // navnet oppdaterer seg med én gang man kommer tilbake fra «Endre».
@@ -393,36 +380,23 @@ function Skjema({
     }, []),
   );
 
-  // Er man alt påmeldt, skal ikke feltet fylles ut med eget navn igjen —
-  // da ville ett trykk på «Meld på» meldt på deg selv en gang til.
-  const effektivtNavn = (d: Deltaker, i: number) =>
-    i === 0 && !rortForste && !alleredePameldt ? navn : d.navn;
-  const antall = deltakere.filter((d, i) => effektivtNavn(d, i).trim()).length;
-  const kanLeggeTil =
-    arrangement.tillat_flere && (ledige === null || deltakere.length < ledige);
-
-  function endre(i: number, endring: Partial<Deltaker>) {
-    settDeltakere((liste) => liste.map((d, j) => (j === i ? { ...d, ...endring } : d)));
-  }
-
   async function send() {
     settSender(true);
     settFeil(null);
     settFeltfeil({});
 
-    const pushToken = vilHaPaaminnelse ? await hentPushToken() : null;
+    // Har man alt sagt ja til varsler, følger tokenet med så påminnelsen
+    // dagen før finner riktig telefon. Har man ikke det, spør vi ikke her —
+    // det spørsmålet ble stilt i velkomsten.
+    const pushToken = await hentPushToken({ spor: false });
 
     const svar = await meldPa({
       slug: arrangement.slug,
-      kontaktNavn: navn,
-      kontaktTelefon: telefon,
-      kontaktEpost: epost,
-      melding,
+      navn,
+      telefon,
+      epost,
+      bidrag,
       pushToken,
-      deltakere: deltakere.map((d, i) => ({
-        navn: effektivtNavn(d, i),
-        kosthold: kostholdTekst(d),
-      })),
     });
 
     settSender(false);
@@ -433,10 +407,6 @@ function Skjema({
       return;
     }
 
-    const navnene = deltakere
-      .map((d, i) => effektivtNavn(d, i).trim())
-      .filter(Boolean);
-
     await Promise.all([
       lagreProfil({ navn, telefon, epost }),
       husk({
@@ -445,18 +415,18 @@ function Skjema({
         tittel: arrangement.tittel,
         starter: arrangement.starter,
         sted: arrangement.sted,
-        deltakere: navnene,
+        bidrag: bidrag.trim() || null,
         meldtPa: new Date().toISOString(),
       }),
     ]);
 
-    settKvittert(svar.antall);
+    settKvittert({ varsler: Boolean(pushToken) });
     onPameldt();
   }
 
   if (kvittert !== null) {
     return (
-      <Bekreftelse kvittert={kvittert} vilHaPaaminnelse={vilHaPaaminnelse}>
+      <Bekreftelse varsler={kvittert.varsler}>
         <Kalenderknapp arrangement={arrangement} />
       </Bekreftelse>
     );
@@ -465,16 +435,8 @@ function Skjema({
   return (
     <View style={{ gap: rom.xl }}>
       <Tekst variant="mellom" halvfet>
-        Meld på
+        Jeg kan hjelpe
       </Tekst>
-
-      {alleredePameldt ? (
-        <Notis>
-          <Tekst variant="liten">
-            Du står allerede oppført til dette. Her kan du melde på andre.
-          </Tekst>
-        </Notis>
-      ) : null}
 
       {feil ? (
         <Notis tone="fare">
@@ -485,12 +447,12 @@ function Skjema({
       ) : null}
 
       {/* Navnet kommer fra profilen. Telefon og e-post spør vi bare om når
-          arrangementet faktisk krever det — ellers er påmeldingen ett trykk. */}
+          oppgaven faktisk krever det — ellers er det å si ja ett trykk. */}
       <View style={{ gap: rom.l }}>
         <View style={stil.megrad}>
           <View style={{ flex: 1, gap: 2 }}>
             <Tekst variant="etikett" farget="myk">
-              Du melder på som
+              Du melder deg som
             </Tekst>
             <Tekst variant="mellom" halvfet>
               {navn || "…"}
@@ -508,138 +470,53 @@ function Skjema({
           </Pressable>
         </View>
 
-        {feltfeil.kontakt_navn ? (
+        {feltfeil.navn ? (
           <Tekst variant="liten" farget="rod">
-            {feltfeil.kontakt_navn}
+            {feltfeil.navn}
           </Tekst>
         ) : null}
 
         {arrangement.krev_telefon ? (
           <Felt
             etikett="Telefon"
-            hjelp="Dette arrangementet trenger et nummer vi kan ringe."
+            hjelp="Til denne oppgaven trenger den ansvarlige et nummer å ringe."
             value={telefon}
             onChangeText={settTelefon}
             keyboardType="phone-pad"
             autoComplete="tel"
             textContentType="telephoneNumber"
-            feil={feltfeil.kontakt_telefon}
+            feil={feltfeil.telefon}
           />
         ) : null}
 
         {arrangement.krev_epost ? (
           <Felt
             etikett="E-post"
-            hjelp="Dette arrangementet trenger en adresse vi kan sende til."
+            hjelp="Til denne oppgaven trenger den ansvarlige en adresse å sende til."
             value={epost}
             onChangeText={settEpost}
             keyboardType="email-address"
             autoCapitalize="none"
             autoComplete="email"
             textContentType="emailAddress"
-            feil={feltfeil.kontakt_epost}
+            feil={feltfeil.epost}
           />
-        ) : null}
-      </View>
-
-      <View style={{ gap: rom.l }}>
-        <Tekst halvfet variant="mellom">
-          {alleredePameldt ? "Hvem andre skal du melde på?" : "Hvem skal komme?"}
-        </Tekst>
-        {alleredePameldt ? (
-          <Tekst variant="liten" farget="myk" style={{ marginTop: -rom.s }}>
-            Deg selv trenger du ikke legge inn — du står allerede oppført.
-          </Tekst>
-        ) : arrangement.tillat_flere ? (
-          <Tekst variant="liten" farget="myk" style={{ marginTop: -rom.s }}>
-            Du kan melde på hele familien, en nabo eller noen fra bygda som ikke bruker mobil.
-          </Tekst>
-        ) : null}
-
-        {deltakere.map((d, i) => (
-          <View key={i} style={stil.deltaker}>
-            <View style={stil.deltakertopp}>
-              <View style={{ flex: 1 }}>
-                <Felt
-                  etikett={`Deltaker ${i + 1}`}
-                  placeholder={i === 0 && !alleredePameldt ? "Fullt navn" : "Navn"}
-                  value={effektivtNavn(d, i)}
-                  onChangeText={(t) => {
-                    if (i === 0) settRortForste(true);
-                    endre(i, { navn: t });
-                  }}
-                  autoComplete="name"
-                />
-              </View>
-              {deltakere.length > 1 ? (
-                <Pressable
-                  onPress={() => settDeltakere((liste) => liste.filter((_, j) => j !== i))}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Fjern deltaker ${i + 1}`}
-                  style={stil.fjern}
-                >
-                  <Tekst variant="mellom" farget="myk">
-                    ×
-                  </Tekst>
-                </Pressable>
-              ) : null}
-            </View>
-
-            {arrangement.sporr_om_kost ? (
-              <AllergiVelger
-                valgt={d.allergier}
-                annet={d.annet}
-                onEndreValgt={(allergier) => endre(i, { allergier })}
-                onEndreAnnet={(annet) => endre(i, { annet })}
-              />
-            ) : null}
-          </View>
-        ))}
-
-        {feltfeil.deltaker_navn ? (
-          <Tekst variant="liten" farget="rod">
-            {feltfeil.deltaker_navn}
-          </Tekst>
-        ) : null}
-
-        {kanLeggeTil ? (
-          <Knapp
-            tittel="Legg til én til"
-            variant="stille"
-            onPress={() =>
-              settDeltakere((liste) => [...liste, { navn: "", allergier: [], annet: "" }])
-            }
-          />
-        ) : ledige !== null ? (
-          <Tekst variant="liten" farget="myk">
-            Det er {ledige} {ledige === 1 ? "plass" : "plasser"} igjen.
-          </Tekst>
         ) : null}
       </View>
 
       <Felt
-        etikett="Kommentar"
-        value={melding}
-        onChangeText={settMelding}
+        etikett="Jeg bidrar med"
+        hjelp="Valgfritt, men til god hjelp: «to kaker», «kjører bussen», «kan komme fra kl. 16»."
+        placeholder="Skriv gjerne hva du tar"
+        value={bidrag}
+        onChangeText={settBidrag}
         multiline
-        numberOfLines={4}
-        style={{ minHeight: 110, textAlignVertical: "top" }}
-      />
-
-      <Avkryss
-        merket={vilHaPaaminnelse}
-        onEndre={settVilHaPaaminnelse}
-        tekst="Minn meg på dagen før"
-        hjelp="Vi sender ett varsel dagen før arrangementet. Ingenting annet."
+        numberOfLines={3}
+        style={{ minHeight: 90, textAlignVertical: "top" }}
       />
 
       <View style={{ gap: rom.m, alignItems: "flex-start" }}>
-        <Knapp
-          tittel={antall > 1 ? `Meld på ${antall} personer` : "Meld på"}
-          onPress={send}
-          travel={sender}
-          fyllBredde
-        />
+        <Knapp tittel="Jeg kan hjelpe" onPress={send} travel={sender} fyllBredde />
       </View>
     </View>
   );
@@ -647,19 +524,19 @@ function Skjema({
 
 /* ── Stengt ──────────────────────────────────────────────────────────── */
 
-function Stengt({ grunn }: { grunn: "stengt" | "fullt" | "over" }) {
+function Stengt({ grunn }: { grunn: "stengt" | "nok" | "over" }) {
   const tekst = {
-    fullt: {
-      tittel: "Det er fullt",
-      brod: "Alle plassene er tatt. Sjekk gjerne igjen senere — det hender noen melder avbud.",
+    nok: {
+      tittel: "Vi har folk nok",
+      brod: "Alle plassene er tatt. Sjekk gjerne igjen senere — det hender noen melder avbud, og da får du beskjed.",
     },
     stengt: {
-      tittel: "Påmeldingen er stengt",
-      brod: "Fristen har gått ut, men det er ofte plass likevel. Sjekk gjerne igjen senere.",
+      tittel: "Fristen har gått ut",
+      brod: "Vil du hjelpe likevel, ta kontakt med den ansvarlige.",
     },
     over: {
       tittel: "Dette har vært",
-      brod: "Arrangementet er over. Se hva som kommer under Hva skjer.",
+      brod: "Se hva som trenger folk framover under Vi trenger deg.",
     },
   }[grunn];
 
@@ -694,6 +571,12 @@ const stil = StyleSheet.create({
   faktanavn: { width: 120 },
   faktaverdi: { flexDirection: "row", alignItems: "center", gap: rom.s },
   prikk: { width: 8, height: 8, borderRadius: 4 },
+  frivillig: {
+    gap: 2,
+    paddingLeft: rom.m,
+    borderLeftWidth: 2,
+    borderLeftColor: farge.strek,
+  },
   hakesirkel: {
     width: 64,
     height: 64,
@@ -714,24 +597,6 @@ const stil = StyleSheet.create({
     marginTop: -6,
   },
   skille: { height: 1, backgroundColor: farge.strek },
-  brikkerad: { flexDirection: "row", flexWrap: "wrap", gap: rom.s },
-  brikke: {
-    minHeight: TREFF,
-    paddingHorizontal: rom.m,
-    justifyContent: "center",
-    borderRadius: radius.knapp,
-    borderWidth: 1,
-    borderColor: farge.strek,
-    backgroundColor: farge.papir,
-  },
-  brikkeValgt: { backgroundColor: farge.gran, borderColor: farge.gran },
-  deltaker: {
-    gap: rom.m,
-    paddingBottom: rom.m,
-    borderBottomWidth: 1,
-    borderBottomColor: farge.strekSvak,
-  },
-  deltakertopp: { flexDirection: "row", alignItems: "flex-end", gap: rom.s },
   megrad: {
     flexDirection: "row",
     alignItems: "center",
@@ -744,10 +609,4 @@ const stil = StyleSheet.create({
     paddingHorizontal: rom.l,
   },
   endre: { minHeight: TREFF, justifyContent: "center", paddingHorizontal: rom.s },
-  fjern: {
-    width: TREFF,
-    height: TREFF,
-    alignItems: "center",
-    justifyContent: "center",
-  },
 });

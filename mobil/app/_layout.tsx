@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Redirect, Stack } from "expo-router";
+import { Redirect, Stack, router } from "expo-router";
+import * as Notifications from "expo-notifications";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
 import { useFonts } from "expo-font";
@@ -13,7 +14,7 @@ import {
   SchibstedGrotesk_600SemiBold,
 } from "@expo-google-fonts/schibsted-grotesk";
 import { farge, skrift, storrelse } from "@/design/tema";
-import { forberedAndroidKanal } from "@/lib/varsler";
+import { meldInnEnhet } from "@/lib/varsler";
 import { hentProfil } from "@/lib/profil";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -33,8 +34,23 @@ export default function Rot() {
     SchibstedGrotesk_600SemiBold,
   });
 
+  // Telefonen melder seg inn ved hver oppstart, uten å spørre om noe.
+  // Har man alt sagt ja til varsler, holder det tokenet ferskt; har man
+  // ikke det, skjer det ingenting her.
   useEffect(() => {
-    forberedAndroidKanal().catch(() => {});
+    meldInnEnhet().catch(() => {});
+  }, []);
+
+  // Trykker man på et varsel, skal man havne på det arrangementet varselet
+  // handlet om — ikke på forsiden, der man må lete seg fram igjen.
+  useEffect(() => {
+    const abonnement = Notifications.addNotificationResponseReceivedListener((svar) => {
+      const slug = svar.notification.request.content.data?.slug;
+      if (typeof slug === "string" && slug) {
+        router.push(`/arrangement/${slug}?fra=Varsel`);
+      }
+    });
+    return () => abonnement.remove();
   }, []);
 
   useEffect(() => {

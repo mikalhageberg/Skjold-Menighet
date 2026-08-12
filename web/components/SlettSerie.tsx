@@ -32,7 +32,7 @@ export function SlettSerie({
     <form action={slettSerieAction} className="bekreft">
       <input type="hidden" name="serie_id" value={serieId} />
       <p className="bekreft__sporsmal">
-        Slette alle {antall} forekomstene av «{tittel}», og påmeldingene til hver av dem? Dette
+        Slette alle {antall} forekomstene av «{tittel}», og de frivillige på hver av dem? Dette
         kan ikke angres.
       </p>
       <div className="bekreft__valg">

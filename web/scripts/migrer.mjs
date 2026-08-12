@@ -67,16 +67,55 @@ try {
   // «create table if not exists» oppretter ikke nye kolonner på en tabell
   // som alt finnes — det må gjøres med egne alter table-setninger her,
   // én gang per kolonne som er lagt til etter at databasen først ble satt opp.
-  const kolonner = db.prepare(`pragma table_info(arrangementer)`).all().map((k) => k.name);
-  const leggTilKolonne = (navn, type) => {
-    if (kolonner.includes(navn)) return;
-    db.exec(`alter table arrangementer add column ${navn} ${type}`);
-    console.log(`La til kolonnen "${navn}" i arrangementer.`);
+  const kolonnerI = (tabell) =>
+    db.prepare(`pragma table_info(${tabell})`).all().map((k) => k.name);
+
+  const leggTilKolonne = (tabell, navn, type) => {
+    if (kolonnerI(tabell).includes(navn)) return;
+    db.exec(`alter table ${tabell} add column ${navn} ${type}`);
+    console.log(`La til kolonnen "${navn}" i ${tabell}.`);
   };
-  leggTilKolonne("bilde", "blob");
-  leggTilKolonne("bilde_type", "text");
-  leggTilKolonne("bilde_generert", "text");
-  leggTilKolonne("serie_id", "text");
+
+  // Kolonner som byttet navn da appen gikk fra å være en påmelding for
+  // gjester til å være en vaktliste for frivillige. «rename column» tar med
+  // seg innholdet, så det som alt ligger der blir stående.
+  const dopOm = (tabell, fra, til) => {
+    const kolonner = kolonnerI(tabell);
+    if (!kolonner.includes(fra) || kolonner.includes(til)) return;
+    db.exec(`alter table ${tabell} rename column ${fra} to ${til}`);
+    console.log(`Ga kolonnen "${fra}" i ${tabell} det nye navnet "${til}".`);
+  };
+
+  dopOm("arrangementer", "kapasitet", "trengs");
+  dopOm("pameldinger", "kontakt_navn", "navn");
+  dopOm("pameldinger", "kontakt_telefon", "telefon");
+  dopOm("pameldinger", "kontakt_epost", "epost");
+  dopOm("pameldinger", "melding", "bidrag");
+
+  leggTilKolonne("arrangementer", "bilde", "blob");
+  leggTilKolonne("arrangementer", "bilde_type", "text");
+  leggTilKolonne("arrangementer", "bilde_generert", "text");
+  leggTilKolonne("arrangementer", "serie_id", "text");
+  leggTilKolonne("arrangementer", "nyhetsvarsel_sendt", "text");
+  leggTilKolonne("pameldinger", "bidrag", "text");
+
+  // Arrangementer som fantes før varselet om nye oppgaver ble laget, skal
+  // ikke utløse et varsel med det samme jobben neste gang kjører.
+  const eldre = db
+    .prepare(`update arrangementer set nyhetsvarsel_sendt = ? where nyhetsvarsel_sendt is null`)
+    .run(new Date().toISOString());
+  if (eldre.changes > 0) {
+    console.log(`Merket ${eldre.changes} eksisterende arrangementer som allerede varslet.`);
+  }
+
+  // Tabellen «deltakere» hører til den gamle modellen, der én person kunne
+  // melde på flere. Den røres ikke her — data skal ikke forsvinne av en
+  // migrering. Er dere ferdige med den:  drop table deltakere;
+  if (db.prepare(`select 1 from sqlite_master where type = 'table' and name = 'deltakere'`).get()) {
+    console.log(
+      'Tabellen "deltakere" er ikke lenger i bruk. Slett den selv når dere er ferdige med innholdet.',
+    );
+  }
 
   // Må opprettes her, ikke i schema.sql — den kjører før alter table-steget
   // over, og ville feilet mot en database som ennå ikke har serie_id.
@@ -86,7 +125,7 @@ try {
       where serie_id is not null
   `);
 
-  const tabeller = ["arrangementer", "pameldinger", "deltakere", "enheter", "administratorer"];
+  const tabeller = ["arrangementer", "pameldinger", "enheter", "administratorer"];
   const finnes = tabeller.filter((navn) =>
     db.prepare(`select 1 from sqlite_master where type = 'table' and name = ?`).get(navn),
   );

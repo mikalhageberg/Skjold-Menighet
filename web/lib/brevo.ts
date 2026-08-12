@@ -1,13 +1,15 @@
 import "server-only";
-import type { ArrangementMedAntall, PameldingMedDeltakere } from "@skjold/delt";
-import { langDato } from "@skjold/delt";
+import type { ArrangementMedAntall } from "@skjold/delt";
 
 /**
  * E-post via Brevo (transactional API v3).
  *
+ * E-post går bare én vei nå: meldinger den ansvarlige skriver og sender
+ * selv fra admin. Alt som går ut av seg selv — påminnelsen dagen før, nye
+ * oppgaver, avbud — er push til appen, som er det de frivillige leser.
+ *
  * Uten BREVO_API_KEY logges meldingene til konsollen i stedet for å sendes,
- * slik at resten av appen fungerer før nøkkelen er på plass. Utsending skal
- * aldri kunne velte en påmelding – feil fanges og rapporteres tilbake.
+ * slik at resten av appen fungerer før nøkkelen er på plass.
  */
 
 const API = "https://api.brevo.com/v3/smtp/email";
@@ -82,7 +84,7 @@ function ramme(innhold: string) {
     ${innhold}
     <hr style="border:none;border-top:1px solid #D2DAD4;margin:28px 0 16px">
     <p style="font-size:13px;color:#3E5B53;margin:0;font-family:Helvetica,Arial,sans-serif">
-      Skjold menighet · Denne meldingen er sendt fra påmeldingssystemet.
+      Skjold menighet · Du får denne fordi du står oppført som frivillig.
     </p>
   </div>
 </div>`;
@@ -92,131 +94,8 @@ function esc(s: string) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-/**
- * Oppsummeringen til den ansvarlige.
- *
- * Én e-post per arrangement i stedet for én per påmelding — med alt man
- * trenger for å handle inn og dekke bord: hvor mange, hvem, hva de ikke
- * tåler, og hva de har skrevet. Sendes et valgt antall dager før start,
- * eller som testutgave når den ansvarlige ber om det.
- */
-export async function sendOppsummering(
-  arrangement: ArrangementMedAntall,
-  pameldinger: PameldingMedDeltakere[],
-  { test = false }: { test?: boolean } = {},
-) {
-  if (!arrangement.ansvarlig_epost) return { sendt: false, grunn: "ingen ansvarlig" as const };
-
-  const deltakere = pameldinger.flatMap((p) => p.deltakere);
-  const kosthold = deltakere.filter((d) => d.kosthold);
-  const kommentarer = pameldinger.filter((p) => p.melding);
-
-  const rad = (venstre: string, hoyre: string) =>
-    `<tr><td style="padding:6px 16px 6px 0;color:#3E5B53;white-space:nowrap">${venstre}</td><td style="padding:6px 0"><strong>${hoyre}</strong></td></tr>`;
-
-  const navneliste = pameldinger
-    .map((p) => {
-      const navn = p.deltakere
-        .map((d) => esc(d.navn) + (d.kosthold ? ` <span style="color:#99332A">(${esc(d.kosthold)})</span>` : ""))
-        .join(", ");
-      const kontakt = [p.kontakt_telefon, p.kontakt_epost]
-        .filter((v): v is string => Boolean(v))
-        .map(esc)
-        .join(" · ");
-      return `<li style="margin-bottom:8px">${navn}${
-        kontakt ? `<br><span style="color:#3E5B53;font-size:13px">${esc(p.kontakt_navn)} · ${kontakt}</span>` : ""
-      }</li>`;
-    })
-    .join("");
-
-  const kostholdsliste = kosthold
-    .map((d) => `<li style="margin-bottom:4px">${esc(d.navn)} — <strong>${esc(d.kosthold!)}</strong></li>`)
-    .join("");
-
-  const kommentarliste = kommentarer
-    .map(
-      (p) =>
-        `<li style="margin-bottom:10px">${esc(p.melding!)}<br><span style="color:#3E5B53;font-size:13px">— ${esc(
-          p.kontakt_navn,
-        )}</span></li>`,
-    )
-    .join("");
-
-  const bolk = (tittel: string, innhold: string) =>
-    innhold
-      ? `<h2 style="font-size:15px;letter-spacing:.06em;text-transform:uppercase;color:#3E5B53;margin:28px 0 10px;font-family:Helvetica,Arial,sans-serif">${tittel}</h2><ul style="margin:0;padding-left:20px">${innhold}</ul>`
-      : "";
-
-  return sendEpost({
-    til: [{ email: arrangement.ansvarlig_epost, name: arrangement.ansvarlig_navn ?? undefined }],
-    emne: `${test ? "[Test] " : ""}${arrangement.tittel}: ${deltakere.length} påmeldte`,
-    html: ramme(`
-      ${
-        test
-          ? `<p style="margin:0 0 20px;padding:10px 14px;background:#ECDFC2;border-left:3px solid #8F6716;font-size:14px">Dette er en testutgave, sendt fordi du ba om den. Den ekte kommer av seg selv før arrangementet.</p>`
-          : ""
-      }
-      <p style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#3E5B53;margin:0 0 8px;font-family:Helvetica,Arial,sans-serif">Oppsummering før</p>
-      <h1 style="font-size:26px;margin:0 0 4px;font-weight:600">${esc(arrangement.tittel)}</h1>
-      <p style="margin:0 0 24px;color:#3E5B53">${esc(langDato(new Date(arrangement.starter)))} · ${esc(
-        arrangement.sted,
-      )}</p>
-
-      <table style="border-collapse:collapse;font-family:Helvetica,Arial,sans-serif;font-size:15px">
-        ${rad("Påmeldte", String(deltakere.length) + (arrangement.kapasitet ? ` av ${arrangement.kapasitet}` : ""))}
-        ${rad("Påmeldinger", String(pameldinger.length))}
-        ${kosthold.length ? rad("Hensyn til kosthold", String(kosthold.length)) : ""}
-        ${kommentarer.length ? rad("Kommentarer", String(kommentarer.length)) : ""}
-      </table>
-
-      ${bolk("Hvem kommer", navneliste)}
-      ${bolk("Allergi og kosthold", kostholdsliste)}
-      ${bolk("Kommentarer", kommentarliste)}
-
-      ${
-        deltakere.length === 0
-          ? `<p style="margin:24px 0 0;color:#3E5B53">Ingen har meldt seg på ennå.</p>`
-          : ""
-      }
-    `),
-  });
-}
-
-/**
- * Varsel til den ansvarlige når noen med et kosthold- eller allergihensyn
- * melder seg av. Uten dette kunne et hensyn den ansvarlige har planlagt
- * rundt — et glutenfritt bord, en nøttefri rett — bli stående uoppdaget.
- */
-export async function sendAvmeldingsvarsel(
-  arrangement: ArrangementMedAntall,
-  pamelding: PameldingMedDeltakere,
-) {
-  if (!arrangement.ansvarlig_epost) return { sendt: false, grunn: "ingen ansvarlig" as const };
-
-  const kosthold = pamelding.deltakere.filter((d) => d.kosthold);
-  const navneliste = kosthold
-    .map((d) => `<li style="margin-bottom:4px">${esc(d.navn)} — <strong>${esc(d.kosthold!)}</strong></li>`)
-    .join("");
-
-  return sendEpost({
-    til: [{ email: arrangement.ansvarlig_epost, name: arrangement.ansvarlig_navn ?? undefined }],
-    emne: `${arrangement.tittel}: Avmelding med kosthold å ta hensyn til`,
-    html: ramme(`
-      <p style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#3E5B53;margin:0 0 8px;font-family:Helvetica,Arial,sans-serif">Avmelding</p>
-      <h1 style="font-size:24px;margin:0 0 4px;font-weight:600">${esc(arrangement.tittel)}</h1>
-      <p style="margin:0 0 24px;color:#3E5B53">${esc(langDato(new Date(arrangement.starter)))} · ${esc(
-        arrangement.sted,
-      )}</p>
-      <p style="margin:0 0 16px">
-        <strong>${esc(pamelding.kontakt_navn)}</strong> har meldt av, og noen av dem hadde et
-        kosthold- eller allergihensyn du kanskje har planlagt rundt:
-      </p>
-      <ul style="margin:0;padding-left:20px">${navneliste}</ul>
-    `),
-  });
-}
-
-export async function sendTilPameldte(
+/** Meldingen den ansvarlige skriver selv og sender til dem som har sagt ja. */
+export async function sendTilFrivillige(
   arrangement: ArrangementMedAntall,
   mottakere: Mottaker[],
   emne: string,

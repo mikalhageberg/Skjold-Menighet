@@ -1,7 +1,9 @@
+import { Platform } from "react-native";
 import Constants from "expo-constants";
 import type {
   ArrangementMedAntall,
   AvmeldingSvar,
+  Frivillig,
   PameldingInn,
   PameldingSvar,
 } from "@skjold/delt";
@@ -57,11 +59,33 @@ export async function hentArrangementer(): Promise<ArrangementMedAntall[]> {
   return arrangementer;
 }
 
-export async function hentArrangement(slug: string): Promise<ArrangementMedAntall> {
-  const { arrangement } = await hent<{ arrangement: ArrangementMedAntall }>(
+/** Ett arrangement med lista over hvem som alt har sagt ja. */
+export async function hentArrangement(
+  slug: string,
+): Promise<{ arrangement: ArrangementMedAntall; frivillige: Frivillig[] }> {
+  const svar = await hent<{ arrangement: ArrangementMedAntall; frivillige?: Frivillig[] }>(
     `/api/offentlig/arrangementer/${encodeURIComponent(slug)}`,
   );
-  return arrangement;
+  return { arrangement: svar.arrangement, frivillige: svar.frivillige ?? [] };
+}
+
+/**
+ * Melder telefonen inn så den kan få varsler — også om ting den ennå ikke
+ * har sagt ja til. Uten dette ville «det trengs en frivillig» bare nådd dem
+ * som alt står på en liste, og det er motsatt av hvem vi vil nå.
+ *
+ * Feiler stille: appen skal virke like godt uten varsler.
+ */
+export async function registrerEnhet(token: string): Promise<void> {
+  try {
+    await hent<{ ok: boolean }>("/api/offentlig/enheter", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ token, plattform: Platform.OS }),
+    });
+  } catch {
+    // Neste gang appen åpnes prøver vi igjen.
+  }
 }
 
 export async function meldPa(input: PameldingInn): Promise<PameldingSvar> {

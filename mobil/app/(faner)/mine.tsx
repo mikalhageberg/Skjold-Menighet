@@ -9,8 +9,11 @@ import { Tekst } from "@/design/Grunnelementer";
 import { farge, radius, rom, TREFF } from "@/design/tema";
 
 /**
- * Det telefonen husker at du har sagt ja til. Ingen innlogging — lista bor
- * på telefonen, og er der for å svare på «hva var det jeg meldte meg på?»
+ * Vaktene telefonen husker at du har sagt ja til. Ingen innlogging — lista
+ * bor på telefonen, og er der for å svare på «hva var det jeg sa ja til?»
+ *
+ * Det er også herfra man melder avbud. Da går det ut et varsel til de andre
+ * med appen om at det trengs en avløser, så ingen trenger å ringe rundt.
  */
 export default function Mine() {
   const router = useRouter();
@@ -27,11 +30,11 @@ export default function Mine() {
 
   function sporAvmelding(p: MinPamelding) {
     Alert.alert(
-      "Meld av?",
-      `Du blir meldt av «${p.tittel}». Det kan du ikke gjøre om selv i appen etterpå.`,
+      "Melde avbud?",
+      `Du tas av lista til «${p.tittel}», og de andre med appen får beskjed om at det trengs en avløser. Du kan ikke angre selv i appen etterpå.`,
       [
         { text: "Avbryt", style: "cancel" },
-        { text: "Meld av", style: "destructive", onPress: () => utforAvmelding(p) },
+        { text: "Meld avbud", style: "destructive", onPress: () => utforAvmelding(p) },
       ],
     );
   }
@@ -75,9 +78,10 @@ export default function Mine() {
       <ScrollView contentContainerStyle={stil.innhold}>
         {megrad}
         <View style={stil.tomt}>
-          <Tekst variant="mellom">Ingen påmeldinger ennå</Tekst>
+          <Tekst variant="mellom">Ingen vakter ennå</Tekst>
           <Tekst farget="myk">
-            Når du melder deg på noe, samles det her — med tid, sted og hvem du meldte på.
+            Når du sier ja til noe, samles det her — med tid, sted og hva du sa du skulle
+            bidra med.
           </Tekst>
           <Pressable
             onPress={() => router.push("/")}
@@ -85,7 +89,7 @@ export default function Mine() {
             style={stil.lenke}
           >
             <Tekst farget="messing" halvfet>
-              Se hva som skjer
+              Se hva som trenger folk
             </Tekst>
           </Pressable>
         </View>
@@ -106,7 +110,7 @@ export default function Mine() {
               <Pressable
                 onPress={() =>
                   router.push(
-                    `/arrangement/${p.slug}?fra=${encodeURIComponent("Mine påmeldinger")}`,
+                    `/arrangement/${p.slug}?fra=${encodeURIComponent("Mine vakter")}`,
                   )
                 }
                 accessibilityRole="button"
@@ -124,24 +128,26 @@ export default function Mine() {
                   {klokka(start).replace(":", ".")} · {p.sted}
                 </Tekst>
 
-                <View style={stil.navn}>
-                  <Tekst variant="etikett" farget="myk">
-                    {p.deltakere.length === 1 ? "Påmeldt" : `${p.deltakere.length} påmeldte`}
-                  </Tekst>
-                  <Tekst variant="liten">{p.deltakere.join(", ")}</Tekst>
-                </View>
+                {p.bidrag ? (
+                  <View style={stil.navn}>
+                    <Tekst variant="etikett" farget="myk">
+                      Du bidrar med
+                    </Tekst>
+                    <Tekst variant="liten">{p.bidrag}</Tekst>
+                  </View>
+                ) : null}
               </Pressable>
 
               <Pressable
                 onPress={() => sporAvmelding(p)}
                 disabled={avmelder === p.pameldingId}
                 accessibilityRole="button"
-                accessibilityLabel={`Meld av ${p.tittel}`}
+                accessibilityLabel={`Meld avbud fra ${p.tittel}`}
                 style={stil.avmeld}
                 hitSlop={8}
               >
                 <Tekst variant="liten" farget="rod">
-                  {avmelder === p.pameldingId ? "Melder av …" : "Meld av"}
+                  {avmelder === p.pameldingId ? "Melder avbud …" : "Meld avbud"}
                 </Tekst>
               </Pressable>
             </View>
@@ -151,7 +157,8 @@ export default function Mine() {
 
       {mine && mine.length > 0 ? (
         <Tekst variant="liten" farget="svak" style={{ marginTop: rom.m }}>
-          Lista ligger på denne telefonen. Blir du forhindret, kan du melde deg av over.
+          Lista ligger på denne telefonen. Blir du forhindret, meld avbud over — da spør vi
+          de andre for deg.
         </Tekst>
       ) : null}
     </ScrollView>

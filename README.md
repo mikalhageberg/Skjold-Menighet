@@ -1,7 +1,8 @@
 # Skjold menighet
 
-Erstatter papirlistene på kjøkkenbenken. Folk ser hva som skjer i kirken og melder
-på seg selv eller andre, og de ansvarlige får oversikt over hvem som kommer.
+Erstatter ringerunden. Menigheten legger ut det som trenger frivillige, folk med
+appen får beskjed, og alle ser hele tiden hvem som har meldt seg — også når noen
+melder avbud og det trengs en avløser.
 
 Tre deler i ett arbeidsområde:
 
@@ -13,6 +14,9 @@ Tre deler i ett arbeidsområde:
 
 Appen snakker med `web/` over et lite offentlig API. Det er bare ett sted som
 kjenner databasen, og ingen nøkler ligger i appen.
+
+Ordbruk: et **arrangement** er en oppgave det trengs folk til, og en **påmelding**
+er én frivillig som har sagt ja til én oppgave. Man melder bare på seg selv.
 
 ## Kom i gang
 
@@ -55,24 +59,45 @@ EXPO_PUBLIC_API_BASE=http://192.168.1.42:3000 npm run mobil
 
 - **Velkomsten** — første gang appen åpnes spør vi om ett: hva heter du. Ingen
   konto, ingen kode, ingen passord. Navnet blir liggende på telefonen og fyller
-  ut påmeldingene siden. Telefon og e-post er frivillig her, og kan endres når
-  som helst under Mine påmeldinger.
-- **Hva skjer** — ett arrangement per kort, gruppert etter måned. Kanten til
-  venstre har den liturgiske fargen for tiden i kirkeåret.
-- **Påmelding uten innlogging.** Én kontaktperson melder på én eller flere
-  deltakere, så man kan melde på naboen, hele familien eller noen som ikke bruker
-  smarttelefon. Til vanlig er påmelding bare å trykke — navnet er allerede der.
-- **Mine påmeldinger** — lista ligger på telefonen, ingen konto trengs.
-- **Push-varsler** — ett varsel dagen før, hvis man ber om det i påmeldingen.
-- **Legg i kalenderen** — arrangementet inn i telefonens egen kalender med
-  påminnelse.
+  ut skjemaene siden. Telefon og e-post er frivillig her, og kan endres når
+  som helst under Mine vakter. Det er også her vi ber om lov til å sende varsler.
+- **Vi trenger deg** — én oppgave per kort, gruppert etter måned. Kanten til
+  venstre har den liturgiske fargen for tiden i kirkeåret. Under står hvor mange
+  som mangler, i rødt når oppgaven er nær i tid og fortsatt ikke er dekket.
+- **Å si ja uten innlogging.** Man melder bare seg selv, og til vanlig er det ett
+  trykk — navnet er allerede der. Feltet **Jeg bidrar med** er valgfritt, og er
+  der for at ikke tre skal komme med hver sin bløtkake.
+- **Hvem har meldt seg** står åpent på hver oppgave, hele tiden, for alle. Navn og
+  bidrag — aldri telefonnummer eller e-post.
+- **Mine vakter** — lista ligger på telefonen, ingen konto trengs. Herfra melder
+  man også avbud.
+- **Legg i kalenderen** — vakta inn i telefonens egen kalender med påminnelse.
 
-### Hva påmeldingen krever
+### De tre varslene
 
-Navn er alt som kreves. Trenger et arrangement mer, krysser den ansvarlige av for
-**Krev telefonnummer** eller **Krev e-postadresse** på arrangementet, og da — og
-bare da — spør appen om det. Har man fylt inn nummeret sitt én gang, ligger det
-klart neste gang noe krever det.
+Push er den eneste veien menigheten når folk av seg selv. Derfor er det få og
+korte varsler, og ingen av dem er e-post:
+
+| Når | Hvem får det |
+| --- | --- |
+| Det er lagt ut en ny oppgave som trenger folk | Alle med appen. Én gang per oppgave — en hel serie deler ett varsel |
+| Noen har meldt avbud | Alle med appen, unntatt hun som meldte avbud og de som alt står på lista |
+| Dagen før en vakt du har sagt ja til | Bare du |
+
+Avbudsvarselet er grunnen til at avbud er en knapp og ikke en telefonsamtale: den
+som blir forhindret slipper å ringe rundt etter en avløser selv.
+
+Fordi de to første varslene skal nå dem som *ikke* har sagt ja til noe ennå, melder
+telefonen seg inn med `POST /api/offentlig/enheter` ved hver oppstart — ikke først
+når noen melder seg på noe. Vi lagrer ingenting om personen, bare Expo-tokenet.
+Sier man nei til varsler, virker resten av appen som før.
+
+### Hva det krever å melde seg
+
+Navn er alt som kreves. Trenger en oppgave mer, krysser den ansvarlige av for
+**Krev telefonnummer** eller **Krev e-postadresse**, og da — og bare da — spør
+appen om det. Har man fylt inn nummeret sitt én gang, ligger det klart neste gang
+noe krever det.
 
 Dette er et bevisst valg: hvert felt til er en terskel for dem som synes mobil er
 vanskelig, og det er den gruppa appen er til for.
@@ -113,13 +138,16 @@ Merket er et kirkevindu med kirkeåret som en farget søyle inni.
 
 **Om Apples «minimum functionality»:** Apple avviser apper som bare er en
 nettside i et skall. Push-varsler og kalenderintegrasjon er grunnen til at dette
-er en app og ikke bare nettsiden — nevn dem i innsendingsnotatet.
+er en app og ikke bare nettsiden — nevn dem i innsendingsnotatet. Avbudsvarselet
+er det tydeligste eksemplet: det er hele grunnen til at appen finnes.
 
 ## Nettsiden og admin
 
-Samme innhold som appen, for dem som ikke laster ned noe. Admin ligger på
-`/admin`: antall påmeldte, deltakerlister, CSV-nedlasting, meldingsutsending og
-skjema for å opprette og redigere arrangementer. Arrangementer slettes fra lista
+Samme innhold som appen, for dem som ikke laster ned noe — også lista over hvem
+som har meldt seg. Fra nett får man ingen varsler; det er appen som gjør det.
+Admin ligger på `/admin`: hvor mange som mangler, frivilliglista med kontakt-
+opplysninger, CSV-nedlasting, meldingsutsending og skjema for å opprette og
+redigere arrangementer. Arrangementer slettes fra lista
 under **Alle arrangementer** — man trenger ikke åpne dem først.
 
 Nettadressen til et arrangement lages av tittelen og settes én gang. Den står
@@ -140,6 +168,13 @@ Leser `database/schema.sql` og setter opp tabellene i fila `DATABASE_PATH`
 peker på. Trygt å kjøre om igjen; alt er «if not exists», så data som ligger
 der blir stående. På Railway kjøres den av seg selv ved hver utrulling, så
 skjemaendringer følger med koden.
+
+Migreringen døper også om kolonnene fra den gamle modellen — `kapasitet` ble
+`trengs`, `kontakt_navn` ble `navn`, `melding` ble `bidrag` — uten å miste noe,
+og merker arrangementer som alt lå der som «allerede varslet», så ingen får
+tolv varsler første gang den nye koden ruller ut. Tabellen `deltakere` hører til
+modellen der én kunne melde på flere, og røres ikke. Er dere ferdige med
+innholdet: `drop table deltakere;`
 
 Uten `DATABASE_PATH` kjører appen i **demomodus** med eksempeldata i minnet, og
 admin er åpen uten innlogging. Da virker `npm run web` før noe er satt opp.
@@ -162,7 +197,9 @@ som allerede har tilgang til serveren.
 #### Om sikkerheten
 
 Bare serveren har databasefila. Verken nettleseren eller appen ser den, så det
-finnes ingen vei utenom serveren til påmeldingslistene. Innloggingen er Auth.js
+finnes ingen vei utenom serveren til kontaktopplysningene. Navnene på lista er
+åpne med vilje — det er hele poenget med å se hvem som har meldt seg — men
+telefonnummer og e-post går aldri ut av admin. Innloggingen er Auth.js
 med økten i en signert cookie.
 
 ### Koble til Brevo
@@ -178,37 +215,29 @@ med økten i en signert cookie.
 
 3. Avsenderadressen må være verifisert i Brevo under **Senders & IP**.
 
-E-post går bare to veier: **oppsummeringen** til den ansvarlige før hvert
-arrangement, og meldinger admin sender ut selv. Den som melder seg på får
-**ingen** bekreftelses-e-post — kvitteringen i appen kommer med én gang.
+E-post går bare **én** vei: meldinger den ansvarlige skriver og sender selv fra
+admin. Alt som går ut av seg selv er push til appen — se «De tre varslene»
+ovenfor. Den som melder seg får **ingen** bekreftelses-e-post; kvitteringen i
+appen kommer med én gang.
 
-E-post kan aldri velte en påmelding: feiler utsendingen, er påmeldingen likevel
-lagret, og feilen logges.
+Utsending kan aldri velte det som utløste den: feiler e-posten eller pushen, er
+påmeldingen eller avbudet likevel lagret, og feilen logges.
 
-### Oppsummering til den ansvarlige
-
-Ingen får e-post når noen melder seg på — med femti påmeldte blir det femti
-meldinger, og da leser man ingen av dem. I stedet går **én** e-post til den
-ansvarlige før arrangementet, med antall påmeldte, hvem som kommer, allergier og
-kommentarer.
-
-Når den sendes velges per arrangement i admin: samme morgen, dagen før, to eller
-tre dager før, eller en uke før — eventuelt av. Den går ut kl. 08 norsk tid den
-dagen, og bare én gang. Regnet ut fra kalenderdatoen i Oslo, ikke klokkeslettet
-arrangementet starter, så en middag kl. 16.30 og en frokost kl. 09 får e-posten
-til samme tid.
-
-Knappen **Send testutgave nå** på arrangementssiden sender den samme e-posten med
-de påmeldingene som finnes akkurat da, så den ansvarlige kan se hva hun får.
-Testen påvirker ikke den ekte utsendingen.
+Den ansvarlige får heller ingen oppsummering på e-post lenger. Hun trenger den
+ikke — lista står oppdatert i appen og i admin hele tiden, og kan lastes ned som
+CSV når hun skal handle inn.
 
 ### Påminnelser og utsending
 
-`GET /api/varsler/paaminnelser` gjør to ting: sender push til alle som er påmeldt
-noe som starter om mellom 20 og 28 timer, og sender oppsummeringene som har
-forfalt. Begge merkes som sendt, så ingenting går ut to ganger. Ruta er beskyttet
-av `CRON_SECRET` og skal kjøres én gang i timen — se cron-jobben under
-utrullingen nedenfor.
+`GET /api/varsler/paaminnelser` gjør to ting: sender påminnelsen til alle som har
+en vakt som starter om mellom 20 og 28 timer, og tar igjen «det trengs
+frivillige»-varsler som ikke kom av gårde da arrangementet ble publisert. Begge
+merkes som sendt, så ingenting går ut to ganger. Ruta er beskyttet av
+`CRON_SECRET` og skal kjøres én gang i timen — se cron-jobben under utrullingen
+nedenfor.
+
+Varselet om en ny oppgave sendes til vanlig med én gang den ansvarlige
+publiserer, ikke av cron-jobben. Jobben er sikkerhetsnettet.
 
 ### Legge det ut på Railway
 
@@ -257,7 +286,7 @@ ekte databasetjeneste i stedet.
 
 #### Cron-jobben
 
-Påminnelser og oppsummeringer trenger et kall hver time. I Railway: *New* →
+Påminnelsene trenger et kall hver time. I Railway: *New* →
 *Cron Job* i samme prosjekt, med tidsplan `0 * * * *` og kommando:
 
 ```bash
@@ -289,11 +318,12 @@ dem som skal bruke dette er godt voksne.
 
 Ting som bevisst er utelatt i første versjon:
 
-- **Avmelding uten å ringe.** I dag melder admin av på vegne av folk. Appen vet
-  hvilken påmelding som er din, så en «Meld av»-knapp under Mine påmeldinger er
-  det neste jeg ville bygget.
 - **Profilen følger ikke med til ny telefon.** Den ligger bare lokalt. Skal den
   flytte med, må det en ekte innlogging til — SMS-kode eller e-postlenke.
-- **Venteliste.** Fulle arrangementer viser telefonnummeret til kontoret.
-- **Gjentakende arrangementer.** Formiddagstreff hver tredje torsdag må legges
-  inn én og én gang.
+- **Ingen kan skru av enkelte varsler.** Man sier ja eller nei til alt, i
+  telefonens egne innstillinger. Blir det for mye, er det per-oppgave-typer som
+  må til — ikke flere brytere i appen.
+- **Faste vaktlister.** «Ingrid tar kirkekaffen hver tredje søndag» må legges inn
+  som en serie, og Ingrid må si ja til hver enkelt.
+- **Ingen ser hvem som pleier å stille.** Systemet husker ikke folk mellom
+  oppgaver, så ingen kan se at noen har tatt fire vakter på rad — eller ingen.

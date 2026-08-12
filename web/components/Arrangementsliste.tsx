@@ -3,8 +3,8 @@ import {
   dag,
   klokka,
   maned,
+  frivilligtekst,
   pameldingsstatus,
-  plasstekst,
   sesongFor,
   tidsrom,
   ukedag,
@@ -12,7 +12,7 @@ import {
 } from "@skjold/delt";
 
 /**
- * Ett arrangement er ett kort. Kanten til venstre har den liturgiske fargen
+ * Én oppgave er ett kort. Kanten til venstre har den liturgiske fargen
  * for tiden i kirkeåret arrangementet faller i — grønn i treenighetstiden,
  * fiolett i advent og faste. Det er eneste stedet farge brukes, så lista
  * blir rolig samtidig som året merkes. Samme oppsett som i appen.
@@ -53,7 +53,12 @@ export function Arrangementskort({
   const start = new Date(arrangement.starter);
   const s = sesongFor(start);
   const status = pameldingsstatus(arrangement);
-  const fullt = !status.apen && status.grunn === "fullt";
+  // Rødt bare når noe nært i tid fortsatt mangler folk — det er da et
+  // manglende navn faktisk er et problem noen må gjøre noe med.
+  const haster =
+    status.apen &&
+    status.mangler !== null &&
+    new Date(arrangement.starter).getTime() < Date.now() + 7 * 86400000;
 
   return (
     <article
@@ -93,8 +98,8 @@ export function Arrangementskort({
         {arrangement.ingress && <p className="kort__ingress">{arrangement.ingress}</p>}
 
         <div className="kort__bunn">
-          <p className={`kort__plasser${fullt ? " kort__plasser--fullt" : ""}`}>
-            {plasstekst(arrangement)}
+          <p className={`kort__dekning${haster ? " kort__dekning--haster" : ""}`}>
+            {frivilligtekst(arrangement)}
           </p>
           <Handling arrangement={arrangement} stort={stort} />
         </div>
@@ -116,26 +121,26 @@ function Handling({
   if (status.apen) {
     return (
       <Link href={url} className={`knapp knapp--liten${stort ? "" : " knapp--stille"}`}>
-        Meld på
+        Jeg kan hjelpe
       </Link>
     );
   }
 
   return (
     <Link href={url} className="tekstknapp">
-      {status.grunn === "fullt" ? "Venteliste" : "Les mer"}
+      {status.grunn === "nok" ? "Dekket" : "Les mer"}
     </Link>
   );
 }
 
-/** Det neste som skjer, i et kort som får litt mer plass enn de andre. */
+/** Den nærmeste oppgaven, i et kort som får litt mer plass enn de andre. */
 export function Neste({ arrangement }: { arrangement: ArrangementMedAntall }) {
   const start = new Date(arrangement.starter);
 
   return (
     <section className="neste">
       <p className="merke">
-        Det neste som skjer · {ukedag(start)} kl. {klokka(start).replace(":", ".")}
+        Først ut · {ukedag(start)} kl. {klokka(start).replace(":", ".")}
       </p>
       <Arrangementskort arrangement={arrangement} stort />
     </section>

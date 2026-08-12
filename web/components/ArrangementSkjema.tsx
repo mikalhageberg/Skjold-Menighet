@@ -5,7 +5,7 @@ import { useFormStatus } from "react-dom";
 import { lagreArrangementAction, type Svar } from "@/app/admin/actions";
 import { BildeVelger } from "@/components/BildeVelger";
 import type { Arrangement } from "@skjold/delt";
-import { OPPSUMMERINGSVALG, tilInputVerdi } from "@skjold/delt";
+import { tilInputVerdi } from "@skjold/delt";
 
 const START: Svar = { ok: true };
 
@@ -101,7 +101,10 @@ export function ArrangementSkjema({ arrangement }: { arrangement?: Arrangement }
           <label className="felt__etikett" htmlFor="ingress">
             Kort beskrivelse
           </label>
-          <p className="felt__hjelp">Én eller to setninger. Dette står i lista på forsiden.</p>
+          <p className="felt__hjelp">
+            Én eller to setninger om hva de frivillige skal gjøre. Dette står i lista på
+            forsiden, og er ofte alt folk leser før de bestemmer seg.
+          </p>
           <input
             id="ingress"
             name="ingress"
@@ -116,7 +119,8 @@ export function ArrangementSkjema({ arrangement }: { arrangement?: Arrangement }
             Full tekst
           </label>
           <p className="felt__hjelp">
-            Blank linje mellom avsnitt. Skriv gjerne hva som serveres og hvor lenge det varer.
+            Blank linje mellom avsnitt. Skriv gjerne hva oppgaven går ut på, når man må møte,
+            og hvor lenge man må regne med å bli.
           </p>
           <textarea
             id="beskrivelse"
@@ -244,47 +248,35 @@ export function ArrangementSkjema({ arrangement }: { arrangement?: Arrangement }
       )}
 
       <section className="bolk">
-        <h3 className="bolk__tittel">Påmelding</h3>
+        <h3 className="bolk__tittel">Frivillige</h3>
 
         <div className="rad2">
           <div className="felt">
-            <label className="felt__etikett" htmlFor="kapasitet">
-              Antall plasser
+            <label className="felt__etikett" htmlFor="trengs">
+              Hvor mange trengs?
             </label>
-            <p className="felt__hjelp">La stå tomt hvis det ikke er noen grense.</p>
+            <p className="felt__hjelp">
+              Lista stenger av seg selv når så mange har meldt seg. La stå tomt hvis dere kan
+              ta imot alle som vil.
+            </p>
             <input
-              id="kapasitet"
-              name="kapasitet"
+              id="trengs"
+              name="trengs"
               type="number"
               min={1}
               className="felt__inn"
-              defaultValue={arrangement?.kapasitet ?? ""}
+              defaultValue={arrangement?.trengs ?? ""}
             />
           </div>
           <DatoKlokkeFelt
             id="pamelding_stenger"
             navn="pamelding_stenger"
-            etikett="Påmeldingsfrist"
-            hjelp="La stå tomt for åpen påmelding fram til start."
+            etikett="Frist for å melde seg"
+            hjelp="La stå tomt for åpen liste fram til start."
             dato={pameldingStengerDato}
             klokke={pameldingStengerKlokke}
             onEndreDato={settPameldingStengerDato}
             onEndreKlokke={settPameldingStengerKlokke}
-          />
-        </div>
-
-        <div className="valg">
-          <Avkryss
-            navn="tillat_flere"
-            merket={arrangement?.tillat_flere ?? true}
-            tekst="Man kan melde på flere personer"
-            hjelp="Skru av for kurs og grupper der hver plass må bookes enkeltvis."
-          />
-          <Avkryss
-            navn="sporr_om_kost"
-            merket={arrangement?.sporr_om_kost ?? false}
-            tekst="Spør om allergi og kosthold"
-            hjelp="Bruk denne når det serveres mat."
           />
         </div>
 
@@ -298,7 +290,7 @@ export function ArrangementSkjema({ arrangement }: { arrangement?: Arrangement }
             navn="krev_telefon"
             merket={arrangement?.krev_telefon ?? false}
             tekst="Krev telefonnummer"
-            hjelp="Bruk denne når dere må kunne ringe — henting, avlysning på kort varsel."
+            hjelp="Bruk denne når dere må kunne ringe — omrokering på kort varsel."
           />
           <Avkryss
             navn="krev_epost"
@@ -312,7 +304,7 @@ export function ArrangementSkjema({ arrangement }: { arrangement?: Arrangement }
       <section className="bolk">
         <h3 className="bolk__tittel">Ansvarlig</h3>
         <p className="felt__hjelp">
-          Står oppført på arrangementssiden, og får oppsummeringen før arrangementet.
+          Den de frivillige skal forholde seg til. Står oppført på arrangementssiden.
         </p>
 
         <div className="rad2">
@@ -343,46 +335,14 @@ export function ArrangementSkjema({ arrangement }: { arrangement?: Arrangement }
       </section>
 
       <section className="bolk">
-        <h3 className="bolk__tittel">Oppsummering til ansvarlig</h3>
-        <p className="felt__hjelp valg__innledning">
-          Én e-post med antall påmeldte, navn, allergier og kommentarer — i stedet for én
-          melding hver gang noen melder seg på. Den sendes kl. 08 den dagen du velger.
-        </p>
-
-        <div className="felt">
-          <label className="felt__etikett" htmlFor="oppsummering_dager_for">
-            Når skal den sendes?
-          </label>
-          <select
-            id="oppsummering_dager_for"
-            name="oppsummering_dager_for"
-            className="felt__inn"
-            defaultValue={
-              arrangement?.oppsummering_dager_for === null
-                ? "av"
-                : String(arrangement?.oppsummering_dager_for ?? 1)
-            }
-          >
-            {OPPSUMMERINGSVALG.map((v) => (
-              <option key={v.verdi} value={String(v.verdi)}>
-                {v.tekst}
-              </option>
-            ))}
-            <option value="av">Ikke send oppsummering</option>
-          </select>
-        </div>
-      </section>
-
-      <section className="bolk">
         <h3 className="bolk__tittel">Publisering</h3>
 
         <Avkryss
           navn="publisert"
           merket={arrangement?.publisert ?? true}
-          tekst="Vis arrangementet på forsiden"
-          hjelp="Kladder er bare synlige her inne."
+          tekst="Vis arrangementet, og varsle om at det trengs frivillige"
+          hjelp="Alle med appen får ett pushvarsel når dette publiseres første gang. Kladder er bare synlige her inne, og varsler ingen."
         />
-
       </section>
 
       <Lagre nytt={!arrangement} />

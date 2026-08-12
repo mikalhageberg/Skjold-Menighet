@@ -4,7 +4,7 @@ import { apiSvar, forhandsvarsel } from "../felles";
 
 export const dynamic = "force-dynamic";
 
-/** Påmelding fra appen. Samme regler og varsler som skjemaet på nett. */
+/** Én frivillig melder seg, fra appen. Samme regler som skjemaet på nett. */
 export async function POST(forespørsel: Request) {
   let kropp: PameldingInn;
   try {
@@ -13,16 +13,8 @@ export async function POST(forespørsel: Request) {
     return apiSvar({ ok: false, feil: "Ugyldig forespørsel." }, 400);
   }
 
-  if (!kropp?.slug || !Array.isArray(kropp.deltakere)) {
+  if (!kropp?.slug || typeof kropp.navn !== "string") {
     return apiSvar({ ok: false, feil: "Ugyldig forespørsel." }, 400);
-  }
-
-  // Enkel demper mot tullepåmeldinger — ingen kan melde på hundre om gangen.
-  if (kropp.deltakere.length > 20) {
-    return apiSvar(
-      { ok: false, feil: "Meld på inntil 20 om gangen." },
-      400,
-    );
   }
 
   const svar = await registrerPamelding(kropp);

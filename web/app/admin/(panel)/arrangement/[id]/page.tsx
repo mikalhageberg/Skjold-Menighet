@@ -3,11 +3,10 @@ import { notFound } from "next/navigation";
 import { hentArrangementMedId, hentArrangementerISerie, hentPameldinger } from "@/lib/data";
 import { krevAdmin } from "@/lib/auth";
 import { harBrevo } from "@/lib/brevo";
-import { oppsummeringstidspunkt, pameldingsstatus, sesongFor } from "@skjold/delt";
+import { pameldingsstatus, sesongFor } from "@skjold/delt";
 import { dato, klokka, langDato, ukedag } from "@skjold/delt";
 import { ArrangementSkjema } from "@/components/ArrangementSkjema";
 import { MeldingSkjema } from "@/components/MeldingSkjema";
-import { Oppsummeringstest } from "@/components/Oppsummering";
 import { SlettArrangement } from "@/components/SlettArrangement";
 import { SlettSerie } from "@/components/SlettSerie";
 import { MeldAv } from "@/components/MeldAv";
@@ -29,10 +28,9 @@ export default async function AdminArrangement({ params, searchParams }: Props) 
   if (!a) notFound();
 
   const soskenISerien = a.serie_id ? await hentArrangementerISerie(a.serie_id, a.id) : [];
-  const pameldinger = await hentPameldinger(id);
-  const deltakere = pameldinger.flatMap((p) => p.deltakere);
-  const kost = deltakere.filter((d) => d.kosthold);
-  const medEpost = pameldinger.filter((p) => p.kontakt_epost).length;
+  const frivillige = await hentPameldinger(id);
+  const medBidrag = frivillige.filter((p) => p.bidrag).length;
+  const medEpost = frivillige.filter((p) => p.epost).length;
   const start = new Date(a.starter);
   const s = sesongFor(start);
   const status = pameldingsstatus(a);
@@ -125,38 +123,32 @@ export default async function AdminArrangement({ params, searchParams }: Props) 
 
       <div className="adm__tall">
         <p className="adm__tall-post">
-          <span className="adm__verdi">{deltakere.length}</span>
-          <span className="merke">Påmeldte{a.kapasitet ? ` av ${a.kapasitet}` : ""}</span>
+          <span className="adm__verdi">{frivillige.length}</span>
+          <span className="merke">Frivillige{a.trengs ? ` av ${a.trengs}` : ""}</span>
         </p>
-        <p className="adm__tall-post">
-          <span className="adm__verdi">{pameldinger.length}</span>
-          <span className="merke">Påmeldinger</span>
-        </p>
-        {a.sporr_om_kost && (
+        {a.trengs && (
           <p className="adm__tall-post">
-            <span className="adm__verdi">{kost.length}</span>
-            <span className="merke">Med hensyn til kosthold</span>
-          </p>
-        )}
-        {a.kapasitet && (
-          <p className="adm__tall-post">
-            <span className="adm__verdi" style={{ color: status.apen ? undefined : "var(--rod)" }}>
-              {Math.max(0, a.kapasitet - deltakere.length)}
+            <span className="adm__verdi" style={{ color: status.apen ? "var(--rod)" : undefined }}>
+              {Math.max(0, a.trengs - frivillige.length)}
             </span>
-            <span className="merke">Ledige plasser</span>
+            <span className="merke">Mangler ennå</span>
           </p>
         )}
+        <p className="adm__tall-post">
+          <span className="adm__verdi">{medBidrag}</span>
+          <span className="merke">Har skrevet hva de bidrar med</span>
+        </p>
       </div>
 
-      <h2 className="adm__bolk">Påmeldte</h2>
+      <h2 className="adm__bolk">Frivillige</h2>
 
-      {pameldinger.length === 0 ? (
+      {frivillige.length === 0 ? (
         <div className="tom">
-          <p className="tom__tittel">Ingen har meldt seg på ennå</p>
+          <p className="tom__tittel">Ingen har meldt seg ennå</p>
           <p>
             {a.publisert
-              ? "Arrangementet er publisert. Påmeldingene dukker opp her etter hvert."
-              : "Arrangementet er ikke publisert ennå, så ingen kan se det."}
+              ? "Alle med appen har fått beskjed om at det trengs folk. De som melder seg dukker opp her."
+              : "Arrangementet er ikke publisert ennå, så ingen har fått beskjed om det."}
           </p>
         </div>
       ) : (
@@ -164,54 +156,35 @@ export default async function AdminArrangement({ params, searchParams }: Props) 
           <table className="tabell">
             <thead>
               <tr>
-                <th scope="col">Deltakere</th>
-                <th scope="col">Meldt på av</th>
+                <th scope="col">Navn</th>
+                <th scope="col">Bidrar med</th>
                 <th scope="col">Kontakt</th>
-                <th scope="col">Merknad</th>
+                <th scope="col">Meldte seg</th>
                 <th scope="col">
                   <span className="skjult">Handling</span>
                 </th>
               </tr>
             </thead>
             <tbody>
-              {pameldinger.map((p) => (
+              {frivillige.map((p) => (
                 <tr key={p.id}>
-                  <td className="tabell__navn">
-                    <ul className="navneliste">
-                      {p.deltakere.map((d) => (
-                        <li key={d.id}>
-                          {d.navn}
-                          {d.kosthold && <span className="stille"> · {d.kosthold}</span>}
-                        </li>
-                      ))}
-                    </ul>
+                  <td className="tabell__navn">{p.navn}</td>
+                  <td className="tabell__merknad">{p.bidrag ?? "—"}</td>
+                  <td>
+                    {p.telefon && (
+                      <a href={`tel:${p.telefon.replace(/\s/g, "")}`}>{p.telefon}</a>
+                    )}
+                    {p.telefon && p.epost && <br />}
+                    {p.epost && <a href={`mailto:${p.epost}`}>{p.epost}</a>}
+                    {!p.telefon && !p.epost && <span className="stille">—</span>}
                   </td>
                   <td>
-                    {p.kontakt_navn}
-                    <br />
                     <span className="stille">
                       {ukedag(new Date(p.opprettet))} {dato(new Date(p.opprettet))}
                     </span>
                   </td>
                   <td>
-                    {p.kontakt_telefon && (
-                      <a href={`tel:${p.kontakt_telefon.replace(/\s/g, "")}`}>
-                        {p.kontakt_telefon}
-                      </a>
-                    )}
-                    {p.kontakt_telefon && p.kontakt_epost && <br />}
-                    {p.kontakt_epost && (
-                      <a href={`mailto:${p.kontakt_epost}`}>{p.kontakt_epost}</a>
-                    )}
-                  </td>
-                  <td className="tabell__merknad">{p.melding ?? "—"}</td>
-                  <td>
-                    <MeldAv
-                      pameldingId={p.id}
-                      arrangementId={a.id}
-                      kontaktNavn={p.kontakt_navn}
-                      antall={p.deltakere.length}
-                    />
+                    <MeldAv pameldingId={p.id} arrangementId={a.id} navn={p.navn} />
                   </td>
                 </tr>
               ))}
@@ -220,34 +193,7 @@ export default async function AdminArrangement({ params, searchParams }: Props) 
         </div>
       )}
 
-      <h2 className="adm__bolk">Oppsummering til ansvarlig</h2>
-      <div className="kort">
-        <p className="stille" style={{ marginBottom: "1.25rem" }}>
-          {a.oppsummering_dager_for === null ? (
-            <>
-              Ingen oppsummering sendes for dette arrangementet. Skru den på under
-              «Oppsummering til ansvarlig» i skjemaet nedenfor.
-            </>
-          ) : (
-            <>
-              Sendes til {a.ansvarlig_navn ?? "den ansvarlige"}{" "}
-              <strong>
-                {langDato(oppsummeringstidspunkt(a.starter, a.oppsummering_dager_for))}
-              </strong>{" "}
-              — med antall påmeldte, navn, allergier og kommentarer slik de står da.
-            </>
-          )}
-        </p>
-        {!harBrevo() && (
-          <p className="notis" style={{ marginBottom: "1.25rem" }}>
-            Brevo er ikke koblet til ennå. Legg inn <code>BREVO_API_KEY</code> i
-            miljøvariablene, så går utsendingen live.
-          </p>
-        )}
-        <Oppsummeringstest arrangementId={a.id} ansvarligEpost={a.ansvarlig_epost} />
-      </div>
-
-      <h2 className="adm__bolk">Send melding til de påmeldte</h2>
+      <h2 className="adm__bolk">Send melding til de frivillige</h2>
       <div className="kort">
         {!harBrevo() && (
           <p className="notis" style={{ marginBottom: "1.5rem" }}>
@@ -258,7 +204,7 @@ export default async function AdminArrangement({ params, searchParams }: Props) 
         <MeldingSkjema
           arrangementId={a.id}
           antallMottakere={medEpost}
-          antallPameldinger={pameldinger.length}
+          antallFrivillige={frivillige.length}
           tittel={a.tittel}
         />
       </div>
@@ -272,12 +218,12 @@ export default async function AdminArrangement({ params, searchParams }: Props) 
         <div>
           <h2 className="fareombraade__tittel">Slett arrangementet</h2>
           <p className="stille">
-            {deltakere.length > 0
-              ? `${deltakere.length} påmeldinger slettes samtidig. Last ned lista først hvis du vil beholde den.`
+            {frivillige.length > 0
+              ? `${frivillige.length} frivillige mister vakten, uten å få beskjed. Last ned lista først hvis du vil beholde den.`
               : "Arrangementet fjernes for godt."}
           </p>
         </div>
-        <SlettArrangement id={a.id} tittel={a.tittel} antallPameldte={deltakere.length} />
+        <SlettArrangement id={a.id} tittel={a.tittel} antallFrivillige={frivillige.length} />
       </div>
 
       <p className="stille" style={{ padding: "2rem 0" }}>

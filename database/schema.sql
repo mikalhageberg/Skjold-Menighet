@@ -6,7 +6,7 @@
 --
 -- Databasen er én fil, som regel liggende på et Railway-volum. Bare
 -- serveren har tilgang til fila, så det finnes ingen vei utenom serveren
--- til påmeldingslistene.
+-- til frivilliglistene.
 --
 -- SQLite har ingen egen boolean- eller tidssone-type: sant/usant lagres
 -- som 0/1, og tidspunkt som ISO 8601-tekst (f.eks. 2026-08-12T07:00:00.000Z),
@@ -14,6 +14,7 @@
 -- ═══════════════════════════════════════════════════════════════════════
 
 -- ── Arrangementer ─────────────────────────────────────────────────────
+-- Et arrangement er en oppgave det trengs frivillige til.
 
 create table if not exists arrangementer (
   id                text primary key,
@@ -24,20 +25,18 @@ create table if not exists arrangementer (
   starter           text not null,
   slutter           text,
   sted              text not null default 'Skjold kirke',
-  kapasitet         integer check (kapasitet is null or kapasitet > 0),
+  -- Hvor mange frivillige oppgaven trenger. null = ingen øvre grense.
+  trengs            integer check (trengs is null or trengs > 0),
   pamelding_stenger text,
-  tillat_flere      integer not null default 1,
-  sporr_om_kost     integer not null default 0,
-  -- Påmelding krever bare navn. Trenger arrangementet mer, skrus det på her.
+  -- Påmelding krever bare navn. Trenger oppgaven mer, skrus det på her.
   krev_telefon      integer not null default 0,
   krev_epost        integer not null default 0,
-  -- Oppsummeringen til den ansvarlige: hvor mange dager før start den sendes.
-  -- null betyr at den ikke sendes. Sendes kl. 08 den dagen, én gang.
-  oppsummering_dager_for integer check (oppsummering_dager_for is null or oppsummering_dager_for between 0 and 60),
-  oppsummering_sendt     text,
   ansvarlig_navn    text,
   ansvarlig_epost   text,
   publisert         integer not null default 0,
+  -- Tidspunktet pushvarselet «det trengs frivillige til noe nytt» gikk ut.
+  -- Null til det er sendt; sikrer at det bare går én gang per arrangement.
+  nyhetsvarsel_sendt text,
   -- AI-generert headline-bilde. bilde_generert er null når det ikke finnes
   -- noe bilde; ellers tidspunktet det sist ble satt, brukt som cache-nøkkel.
   bilde             blob,
@@ -60,8 +59,12 @@ create index if not exists arrangementer_starter_idx
 -- ikke har fått kolonnen fra alter table-steget.
 
 -- ── Enheter ───────────────────────────────────────────────────────────
--- Telefoner som har sagt ja til påminnelser. Én rad per installasjon.
+-- Telefoner som har sagt ja til varsler. Én rad per installasjon.
 -- Vi lagrer ingenting om personen, bare tokenet Expo bruker for å nå den.
+--
+-- Alle som har appen ligger her, ikke bare de som har meldt seg på noe:
+-- varselet om en ny oppgave, og om et avbud, skal jo nå dem som ennå ikke
+-- har sagt ja til noe.
 
 create table if not exists enheter (
   id         text primary key,
@@ -72,17 +75,18 @@ create table if not exists enheter (
 );
 
 -- ── Påmeldinger ───────────────────────────────────────────────────────
--- Én påmelding = én kontaktperson som melder på én eller flere deltakere.
--- Det er dette som gjør at man kan melde på naboen eller hele familien.
+-- Én påmelding = én frivillig som har sagt ja til én oppgave. Man melder
+-- bare på seg selv; ingen kan sette opp naboen til å bake kaker.
 
 create table if not exists pameldinger (
   id                text primary key,
   arrangement_id    text not null references arrangementer(id) on delete cascade,
   enhet_id          text references enheter(id) on delete set null,
-  kontakt_navn      text not null,
-  kontakt_telefon   text,
-  kontakt_epost     text,
-  melding           text,
+  navn              text not null,
+  telefon           text,
+  epost             text,
+  -- «Jeg bidrar med» — hva den frivillige selv sa hun tar.
+  bidrag            text,
   avmeldt           text,
   paaminnelse_sendt text,
   opprettet         text not null
@@ -90,18 +94,6 @@ create table if not exists pameldinger (
 
 create index if not exists pameldinger_arrangement_idx
   on pameldinger (arrangement_id, opprettet);
-
-create table if not exists deltakere (
-  id           text primary key,
-  pamelding_id text not null references pameldinger(id) on delete cascade,
-  navn         text not null,
-  er_kontakt   integer not null default 0,
-  kosthold     text,
-  opprettet    text not null
-);
-
-create index if not exists deltakere_pamelding_idx
-  on deltakere (pamelding_id);
 
 -- Brukes av påminnelsesjobben: finn påmeldinger som ennå ikke er varslet.
 create index if not exists pameldinger_paaminnelse_idx

@@ -11,8 +11,8 @@ import { dirname, resolve } from "node:path";
  * `npm run dev` virker før noe er satt opp.
  *
  * WAL-modus lar lesing og skriving skje samtidig uten å blokkere hverandre.
- * Fremmednøkler er skrudd på, så en slettet påmelding tar deltakerne sine
- * med seg, og en slettet enhet nulles ut i stedet for å knekke noe.
+ * Fremmednøkler er skrudd på, så et slettet arrangement tar frivilliglista
+ * si med seg, og en slettet enhet nulles ut i stedet for å knekke noe.
  */
 
 export function harDatabase() {
