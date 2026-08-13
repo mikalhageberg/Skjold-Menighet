@@ -54,7 +54,7 @@ export default function HvaSkjer() {
     >
       {feil ? (
         <Notis tone="fare">
-          <Tekst halvfet>Fikk ikke tak i programmet</Tekst>
+          <Tekst halvfet>Fikk ikke tak i lista</Tekst>
           <Tekst variant="liten" farget="myk">
             {feil}
           </Tekst>

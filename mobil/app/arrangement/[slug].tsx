@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import LottieView from "lottie-react-native";
 import {
   dag,
   dato,
@@ -39,6 +40,11 @@ export default function Arrangementsside() {
   const [frivillige, settFrivillige] = useState<Frivillig[]>([]);
   const [lastefeil, settLastefeil] = useState<string | null>(null);
   const [alleredePameldt, settAlleredePameldt] = useState(false);
+  // Kvitteringen bor her, ikke i skjemaet. Så snart påmeldingen er lagret
+  // vet vi jo at man står på lista, og hadde skjemaet eid kvitteringen,
+  // ville den blitt byttet ut med «du har sagt ja» i samme øyeblikk — før
+  // noen rakk å se den.
+  const [kvittert, settKvittert] = useState<{ varsler: boolean } | null>(null);
 
   const last = useCallback(async () => {
     try {
@@ -140,10 +146,20 @@ export default function Arrangementsside() {
 
           {/* Påmeldingen står over beskrivelsen. Den som bare skal si ja,
               skal slippe å bla gjennom hele teksten for å finne knappen. */}
-          {alleredePameldt ? (
+          {kvittert ? (
+            <Bekreftelse varsler={kvittert.varsler}>
+              <Kalenderknapp arrangement={arrangement} />
+            </Bekreftelse>
+          ) : alleredePameldt ? (
             <AlleredeMed arrangement={arrangement} />
           ) : status.apen ? (
-            <Skjema arrangement={arrangement} onPameldt={last} />
+            <Skjema
+              arrangement={arrangement}
+              onPameldt={(varsler) => {
+                settKvittert({ varsler });
+                last();
+              }}
+            />
           ) : (
             <Stengt grunn={status.grunn} />
           )}
@@ -258,10 +274,16 @@ function Kalenderknapp({ arrangement }: { arrangement: ArrangementMedAntall }) {
 
 /* ── Bekreftelse ─────────────────────────────────────────────────────── */
 
+/** Hvor lenge Lottie-haken bruker på å tegne seg ferdig. */
+const HAKE_MS = 640;
+
 /**
- * Kvitteringen etter at man har sagt ja. Haken tegnes med en fjærende
- * skalering, så det er tydelig at trykket faktisk ble til noe — viktig når
- * man ikke får en e-post å lene seg på.
+ * Kvitteringen etter at man har sagt ja. Haken er en Lottie-animasjon som
+ * spretter opp og strør konfetti, så det er tydelig at trykket faktisk ble
+ * til noe — viktig når man ikke får en e-post å lene seg på.
+ *
+ * Teksten kommer først når haken er ferdig tegnet. Kom den samtidig, ville
+ * de to kjempet om oppmerksomheten.
  */
 function Bekreftelse({
   varsler,
@@ -270,31 +292,32 @@ function Bekreftelse({
   varsler: boolean;
   children: React.ReactNode;
 }) {
-  const hakeskala = useRef(new Animated.Value(0)).current;
   const innhold = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.sequence([
-      Animated.spring(hakeskala, {
-        toValue: 1,
-        friction: 5,
-        tension: 65,
-        useNativeDriver: true,
-      }),
-      Animated.timing(innhold, {
-        toValue: 1,
-        duration: 260,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [hakeskala, innhold]);
+    Animated.timing(innhold, {
+      toValue: 1,
+      duration: 260,
+      delay: HAKE_MS,
+      useNativeDriver: true,
+    }).start();
+  }, [innhold]);
 
   return (
     <Notis tone="klar">
-      <View style={stil.hakesirkel}>
-        <Animated.View style={{ transform: [{ scale: hakeskala }] }}>
-          <View style={stil.hakestrek} />
-        </Animated.View>
+      {/* Animasjonen bærer ingen informasjon som ikke også står i teksten
+          under, så skjermlesere skal hoppe rett forbi den. */}
+      <View
+        style={stil.hake}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      >
+        <LottieView
+          source={require("@/assets/bekreftelse.json")}
+          autoPlay
+          loop={false}
+          style={{ flex: 1 }}
+        />
       </View>
 
       <Animated.View
@@ -355,7 +378,8 @@ function Skjema({
   onPameldt,
 }: {
   arrangement: ArrangementMedAntall;
-  onPameldt: () => void;
+  /** Kalles når påmeldingen er lagret. `varsler` sier om telefonen får push. */
+  onPameldt: (varsler: boolean) => void;
 }) {
   const router = useRouter();
   const [navn, settNavn] = useState("");
@@ -365,7 +389,6 @@ function Skjema({
   const [sender, settSender] = useState(false);
   const [feil, settFeil] = useState<string | null>(null);
   const [feltfeil, settFeltfeil] = useState<Record<string, string>>({});
-  const [kvittert, settKvittert] = useState<{ varsler: boolean } | null>(null);
 
   // Profilen fyller ut skjemaet. useFocusEffect og ikke useEffect, slik at
   // navnet oppdaterer seg med én gang man kommer tilbake fra «Endre».
@@ -420,16 +443,7 @@ function Skjema({
       }),
     ]);
 
-    settKvittert({ varsler: Boolean(pushToken) });
-    onPameldt();
-  }
-
-  if (kvittert !== null) {
-    return (
-      <Bekreftelse varsler={kvittert.varsler}>
-        <Kalenderknapp arrangement={arrangement} />
-      </Bekreftelse>
-    );
+    onPameldt(Boolean(pushToken));
   }
 
   return (
@@ -577,24 +591,15 @@ const stil = StyleSheet.create({
     borderLeftWidth: 2,
     borderLeftColor: farge.strek,
   },
-  hakesirkel: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: farge.gran,
-    alignItems: "center",
-    justifyContent: "center",
+  // Lerretet er kvadratisk, og selve sirkelen dekker bare drøyt en tredel
+  // av det — resten er plassen konfettien flyr ut i. Derfor er boksen mye
+  // større enn haken ser ut til å være, og trekkes inn igjen med margin.
+  hake: {
+    width: 200,
+    height: 200,
     alignSelf: "center",
-    marginBottom: rom.s,
-  },
-  hakestrek: {
-    width: 16,
-    height: 28,
-    borderRightWidth: 3.5,
-    borderBottomWidth: 3.5,
-    borderColor: farge.papir,
-    transform: [{ rotate: "45deg" }],
-    marginTop: -6,
+    marginTop: -rom.l,
+    marginBottom: -rom.l,
   },
   skille: { height: 1, backgroundColor: farge.strek },
   megrad: {
