@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { hentKommende } from "@/lib/data";
 import { krevAdmin } from "@/lib/auth";
+import { harCronNokkel } from "@/lib/varsling";
 import { pameldingsstatus, sesongFor } from "@skjold/delt";
 import { dato, nartid, ukedag } from "@skjold/delt";
 
@@ -30,6 +31,14 @@ export default async function AdminOversikt() {
           Nytt arrangement
         </Link>
       </header>
+
+      {!harCronNokkel() && (
+        <p className="notis notis--fare" role="alert" style={{ marginTop: "1.5rem" }}>
+          <strong>Påminnelsene går ikke ut.</strong> <code>CRON_SECRET</code> er ikke satt på
+          serveren, så timesjobben blir avvist. De frivillige får da ingen påminnelse dagen
+          før. Sett den samme verdien på web-tjenesten og på cron-jobben.
+        </p>
+      )}
 
       <div className="adm__tall">
         <p className="adm__tall-post">

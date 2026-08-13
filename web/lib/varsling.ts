@@ -4,6 +4,16 @@ import { hentAlleTokens, hentUvarsledeArrangementer, merkNyhetsvarselSendt } fro
 import { varsleNyOppgave } from "./push";
 
 /**
+ * Om cron-jobben kan slippe til. Uten CRON_SECRET svarer
+ * /api/varsler/paaminnelser 500, og da stopper påminnelsen dagen før —
+ * uten at noen merker det før en frivillig ikke dukker opp. Derfor sier
+ * admin fra om den mangler, på samme måte som med Brevo-nøkkelen.
+ */
+export function harCronNokkel() {
+  return Boolean(process.env.CRON_SECRET);
+}
+
+/**
  * «Det trengs frivillige til noe nytt» — varselet som går til alle med
  * appen når et arrangement blir publisert.
  *

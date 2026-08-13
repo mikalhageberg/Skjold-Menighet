@@ -16,14 +16,14 @@
       "distribution": "internal",
       "channel": "test",
       "env": {
-        "EXPO_PUBLIC_API_BASE": "https://skjold-menighet.vercel.app"
+        "EXPO_PUBLIC_API_BASE": "https://skjold.online"
       }
     },
     "produksjon": {
       "autoIncrement": true,
       "channel": "produksjon",
       "env": {
-        "EXPO_PUBLIC_API_BASE": "https://skjold-menighet.vercel.app"
+        "EXPO_PUBLIC_API_BASE": "https://skjold.online"
       }
     }
   },
