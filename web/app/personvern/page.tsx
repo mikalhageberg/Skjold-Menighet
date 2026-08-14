@@ -126,13 +126,13 @@ export default function Personvern() {
           <tbody>
             <tr>
               <th scope="row">Railway</th>
-              <td>Driver serveren og databasen. Serverne står i USA.</td>
+              <td>Driver serveren og databasen. Serverne står i Amsterdam.</td>
             </tr>
             <tr>
               <th scope="row">Expo</th>
               <td>
                 Sender varslene videre til Apple og Google. Får bare koden som identifiserer
-                telefonen, og teksten i varselet.
+                telefonen, og teksten i varselet. Amerikansk tjeneste.
               </td>
             </tr>
             <tr>
@@ -152,11 +152,16 @@ export default function Personvern() {
           </tbody>
         </table>
 
-        <h2>Opplysninger utenfor Europa</h2>
+        <h2>Hvor opplysningene ligger</h2>
         <p>
-          Serveren står i USA, altså utenfor EØS. Det betyr at navnet ditt, og eventuelt
-          nummeret eller adressen din, lagres der. Vi har ikke valgt USA av noen annen grunn
-          enn at det er der tjenesten vi bruker ble satt opp.
+          Serveren og databasen står i Amsterdam, altså innenfor EØS. Navnet ditt, og
+          eventuelt nummeret eller adressen din, forlater ikke Europa.
+        </p>
+        <p>
+          Ett unntak: selve varslene går gjennom Expo og videre til Apple og Google, som er
+          amerikanske. Det som sendes den veien er koden som identifiserer telefonen din og
+          teksten i varselet — ikke navnet ditt. Vil du unngå det, kan du la være å si ja til
+          varsler, og bruke appen som før.
         </p>
 
         <h2>Hvor lenge vi lagrer det</h2>

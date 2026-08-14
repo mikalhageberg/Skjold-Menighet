@@ -17,11 +17,16 @@
       "infoPlist": {
         "CFBundleLocalizations": [
           "nb",
+          "en",
+          "nb",
+          "en",
+          "nb",
           "en"
         ],
         "CFBundleDevelopmentRegion": "nb",
         "NSCalendarsUsageDescription": "Appen legger arrangementer du melder deg på inn i kalenderen din, hvis du ber om det.",
-        "NSRemindersUsageDescription": "Appen kan legge inn påminnelser om arrangementer du melder deg på."
+        "NSRemindersUsageDescription": "Appen kan legge inn påminnelser om arrangementer du melder deg på.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -34,7 +39,15 @@
         "READ_CALENDAR",
         "WRITE_CALENDAR",
         "RECEIVE_BOOT_COMPLETED",
-        "SCHEDULE_EXACT_ALARM"
+        "SCHEDULE_EXACT_ALARM",
+        "android.permission.READ_CALENDAR",
+        "android.permission.WRITE_CALENDAR",
+        "READ_CALENDAR",
+        "WRITE_CALENDAR",
+        "RECEIVE_BOOT_COMPLETED",
+        "SCHEDULE_EXACT_ALARM",
+        "android.permission.READ_CALENDAR",
+        "android.permission.WRITE_CALENDAR"
       ]
     },
     "web": {
@@ -70,8 +83,19 @@
       "expo-font"
     ],
     "extra": {
-      "apiBase": "https://skjold.online"
+      "apiBase": "https://skjold.online",
+      "router": {},
+      "eas": {
+        "projectId": "05836601-f6bc-4a3e-9942-238dd5f29ba2"
+      }
     },
-    "icon": "./assets/icon.png"
+    "icon": "./assets/icon.png",
+    "owner": "mikalhageberg",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/05836601-f6bc-4a3e-9942-238dd5f29ba2"
+    }
   }
 }

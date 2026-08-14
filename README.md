@@ -145,10 +145,9 @@ butikkene).
   at oppgaver slettes ett til to døgn etter at de har vært; i dag må noen gjøre
   det for hånd fra **Alle arrangementer**. Enten holder dere rutinen, eller så
   bør cron-jobben rydde selv.
-- **Serveren står i USA**, altså utenfor EØS. Overføringen trenger et grunnlag —
-  Data Privacy Framework eller standard personvernbestemmelser. Railway kan
-  kjøre i EU i stedet, og da faller hele spørsmålet bort; husk å endre
-  erklæringen om dere flytter.
+- **Serveren står i Amsterdam**, innenfor EØS. Flytter dere den ut igjen, må
+  personvernerklæringen endres i samme slengen — og overføringen trenger da et
+  grunnlag.
 - Skjermbilder. `eas build` gir dere appen; skjermbildene tar dere i simulator.
 
 Ikonene ligger i `mobil/assets/` og lages av `mobil/verktoy/lag-ikoner.py`.
