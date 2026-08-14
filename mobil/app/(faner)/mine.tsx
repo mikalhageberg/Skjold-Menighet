@@ -6,6 +6,7 @@ import { meldAv } from "@/lib/api";
 import { glem, hentMine, type MinPamelding } from "@/lib/lager";
 import { hentProfil, type Profil } from "@/lib/profil";
 import { Tekst } from "@/design/Grunnelementer";
+import { Personvernlenke } from "@/komponenter/Personvernlenke";
 import { farge, radius, rom, TREFF } from "@/design/tema";
 
 /**
@@ -161,6 +162,8 @@ export default function Mine() {
           de andre for deg.
         </Tekst>
       ) : null}
+
+      <Personvernlenke />
     </ScrollView>
   );
 }

@@ -1186,6 +1186,125 @@ img {
   }
 }
 
+/* ── Brødtekstsider (personvern o.l.) ────────────────────────────────── */
+
+.brodtekst {
+  max-width: 40rem;
+  padding: clamp(2rem, 5vw, 3.5rem) 0 4rem;
+}
+
+.brodtekst__tittel {
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  margin: 0.4rem 0 1.25rem;
+}
+
+.brodtekst__ingress {
+  font-size: 1.125rem;
+  color: var(--gran-myk);
+  margin-bottom: 2rem;
+}
+
+.brodtekst h2 {
+  font-size: 1.3125rem;
+  margin: 2.5rem 0 0.75rem;
+}
+
+.brodtekst p,
+.brodtekst li {
+  line-height: 1.65;
+  margin-bottom: 0.85rem;
+}
+
+.brodtekst ul,
+.brodtekst ol {
+  padding-inline-start: 1.4rem;
+  margin-bottom: 1rem;
+}
+
+.tabell--tekst {
+  margin: 1rem 0 1.5rem;
+}
+
+.tabell--tekst th {
+  width: 12rem;
+  text-align: left;
+  vertical-align: top;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* På en smal telefon blir to spalter for trangt til å leses. Da legger vi
+   forklaringen under stikkordet i stedet. En stor del av dem som skal lese
+   dette er godt voksne, og leser det på mobil. */
+@media (max-width: 34rem) {
+  .tabell--tekst,
+  .tabell--tekst tbody,
+  .tabell--tekst tr,
+  .tabell--tekst th,
+  .tabell--tekst td {
+    display: block;
+    width: auto;
+  }
+
+  .tabell--tekst tr + tr {
+    margin-top: 1rem;
+  }
+
+  .tabell--tekst th {
+    white-space: normal;
+    padding-bottom: 0.15rem;
+  }
+}
+
+/* Det menigheten selv må fylle ut før erklæringen kan publiseres. Med vilje
+   umulig å overse — en personvernerklæring med hull er verre enn ingen. */
+.fyll-inn {
+  border: 1px solid var(--messing, #8f6716);
+  border-inline-start: 3px solid var(--messing, #8f6716);
+  background: #f6efdf;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius);
+  margin: 1.5rem 0 2rem;
+}
+
+.fyll-inn p {
+  margin: 0;
+  font-size: var(--t-liten);
+}
+
+.fyll-inn__felt {
+  background: #f6e2a8;
+  color: var(--gran);
+  padding: 0.1em 0.3em;
+  border-radius: 2px;
+}
+
+/* ── Bunntekst ───────────────────────────────────────────────────────── */
+
+.bunn {
+  border-top: 1px solid var(--strek);
+  margin-top: 4rem;
+  padding: 1.5rem 0;
+  font-size: var(--t-liten);
+  color: var(--gran-myk);
+}
+
+.bunn__rad {
+  max-width: var(--bredde, 64rem);
+  margin: 0 auto;
+  padding-inline: clamp(1rem, 4vw, 2rem);
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+@media print {
+  .fyll-inn {
+    border-color: #000;
+  }
+}
+
 @media print {
   .topp,
   .bunn,

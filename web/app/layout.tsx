@@ -44,6 +44,13 @@ export default function RotLayout({ children }: { children: React.ReactNode }) {
         </header>
 
         <main>{children}</main>
+
+        <footer className="bunn">
+          <div className="bunn__rad">
+            <span>Skjold menighet</span>
+            <Link href="/personvern">Personvern</Link>
+          </div>
+        </footer>
       </body>
     </html>
   );

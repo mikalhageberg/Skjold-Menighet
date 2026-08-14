@@ -25,6 +25,15 @@
       "env": {
         "EXPO_PUBLIC_API_BASE": "https://skjold.online"
       }
+    },
+    "simulator": {
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      },
+      "env": {
+        "EXPO_PUBLIC_API_BASE": "https://skjold.online"
+      }
     }
   },
   "submit": {

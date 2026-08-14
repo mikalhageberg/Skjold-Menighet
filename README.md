@@ -126,16 +126,21 @@ eas build --profile produksjon --platform all
 eas submit --profile produksjon --platform all
 ```
 
-Tre profiler i `eas.json`: `utvikling` (development client mot localhost),
-`test` (intern distribusjon), `produksjon` (til butikkene).
+Fire profiler i `eas.json`: `utvikling` (development client mot localhost),
+`simulator` (kjører i iOS-simulatoren, og er den eneste som ikke krever et
+betalt Apple-medlemskap), `test` (intern distribusjon) og `produksjon` (til
+butikkene).
 
 **Dette trenger dere før innsending:**
 
 - Apple Developer Program, 99 USD i året, og en App Store Connect-app med
   pakke-id `no.skjoldmenighet.app`.
 - Google Play Developer, 25 USD én gang.
-- Personvernerklæring på en offentlig adresse — begge butikkene krever det, og
-  appen samler inn navn og telefonnummer.
+- Personvernerklæringen ligger på `/personvern`, og appen lenker dit fra
+  velkomsten og fra Mine vakter — Apple krever at den er å finne inne i appen,
+  ikke bare i butikkoppføringen. **Den har tre felt menigheten må fylle ut**,
+  merket i gult på siden. Fyll dem ut, slett den gule boksen på toppen, og la
+  noen som kan personvern lese teksten før dere sender inn.
 - Skjermbilder. `eas build` gir dere appen; skjermbildene tar dere i simulator.
 
 Ikonene ligger i `mobil/assets/` og lages av `mobil/verktoy/lag-ikoner.py`.

@@ -4,6 +4,7 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Felt, Knapp, Tekst } from "@/design/Grunnelementer";
 import { farge, rom } from "@/design/tema";
 import { hentProfil, lagreProfil } from "@/lib/profil";
+import { Personvernlenke } from "@/komponenter/Personvernlenke";
 import { meldInnEnhet } from "@/lib/varsler";
 
 /**
@@ -142,6 +143,8 @@ export default function Velkommen() {
                 når det trengs folk — du kan si nei, og likevel bruke appen.
               </Tekst>
             )}
+
+            <Personvernlenke />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
