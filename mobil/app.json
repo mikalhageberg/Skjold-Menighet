@@ -17,10 +17,6 @@
       "infoPlist": {
         "CFBundleLocalizations": [
           "nb",
-          "en",
-          "nb",
-          "en",
-          "nb",
           "en"
         ],
         "CFBundleDevelopmentRegion": "nb",
@@ -39,15 +35,7 @@
         "READ_CALENDAR",
         "WRITE_CALENDAR",
         "RECEIVE_BOOT_COMPLETED",
-        "SCHEDULE_EXACT_ALARM",
-        "android.permission.READ_CALENDAR",
-        "android.permission.WRITE_CALENDAR",
-        "READ_CALENDAR",
-        "WRITE_CALENDAR",
-        "RECEIVE_BOOT_COMPLETED",
-        "SCHEDULE_EXACT_ALARM",
-        "android.permission.READ_CALENDAR",
-        "android.permission.WRITE_CALENDAR"
+        "SCHEDULE_EXACT_ALARM"
       ]
     },
     "web": {
