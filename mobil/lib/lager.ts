@@ -62,3 +62,13 @@ export async function erPameldt(slug: string) {
   const alle = await hentMine();
   return alle.some((p) => p.slug === slug);
 }
+
+/**
+ * Ens egen påmeldings-id til en oppgave, om man har sagt ja til den.
+ * Sendes til serveren for å vise at man står på lista — det er den som
+ * åpner telefonnumrene til de andre frivillige.
+ */
+export async function minPameldingId(slug: string): Promise<string | null> {
+  const alle = await hentMine();
+  return alle.find((p) => p.slug === slug)?.pameldingId ?? null;
+}

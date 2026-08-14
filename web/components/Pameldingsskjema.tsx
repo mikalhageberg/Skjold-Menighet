@@ -92,6 +92,28 @@ export function Pameldingsskjema({ arrangement }: { arrangement: ArrangementMedA
             )}
           </div>
         )}
+
+        {/* Nummeret er gitt for at den ansvarlige skal kunne ringe. Skal de
+            andre frivillige få se det også, må man si ja til det selv. */}
+        {arrangement.krev_telefon && (
+          <div className="valg__post">
+            <label className="avkryss">
+              <input
+                type="checkbox"
+                className="avkryss__boks"
+                name="del_nummer"
+                value="på"
+              />
+              <span className="avkryss__tekst">
+                Vis nummeret mitt til de andre frivillige
+              </span>
+            </label>
+            <p className="felt__hjelp valg__hjelp">
+              Da kan dere avtale dere imellom hvem som tar med hva. Lar du den stå tom, er
+              det bare den ansvarlige som ser nummeret ditt.
+            </p>
+          </div>
+        )}
       </section>
 
       <div className="felt">

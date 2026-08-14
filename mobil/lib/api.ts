@@ -59,12 +59,21 @@ export async function hentArrangementer(): Promise<ArrangementMedAntall[]> {
   return arrangementer;
 }
 
-/** Ett arrangement med lista over hvem som alt har sagt ja. */
+/**
+ * Ett arrangement med lista over hvem som alt har sagt ja.
+ *
+ * `pameldingId` er ens egen påmelding til nettopp dette arrangementet, om
+ * man har en. Den viser serveren at man står på lista selv, og er det som
+ * avgjør om telefonnumrene til de andre følger med. Uten den kommer lista
+ * uten numre — som er det en tilfeldig forbipasserende skal få.
+ */
 export async function hentArrangement(
   slug: string,
+  pameldingId?: string | null,
 ): Promise<{ arrangement: ArrangementMedAntall; frivillige: Frivillig[] }> {
   const svar = await hent<{ arrangement: ArrangementMedAntall; frivillige?: Frivillig[] }>(
     `/api/offentlig/arrangementer/${encodeURIComponent(slug)}`,
+    pameldingId ? { headers: { "x-pamelding-id": pameldingId } } : undefined,
   );
   return { arrangement: svar.arrangement, frivillige: svar.frivillige ?? [] };
 }

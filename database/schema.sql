@@ -87,6 +87,10 @@ create table if not exists pameldinger (
   epost             text,
   -- «Jeg bidrar med» — hva den frivillige selv sa hun tar.
   bidrag            text,
+  -- Om hun sa ja til at nummeret hennes vises til de andre frivillige på
+  -- samme oppgave. Avslått med mindre hun krysser av; nummeret er gitt for
+  -- at den ansvarlige skal kunne ringe, og deling er noe annet.
+  del_nummer        integer not null default 0,
   avmeldt           text,
   paaminnelse_sendt text,
   opprettet         text not null

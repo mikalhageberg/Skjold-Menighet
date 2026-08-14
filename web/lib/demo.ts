@@ -205,22 +205,25 @@ export function demolager(): Lager {
 }
 
 function lagPameldinger(): Pamelding[] {
-  const frivillige: [string, string, string | null, string][] = [
-    ["Ingrid Bruvik", "952 14 077", "Tar med to plater sukkerbrød", "d1"],
-    ["Torbjørn Aase", "918 33 210", "Kaffe og rigging", "d1"],
-    ["Solveig Haaland", "476 90 118", null, "d1"],
-    ["Bjørg Tveit", "992 45 630", "Står gjerne på kjøkkenet", "d3"],
-    ["Kåre Sandvik", "913 76 204", "Tar oppvasken", "d3"],
-    ["Gerd Ims", "901 22 845", "Turleder", "d8"],
-    ["Håkon Vestbø", "466 71 309", "Turleder", "d8"],
+  // Siste feltet er om nummeret deles med de andre frivillige. De fleste
+  // sier ja, men ikke alle — og demodataene skal vise begge deler.
+  const frivillige: [string, string, string | null, string, boolean][] = [
+    ["Ingrid Bruvik", "952 14 077", "Tar med to plater sukkerbrød", "d1", true],
+    ["Torbjørn Aase", "918 33 210", "Kaffe og rigging", "d1", true],
+    ["Solveig Haaland", "476 90 118", null, "d1", false],
+    ["Bjørg Tveit", "992 45 630", "Står gjerne på kjøkkenet", "d3", true],
+    ["Kåre Sandvik", "913 76 204", "Tar oppvasken", "d3", false],
+    ["Gerd Ims", "901 22 845", "Turleder", "d8", true],
+    ["Håkon Vestbø", "466 71 309", "Turleder", "d8", true],
   ];
-  return frivillige.map(([navn, telefon, bidrag, arrangement], i) => ({
+  return frivillige.map(([navn, telefon, bidrag, arrangement, delNummer], i) => ({
     id: `p${i}`,
     arrangement_id: arrangement,
     navn,
     telefon,
     epost: null,
     bidrag,
+    del_nummer: delNummer,
     avmeldt: null,
     opprettet: om(-i - 1, 14),
   }));

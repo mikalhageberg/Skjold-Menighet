@@ -16,6 +16,7 @@ export async function meldPa(
     telefon: String(data.get("telefon") ?? ""),
     epost: String(data.get("epost") ?? ""),
     bidrag: String(data.get("bidrag") ?? ""),
+    delNummer: data.get("del_nummer") === "på",
   });
 
   if (!svar.ok) {

@@ -141,27 +141,62 @@ export async function hentPameldinger(arrangementId: string): Promise<Pamelding[
       .sort((a, b) => a.opprettet.localeCompare(b.opprettet));
   }
 
-  return hentDb()
+  const rader = hentDb()
     .prepare(
       `select * from pameldinger
         where arrangement_id = ? and avmeldt is null
         order by opprettet asc`,
     )
-    .all(arrangementId) as Pamelding[];
+    .all(arrangementId) as (Omit<Pamelding, "del_nummer"> & { del_nummer: number })[];
+  return rader.map((r) => ({ ...r, del_nummer: Boolean(r.del_nummer) }));
 }
 
 /**
- * Lista alle ser: navn, hva hver enkelt bidrar med, og nummeret deres når
- * oppgaven krever ett. Poenget er at man skal kunne se om noen alt har
- * tatt kakebaksten før man melder seg — og kunne ringe den man deler
- * vakt med uten å gå veien om den ansvarlige.
+ * Lista alle ser: navn og hva hver enkelt bidrar med. Poenget er at man
+ * skal kunne se om noen alt har tatt kakebaksten før man melder seg — og
+ * at det ikke skal føles tomt å være den første.
  *
- * E-postadressen er ikke med. Den brukes til utsending fra admin, og har
- * ingenting med planlegging mellom frivillige å gjøre.
+ * Numrene følger bare med når `medNumre` er sant, og da bare for dem som
+ * selv har krysset av for å dele. `medNumre` settes av den som spør, og
+ * skal bare være sann når hun står på lista selv — se `staarPaaLista`.
+ *
+ * E-postadresser er aldri med. De brukes til utsending fra admin.
  */
-export async function hentFrivillige(arrangementId: string): Promise<Frivillig[]> {
+export async function hentFrivillige(
+  arrangementId: string,
+  { medNumre = false }: { medNumre?: boolean } = {},
+): Promise<Frivillig[]> {
   const pameldinger = await hentPameldinger(arrangementId);
-  return pameldinger.map((p) => ({ navn: p.navn, bidrag: p.bidrag, telefon: p.telefon }));
+  return pameldinger.map((p) => ({
+    navn: p.navn,
+    bidrag: p.bidrag,
+    telefon: medNumre && p.del_nummer ? p.telefon : null,
+  }));
+}
+
+/**
+ * Om en påmeldings-id hører til en som faktisk står på lista til dette
+ * arrangementet. Telefonen kjenner sin egen id, og det er den eneste
+ * «nøkkelen» som finnes i en app helt uten innlogging — den viser at man
+ * har sagt ja til nettopp denne oppgaven.
+ */
+export async function staarPaaLista(arrangementId: string, pameldingId: string) {
+  if (!pameldingId) return false;
+
+  if (!harDatabase()) {
+    return demolager().pameldinger.some(
+      (p) => p.id === pameldingId && p.arrangement_id === arrangementId && !p.avmeldt,
+    );
+  }
+
+  const rad = hentDb()
+    .prepare(
+      `select 1 from pameldinger
+        where id = ? and arrangement_id = ? and avmeldt is null
+        limit 1`,
+    )
+    .get(pameldingId, arrangementId);
+  return Boolean(rad);
 }
 
 /** Påmeldingen slik den ligger i basen — med enheten, som aldri forlater serveren. */
@@ -203,6 +238,7 @@ export type NyPamelding = {
   telefon: string | null;
   epost: string | null;
   bidrag: string | null;
+  delNummer: boolean;
 };
 
 export async function opprettPamelding(input: NyPamelding): Promise<string> {
@@ -218,6 +254,7 @@ export async function opprettPamelding(input: NyPamelding): Promise<string> {
       telefon: input.telefon,
       epost: input.epost,
       bidrag: input.bidrag,
+      del_nummer: input.delNummer,
       avmeldt: null,
       opprettet: na,
     });
@@ -228,8 +265,8 @@ export async function opprettPamelding(input: NyPamelding): Promise<string> {
   hentDb()
     .prepare(
       `insert into pameldinger
-         (id, arrangement_id, enhet_id, navn, telefon, epost, bidrag, opprettet)
-       values (?, ?, ?, ?, ?, ?, ?, ?)`,
+         (id, arrangement_id, enhet_id, navn, telefon, epost, bidrag, del_nummer, opprettet)
+       values (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       id,
@@ -239,6 +276,7 @@ export async function opprettPamelding(input: NyPamelding): Promise<string> {
       input.telefon,
       input.epost,
       input.bidrag,
+      input.delNummer ? 1 : 0,
       na,
     );
 

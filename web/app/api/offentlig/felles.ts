@@ -7,7 +7,7 @@ import { NextResponse } from "next/server";
 export const CORS = {
   "access-control-allow-origin": "*",
   "access-control-allow-methods": "GET, POST, DELETE, OPTIONS",
-  "access-control-allow-headers": "content-type",
+  "access-control-allow-headers": "content-type, x-pamelding-id",
 };
 
 export function apiSvar(kropp: unknown, status = 200) {

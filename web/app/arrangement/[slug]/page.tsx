@@ -20,6 +20,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: a.tittel,
     description: a.ingress ?? undefined,
+    // Siden navngir folk som har sagt ja til å stille. Forsiden er åpen for
+    // søkemotorer og viser hva som skjer; den enkelte oppgaven skal man
+    // komme til gjennom appen eller en delt lenke, ikke gjennom et søk på
+    // navnet til en frivillig.
+    robots: { index: false, follow: true },
     openGraph: a.bilde_generert
       ? { images: [bildeUrl(a.id, a.bilde_generert)] }
       : undefined,
@@ -35,6 +40,8 @@ export default async function Arrangementsside({ params }: Props) {
   const a = await hentArrangement(slug);
   if (!a || !a.publisert) notFound();
 
+  // Uten `medNumre` følger ingen telefonnumre med. Nettsiden er åpen for
+  // alle, og har ikke noe å vise dem til.
   const frivillige = await hentFrivillige(a.id);
   const start = new Date(a.starter);
   const slutt = a.slutter ? new Date(a.slutter) : null;
@@ -149,8 +156,9 @@ export default async function Arrangementsside({ params }: Props) {
  * når man ser at naboen har gjort det, og lettere å se at det trengs én
  * til når lista er kort.
  *
- * Nummeret står med når oppgaven krever ett, så de som deler en vakt kan
- * avtale seg imellom. E-postadressen deles ikke.
+ * Bare navn og bidrag. Telefonnumrene deles i appen, mellom dem som selv
+ * står på lista — de har ingenting å gjøre på en side hvem som helst kan
+ * åpne, og som ellers ville havnet i søkemotorer.
  */
 function Frivilligliste({ frivillige }: { frivillige: Frivillig[] }) {
   if (frivillige.length === 0) {
@@ -170,11 +178,6 @@ function Frivilligliste({ frivillige }: { frivillige: Frivillig[] }) {
           <li key={i} className="frivillige__post">
             <span className="frivillige__navn">{f.navn}</span>
             {f.bidrag && <span className="frivillige__bidrag">{f.bidrag}</span>}
-            {f.telefon && (
-              <a className="frivillige__nummer" href={`tel:${f.telefon.replace(/\s/g, "")}`}>
-                {f.telefon}
-              </a>
-            )}
           </li>
         ))}
       </ul>

@@ -38,10 +38,9 @@ export type ArrangementMedAntall = Arrangement & {
 /**
  * Én frivillig som har meldt seg, slik de andre ser henne.
  *
- * Telefonnummeret er med så de som deler en vakt kan avtale seg imellom
- * uten å gå veien om den ansvarlige. Det finnes bare når oppgaven krever
- * nummer (`krev_telefon`) — ellers er det null. E-postadressen deles
- * aldri; den blir liggende hos den ansvarlige.
+ * Telefonnummeret er bare med når tre ting stemmer samtidig: oppgaven
+ * krever nummer, hun har krysset av for å dele det, og den som spør står
+ * selv på lista. Ellers er det null. E-postadressen deles aldri.
  */
 export type Frivillig = {
   navn: string;
@@ -57,6 +56,8 @@ export type Pamelding = {
   epost: string | null;
   /** «Jeg bidrar med» — hva den frivillige har sagt at hun tar. */
   bidrag: string | null;
+  /** Om hun har sagt ja til at nummeret vises til de andre på oppgaven. */
+  del_nummer: boolean;
   avmeldt: string | null;
   opprettet: string;
 };
@@ -69,6 +70,8 @@ export type PameldingInn = {
   telefon: string | null;
   epost: string | null;
   bidrag: string | null;
+  /** Om nummeret skal vises til de andre frivillige. Avslått som standard. */
+  delNummer?: boolean;
   /** Expo-push-token, så telefonen kan få påminnelsen dagen før. */
   pushToken?: string | null;
 };

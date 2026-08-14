@@ -98,6 +98,7 @@ try {
   leggTilKolonne("arrangementer", "serie_id", "text");
   leggTilKolonne("arrangementer", "nyhetsvarsel_sendt", "text");
   leggTilKolonne("pameldinger", "bidrag", "text");
+  leggTilKolonne("pameldinger", "del_nummer", "integer not null default 0");
 
   // Arrangementer som fantes før varselet om nye oppgaver ble laget, skal
   // ikke utløse et varsel med det samme jobben neste gang kjører.

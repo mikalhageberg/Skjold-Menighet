@@ -290,7 +290,7 @@ export function ArrangementSkjema({ arrangement }: { arrangement?: Arrangement }
             navn="krev_telefon"
             merket={arrangement?.krev_telefon ?? false}
             tekst="Krev telefonnummer"
-            hjelp="Nummeret blir synlig for de andre frivillige på denne oppgaven, så de kan avtale seg imellom. Krysser du ikke av, spørres det ikke om, og da er det ingenting å dele."
+            hjelp="Bruk denne når dere må kunne ringe — omrokering på kort varsel. Den enkelte får selv velge om nummeret skal vises til de andre frivillige; krysser du ikke av her, spørres det ikke om i det hele tatt."
           />
           <Avkryss
             navn="krev_epost"

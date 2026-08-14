@@ -28,11 +28,11 @@ import {
   type Frivillig,
 } from "@skjold/delt";
 import { API_BASE, hentArrangement, meldPa } from "@/lib/api";
-import { husk, erPameldt } from "@/lib/lager";
+import { husk, erPameldt, minPameldingId } from "@/lib/lager";
 import { hentProfil, lagreProfil } from "@/lib/profil";
 import { hentPushToken } from "@/lib/varsler";
 import { leggIKalender } from "@/lib/kalender";
-import { Felt, Knapp, Notis, Tekst } from "@/design/Grunnelementer";
+import { Avkryss, Felt, Knapp, Notis, Tekst } from "@/design/Grunnelementer";
 import { farge, radius, rom, TREFF } from "@/design/tema";
 
 export default function Arrangementsside() {
@@ -49,7 +49,11 @@ export default function Arrangementsside() {
 
   const last = useCallback(async () => {
     try {
-      const [svar, pameldt] = await Promise.all([hentArrangement(slug), erPameldt(slug)]);
+      // Egen påmeldings-id først: den avgjør om serveren sender med
+      // telefonnumrene til de andre på lista.
+      const minId = await minPameldingId(slug);
+      const svar = await hentArrangement(slug, minId);
+      const pameldt = Boolean(minId);
       settArrangement(svar.arrangement);
       settFrivillige(svar.frivillige);
       settAlleredePameldt(pameldt);
@@ -403,6 +407,7 @@ function Skjema({
   const [telefon, settTelefon] = useState("");
   const [epost, settEpost] = useState("");
   const [bidrag, settBidrag] = useState("");
+  const [delNummer, settDelNummer] = useState(false);
   const [sender, settSender] = useState(false);
   const [feil, settFeil] = useState<string | null>(null);
   const [feltfeil, settFeltfeil] = useState<Record<string, string>>({});
@@ -436,6 +441,7 @@ function Skjema({
       telefon,
       epost,
       bidrag,
+      delNummer,
       pushToken,
     });
 
@@ -534,6 +540,17 @@ function Skjema({
           />
         ) : null}
       </View>
+
+      {/* Nummeret er gitt for at den ansvarlige skal kunne ringe. Skal de
+          andre frivillige få se det også, må man si ja til det selv. */}
+      {arrangement.krev_telefon ? (
+        <Avkryss
+          merket={delNummer}
+          onEndre={settDelNummer}
+          tekst="Vis nummeret mitt til de andre frivillige"
+          hjelp="Da kan dere avtale dere imellom hvem som tar med hva. Lar du den stå, er det bare den ansvarlige som ser nummeret ditt."
+        />
+      ) : null}
 
       <Felt
         etikett="Jeg bidrar med"

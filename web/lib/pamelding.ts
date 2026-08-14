@@ -36,6 +36,8 @@ export async function registrerPamelding(input: PameldingInn): Promise<Pamelding
   const telefon = arrangement.krev_telefon ? (input.telefon ?? "").trim() : "";
   const epost = arrangement.krev_epost ? (input.epost ?? "").trim() : "";
   const bidrag = (input.bidrag ?? "").trim();
+  // Uten nummer er det ingenting å dele, uansett hva klienten sender.
+  const delNummer = Boolean(input.delNummer) && arrangement.krev_telefon;
 
   // Navn er alltid nok. Trenger oppgaven telefon eller e-post, har den
   // ansvarlige krysset av for det, og da spør vi om akkurat det.
@@ -85,6 +87,7 @@ export async function registrerPamelding(input: PameldingInn): Promise<Pamelding
       telefon: telefon || null,
       epost: epost || null,
       bidrag: bidrag || null,
+      delNummer,
     });
   } catch (feil) {
     console.error("Kunne ikke lagre påmelding", feil);

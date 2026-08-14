@@ -67,10 +67,13 @@ EXPO_PUBLIC_API_BASE=http://192.168.1.42:3000 npm run mobil
 - **Å si ja uten innlogging.** Man melder bare seg selv, og til vanlig er det ett
   trykk — navnet er allerede der. Feltet **Jeg bidrar med** er valgfritt, og er
   der for at ikke tre skal komme med hver sin bløtkake.
-- **Hvem har meldt seg** står åpent på hver oppgave, hele tiden, for alle: navn,
-  hva hver enkelt bidrar med, og telefonnummeret deres når oppgaven krever ett.
-  Nummeret er ett trykk fra en samtale, så to som deler en vakt kan avtale seg
-  imellom uten å gå veien om den ansvarlige. E-postadressen deles ikke.
+- **Hvem har meldt seg** står åpent på hver oppgave, hele tiden: navn og hva hver
+  enkelt bidrar med.
+- **Telefonnumre deles bare mellom dem som deler vakta.** Tre ting må stemme
+  samtidig før et nummer vises: oppgaven krever nummer, hun har krysset av for å
+  dele det, og den som spør står selv på lista. Da er nummeret ett trykk fra en
+  samtale, så to som skal samarbeide kan avtale seg imellom uten å gå veien om
+  den ansvarlige. E-postadresser deles aldri.
 - **Mine vakter** — lista ligger på telefonen, ingen konto trengs. Herfra melder
   man også avbud.
 - **Legg i kalenderen** — vakta inn i telefonens egen kalender med påminnelse.
@@ -202,15 +205,34 @@ Bare serveren har databasefila. Verken nettleseren eller appen ser den, så det
 finnes ingen vei utenom serveren til det som ligger der. Innloggingen er Auth.js
 med økten i en signert cookie.
 
-Men vær klar over hva som *med vilje* er åpent: frivilliglista med navn, bidrag
-og telefonnummer ligger på `/api/offentlig/arrangementer/{slug}` og på
+Vær klar over hva som *med vilje* er åpent: navnene på frivilliglista, og hva
+hver enkelt bidrar med, ligger på `/api/offentlig/arrangementer/{slug}` og på
 arrangementssiden, uten innlogging. Det er lesbart for alle som kjenner
-adressen, ikke bare for dem som har appen — det finnes ingen konto å gjemme det
-bak. Nummeret finnes bare der den ansvarlige har krysset av for **Krev
-telefonnummer**, så det er den avkryssingen som avgjør om det deles i det hele
-tatt. Trengs ikke nummer til planleggingen, ikke krev det.
+adressen. Det er prisen for en app helt uten kontoer, og den er tatt med vilje.
+
+**Telefonnumrene er ikke en del av det.** De krever tre ting samtidig:
+
+1. oppgaven krever nummer (`krev_telefon` på arrangementet),
+2. den frivillige har krysset av for å dele det (`del_nummer` på påmeldingen,
+   avslått som standard),
+3. og den som spør står selv på lista.
+
+Det siste vises ved å sende sin egen påmeldings-id i `x-pamelding-id`. Den ligger
+bare på telefonen til den som har sagt ja, og er det nærmeste en nøkkel vi har.
+Den er ingen ekte innlogging — den som får tak i en gyldig id, kommer inn — men
+den skiller den som deler vakta fra hvem som helst, og det er skillet som betyr
+noe her.
+
+Arrangementssidene på nett er merket `noindex`. De navngir folk, og skal ikke
+kunne søkes opp på navnet til en frivillig. Forsiden indekseres som før; den
+viser hva som skjer, uten navn. Numrene skrives aldri inn i HTML-en i det hele
+tatt, bare i API-svaret til appen.
 
 E-postadresser deles aldri; de brukes bare til utsending fra admin.
+
+Dette er teknikken. Selve personvernvurderingen — og personvernerklæringen
+butikkene krever — hører hjemme hos menigheten som behandlingsansvarlig, og bør
+nevne uttrykkelig at numre kan vises til andre frivillige.
 
 ### Koble til Brevo
 
