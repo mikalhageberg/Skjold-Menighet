@@ -1256,29 +1256,6 @@ img {
   }
 }
 
-/* Det menigheten selv må fylle ut før erklæringen kan publiseres. Med vilje
-   umulig å overse — en personvernerklæring med hull er verre enn ingen. */
-.fyll-inn {
-  border: 1px solid var(--messing, #8f6716);
-  border-inline-start: 3px solid var(--messing, #8f6716);
-  background: #f6efdf;
-  padding: 1rem 1.25rem;
-  border-radius: var(--radius);
-  margin: 1.5rem 0 2rem;
-}
-
-.fyll-inn p {
-  margin: 0;
-  font-size: var(--t-liten);
-}
-
-.fyll-inn__felt {
-  background: #f6e2a8;
-  color: var(--gran);
-  padding: 0.1em 0.3em;
-  border-radius: 2px;
-}
-
 /* ── Bunntekst ───────────────────────────────────────────────────────── */
 
 .bunn {
@@ -1299,11 +1276,6 @@ img {
   justify-content: space-between;
 }
 
-@media print {
-  .fyll-inn {
-    border-color: #000;
-  }
-}
 
 @media print {
   .topp,

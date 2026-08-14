@@ -138,9 +138,17 @@ butikkene).
 - Google Play Developer, 25 USD én gang.
 - Personvernerklæringen ligger på `/personvern`, og appen lenker dit fra
   velkomsten og fra Mine vakter — Apple krever at den er å finne inne i appen,
-  ikke bare i butikkoppføringen. **Den har tre felt menigheten må fylle ut**,
-  merket i gult på siden. Fyll dem ut, slett den gule boksen på toppen, og la
-  noen som kan personvern lese teksten før dere sender inn.
+  ikke bare i butikkoppføringen. Den bør leses av noen som kan personvern før
+  dere sender inn, og må endres i samme slengen som dere endrer hva som lagres
+  eller deles.
+- **Sletterutinen står i erklæringen, men ingenting utfører den.** Teksten sier
+  at oppgaver slettes ett til to døgn etter at de har vært; i dag må noen gjøre
+  det for hånd fra **Alle arrangementer**. Enten holder dere rutinen, eller så
+  bør cron-jobben rydde selv.
+- **Serveren står i USA**, altså utenfor EØS. Overføringen trenger et grunnlag —
+  Data Privacy Framework eller standard personvernbestemmelser. Railway kan
+  kjøre i EU i stedet, og da faller hele spørsmålet bort; husk å endre
+  erklæringen om dere flytter.
 - Skjermbilder. `eas build` gir dere appen; skjermbildene tar dere i simulator.
 
 Ikonene ligger i `mobil/assets/` og lages av `mobil/verktoy/lag-ikoner.py`.

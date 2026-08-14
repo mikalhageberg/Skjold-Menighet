@@ -29,18 +29,11 @@ export default function Personvern() {
           mulig, og her står det nøyaktig hva det er.
         </p>
 
-        <div className="fyll-inn" role="note">
-          <p>
-            <strong>Til menigheten:</strong> fyll ut feltene merket i gult nedenfor, og slett
-            så denne boksen. Teksten skal leses av en som kan personvern før den publiseres.
-          </p>
-        </div>
-
         <h2>Hvem er ansvarlig</h2>
         <p>
           Behandlingsansvarlig er Skjold menighet. Spørsmål om personvern, innsyn eller
-          sletting rettes til <Fyll>navn, e-postadresse og telefonnummer til den i
-          menigheten som svarer på dette</Fyll>.
+          sletting rettes til Mikal Hageberg på{" "}
+          <a href="mailto:mikal.hageberg@gmail.com">mikal.hageberg@gmail.com</a>.
         </p>
 
         <h2>Det som bare ligger på telefonen din</h2>
@@ -133,10 +126,7 @@ export default function Personvern() {
           <tbody>
             <tr>
               <th scope="row">Railway</th>
-              <td>
-                Driver serveren og databasen. Opplysningene lagres{" "}
-                <Fyll>hvilket land eller region tjenesten kjører i</Fyll>.
-              </td>
+              <td>Driver serveren og databasen. Serverne står i USA.</td>
             </tr>
             <tr>
               <th scope="row">Expo</th>
@@ -162,12 +152,18 @@ export default function Personvern() {
           </tbody>
         </table>
 
+        <h2>Opplysninger utenfor Europa</h2>
+        <p>
+          Serveren står i USA, altså utenfor EØS. Det betyr at navnet ditt, og eventuelt
+          nummeret eller adressen din, lagres der. Vi har ikke valgt USA av noen annen grunn
+          enn at det er der tjenesten vi bruker ble satt opp.
+        </p>
+
         <h2>Hvor lenge vi lagrer det</h2>
         <p>
           Påmeldingen din blir stående så lenge oppgaven finnes, slik at menigheten vet hvem
-          som stilte. Når en oppgave slettes, forsvinner lista over frivillige sammen med den.
-          Menigheten sletter oppgaver som har vært{" "}
-          <Fyll>hvor lenge etter at en oppgave har vært, oppgavene slettes</Fyll>.
+          som stilte. Oppgaver slettes normalt ett til to døgn etter at de har vært, og da
+          forsvinner lista over frivillige sammen med dem.
         </p>
 
         <h2>Rettighetene dine</h2>
@@ -198,9 +194,4 @@ export default function Personvern() {
       </article>
     </div>
   );
-}
-
-/** Markerer noe menigheten selv må fylle inn før erklæringen publiseres. */
-function Fyll({ children }: { children: React.ReactNode }) {
-  return <mark className="fyll-inn__felt">[{children}]</mark>;
 }
