@@ -4,6 +4,7 @@ import {
   Animated,
   Image,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -214,6 +215,9 @@ function Fakta({
  * Lista over dem som alt har sagt ja. Den står åpent for alle, hele tiden:
  * det er lettere å melde seg når man ser at naboen har gjort det, og man
  * slipper å bli tre om det samme når det står hva hver enkelt tar.
+ *
+ * Nummeret er ett trykk unna en telefonsamtale. Skal to dele en vakt,
+ * skal de kunne avtale seg imellom uten å gå veien om den ansvarlige.
  */
 function Frivilligliste({ frivillige }: { frivillige: Frivillig[] }) {
   return (
@@ -233,6 +237,19 @@ function Frivilligliste({ frivillige }: { frivillige: Frivillig[] }) {
                 <Tekst variant="liten" farget="myk">
                   {f.bidrag}
                 </Tekst>
+              ) : null}
+              {f.telefon ? (
+                <Pressable
+                  onPress={() => Linking.openURL(`tel:${f.telefon!.replace(/\s/g, "")}`)}
+                  accessibilityRole="link"
+                  accessibilityLabel={`Ring ${f.navn} på ${f.telefon}`}
+                  style={stil.nummer}
+                  hitSlop={6}
+                >
+                  <Tekst variant="liten" farget="messing">
+                    {f.telefon}
+                  </Tekst>
+                </Pressable>
               ) : null}
             </View>
           ))}
@@ -520,8 +537,8 @@ function Skjema({
 
       <Felt
         etikett="Jeg bidrar med"
-        hjelp="Valgfritt, men til god hjelp: «to kaker», «kjører bussen», «kan komme fra kl. 16»."
-        placeholder="Skriv gjerne hva du tar"
+        hjelp="Skriv gjerne hva du bidrar med i form av hva du tar med av mat og lignende"
+        placeholder="Valgfritt"
         value={bidrag}
         onChangeText={settBidrag}
         multiline
@@ -585,6 +602,7 @@ const stil = StyleSheet.create({
   faktanavn: { width: 120 },
   faktaverdi: { flexDirection: "row", alignItems: "center", gap: rom.s },
   prikk: { width: 8, height: 8, borderRadius: 4 },
+  nummer: { alignSelf: "flex-start", paddingVertical: 2 },
   frivillig: {
     gap: 2,
     paddingLeft: rom.m,

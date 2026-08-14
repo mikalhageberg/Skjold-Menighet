@@ -151,13 +151,17 @@ export async function hentPameldinger(arrangementId: string): Promise<Pamelding[
 }
 
 /**
- * Lista alle ser: navn og hva hver enkelt bidrar med, ingenting mer.
- * Poenget er at man skal kunne se om noen alt har tatt kakebaksten før
- * man melder seg — og at det ikke skal føles tomt å være den første.
+ * Lista alle ser: navn, hva hver enkelt bidrar med, og nummeret deres når
+ * oppgaven krever ett. Poenget er at man skal kunne se om noen alt har
+ * tatt kakebaksten før man melder seg — og kunne ringe den man deler
+ * vakt med uten å gå veien om den ansvarlige.
+ *
+ * E-postadressen er ikke med. Den brukes til utsending fra admin, og har
+ * ingenting med planlegging mellom frivillige å gjøre.
  */
 export async function hentFrivillige(arrangementId: string): Promise<Frivillig[]> {
   const pameldinger = await hentPameldinger(arrangementId);
-  return pameldinger.map((p) => ({ navn: p.navn, bidrag: p.bidrag }));
+  return pameldinger.map((p) => ({ navn: p.navn, bidrag: p.bidrag, telefon: p.telefon }));
 }
 
 /** Påmeldingen slik den ligger i basen — med enheten, som aldri forlater serveren. */

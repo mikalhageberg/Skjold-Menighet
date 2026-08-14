@@ -824,6 +824,12 @@ img {
   color: var(--gran-myk);
 }
 
+.frivillige__nummer {
+  font-size: var(--t-liten);
+  font-variant-numeric: tabular-nums;
+  justify-self: start;
+}
+
 /* ── Kvittering ──────────────────────────────────────────────────────── */
 
 .kvittering {

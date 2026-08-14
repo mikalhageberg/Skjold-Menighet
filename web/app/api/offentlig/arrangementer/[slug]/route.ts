@@ -7,8 +7,12 @@ export const dynamic = "force-dynamic";
  * Ett arrangement, med lista over hvem som har meldt seg. Appen henter
  * dette på nytt før påmelding, så både tallet og navnene er ferske.
  *
- * Lista er navn og bidrag — aldri telefonnummer eller e-post. De ligger
- * bare hos den ansvarlige.
+ * Lista er navn, bidrag og telefonnummer — det siste bare når oppgaven
+ * krever nummer, og det er delt med vilje, så de som deler en vakt kan
+ * avtale seg imellom. E-postadressen blir liggende hos den ansvarlige.
+ *
+ * Merk at denne ruta er åpen, uten innlogging. Det som legges her, er
+ * lesbart for alle som kjenner adressen.
  */
 export async function GET(
   _forespørsel: Request,

@@ -67,8 +67,10 @@ EXPO_PUBLIC_API_BASE=http://192.168.1.42:3000 npm run mobil
 - **Å si ja uten innlogging.** Man melder bare seg selv, og til vanlig er det ett
   trykk — navnet er allerede der. Feltet **Jeg bidrar med** er valgfritt, og er
   der for at ikke tre skal komme med hver sin bløtkake.
-- **Hvem har meldt seg** står åpent på hver oppgave, hele tiden, for alle. Navn og
-  bidrag — aldri telefonnummer eller e-post.
+- **Hvem har meldt seg** står åpent på hver oppgave, hele tiden, for alle: navn,
+  hva hver enkelt bidrar med, og telefonnummeret deres når oppgaven krever ett.
+  Nummeret er ett trykk fra en samtale, så to som deler en vakt kan avtale seg
+  imellom uten å gå veien om den ansvarlige. E-postadressen deles ikke.
 - **Mine vakter** — lista ligger på telefonen, ingen konto trengs. Herfra melder
   man også avbud.
 - **Legg i kalenderen** — vakta inn i telefonens egen kalender med påminnelse.
@@ -197,10 +199,18 @@ som allerede har tilgang til serveren.
 #### Om sikkerheten
 
 Bare serveren har databasefila. Verken nettleseren eller appen ser den, så det
-finnes ingen vei utenom serveren til kontaktopplysningene. Navnene på lista er
-åpne med vilje — det er hele poenget med å se hvem som har meldt seg — men
-telefonnummer og e-post går aldri ut av admin. Innloggingen er Auth.js
+finnes ingen vei utenom serveren til det som ligger der. Innloggingen er Auth.js
 med økten i en signert cookie.
+
+Men vær klar over hva som *med vilje* er åpent: frivilliglista med navn, bidrag
+og telefonnummer ligger på `/api/offentlig/arrangementer/{slug}` og på
+arrangementssiden, uten innlogging. Det er lesbart for alle som kjenner
+adressen, ikke bare for dem som har appen — det finnes ingen konto å gjemme det
+bak. Nummeret finnes bare der den ansvarlige har krysset av for **Krev
+telefonnummer**, så det er den avkryssingen som avgjør om det deles i det hele
+tatt. Trengs ikke nummer til planleggingen, ikke krev det.
+
+E-postadresser deles aldri; de brukes bare til utsending fra admin.
 
 ### Koble til Brevo
 

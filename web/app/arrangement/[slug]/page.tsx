@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { hentArrangement, hentFrivillige } from "@/lib/data";
-import { frivilligtekst, pameldingsstatus, sesongFor } from "@skjold/delt";
+import { frivilligtekst, pameldingsstatus, sesongFor, type Frivillig } from "@skjold/delt";
 import { dato, klokka, nartid, tidsrom, ukedag } from "@skjold/delt";
 import { Pameldingsskjema } from "@/components/Pameldingsskjema";
 
@@ -147,14 +147,12 @@ export default async function Arrangementsside({ params }: Props) {
 /**
  * Hvem som alt har sagt ja. Den står åpent — det er lettere å melde seg
  * når man ser at naboen har gjort det, og lettere å se at det trengs én
- * til når lista er kort. Bare navn og bidrag; kontaktopplysningene ligger
- * hos den ansvarlige.
+ * til når lista er kort.
+ *
+ * Nummeret står med når oppgaven krever ett, så de som deler en vakt kan
+ * avtale seg imellom. E-postadressen deles ikke.
  */
-function Frivilligliste({
-  frivillige,
-}: {
-  frivillige: { navn: string; bidrag: string | null }[];
-}) {
+function Frivilligliste({ frivillige }: { frivillige: Frivillig[] }) {
   if (frivillige.length === 0) {
     return (
       <div className="frivillige">
@@ -172,6 +170,11 @@ function Frivilligliste({
           <li key={i} className="frivillige__post">
             <span className="frivillige__navn">{f.navn}</span>
             {f.bidrag && <span className="frivillige__bidrag">{f.bidrag}</span>}
+            {f.telefon && (
+              <a className="frivillige__nummer" href={`tel:${f.telefon.replace(/\s/g, "")}`}>
+                {f.telefon}
+              </a>
+            )}
           </li>
         ))}
       </ul>

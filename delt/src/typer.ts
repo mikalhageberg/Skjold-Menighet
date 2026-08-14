@@ -36,12 +36,17 @@ export type ArrangementMedAntall = Arrangement & {
 };
 
 /**
- * Én frivillig som har meldt seg. Dette er alt appen viser om andre —
- * navn og hva de sa de skulle bidra med, aldri telefon eller e-post.
+ * Én frivillig som har meldt seg, slik de andre ser henne.
+ *
+ * Telefonnummeret er med så de som deler en vakt kan avtale seg imellom
+ * uten å gå veien om den ansvarlige. Det finnes bare når oppgaven krever
+ * nummer (`krev_telefon`) — ellers er det null. E-postadressen deles
+ * aldri; den blir liggende hos den ansvarlige.
  */
 export type Frivillig = {
   navn: string;
   bidrag: string | null;
+  telefon: string | null;
 };
 
 export type Pamelding = {

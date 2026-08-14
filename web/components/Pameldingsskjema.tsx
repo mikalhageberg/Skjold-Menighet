@@ -99,8 +99,7 @@ export function Pameldingsskjema({ arrangement }: { arrangement: ArrangementMedA
           Jeg bidrar med
         </label>
         <p className="felt__hjelp">
-          Valgfritt, men til god hjelp: skriv hva du tar, så slipper dere å bli tre om det
-          samme. «To kaker», «kjører bussen», «kan komme fra kl. 16».
+          Skriv gjerne hva du bidrar med i form av hva du tar med av mat og lignende
         </p>
         <textarea id="bidrag" name="bidrag" className="felt__inn felt__inn--omrade" rows={3} />
       </div>
