@@ -37,3 +37,5 @@ web/data/
 
 # Ferdige skjermbilder til App Store — genereres, skal ikke i git
 mobil/verktoy/skjermbilder/
+mobil/verktoy/butikk/
+__pycache__/
