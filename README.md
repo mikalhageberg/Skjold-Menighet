@@ -148,7 +148,16 @@ butikkene).
 - **Serveren står i Amsterdam**, innenfor EØS. Flytter dere den ut igjen, må
   personvernerklæringen endres i samme slengen — og overføringen trenger da et
   grunnlag.
-- Skjermbilder. `eas build` gir dere appen; skjermbildene tar dere i simulator.
+- Skjermbilder. Apple godtar bare noen få eksakte pikselstørrelser, og avviser
+  alt annet med «dimensions are wrong». Ta bildene på telefonen og kjør dem
+  gjennom:
+
+  ```bash
+  python3 verktoy/skjermbilder.py ~/Desktop/*.PNG
+  ```
+
+  Den skalerer til 1284 × 2778 og klipper midtstilt — noen få piksler i kanten,
+  ingen strekking. Andre mål står i `--hjelp`.
 
 Ikonene ligger i `mobil/assets/` og lages av `mobil/verktoy/lag-ikoner.py`.
 Merket er et kirkevindu med kirkeåret som en farget søyle inni.

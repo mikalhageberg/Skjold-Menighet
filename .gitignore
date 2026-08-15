@@ -34,3 +34,6 @@ web/data/
 *.db
 *.db-wal
 *.db-shm
+
+# Ferdige skjermbilder til App Store — genereres, skal ikke i git
+mobil/verktoy/skjermbilder/
