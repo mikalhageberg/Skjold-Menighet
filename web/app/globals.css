@@ -1266,6 +1266,11 @@ img {
   color: var(--gran-myk);
 }
 
+.bunn__lenker {
+  display: flex;
+  gap: 1.25rem;
+}
+
 .bunn__rad {
   max-width: var(--bredde, 64rem);
   margin: 0 auto;
