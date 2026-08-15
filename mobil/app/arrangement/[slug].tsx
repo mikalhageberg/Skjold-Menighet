@@ -11,7 +11,8 @@ import {
   StyleSheet,
   View,
 } from "react-native";
-import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import LottieView from "lottie-react-native";
 import {
   dag,
@@ -32,11 +33,14 @@ import { husk, erPameldt, minPameldingId } from "@/lib/lager";
 import { hentProfil, lagreProfil } from "@/lib/profil";
 import { hentPushToken } from "@/lib/varsler";
 import { leggIKalender } from "@/lib/kalender";
+import { Tilbakeknapp } from "@/komponenter/Tilbakeknapp";
 import { Avkryss, Felt, Knapp, Notis, Tekst } from "@/design/Grunnelementer";
 import { farge, radius, rom, TREFF } from "@/design/tema";
 
 export default function Arrangementsside() {
-  const { slug } = useLocalSearchParams<{ slug: string }>();
+  const { slug, fra } = useLocalSearchParams<{ slug: string; fra?: string }>();
+  // Uten systemets header må vi selv holde innholdet klar av statuslinja.
+  const insets = useSafeAreaInsets();
   const [arrangement, settArrangement] = useState<ArrangementMedAntall | null>(null);
   const [frivillige, settFrivillige] = useState<Frivillig[]>([]);
   const [lastefeil, settLastefeil] = useState<string | null>(null);
@@ -67,9 +71,17 @@ export default function Arrangementsside() {
     last();
   }, [last]);
 
+  const topplinje = (
+    <View style={[stil.topplinje, { paddingTop: insets.top }]}>
+      <Tilbakeknapp fra={fra} />
+    </View>
+  );
+
   if (lastefeil) {
     return (
-      <View style={stil.midt}>
+      <View style={{ flex: 1 }}>
+        {topplinje}
+        <View style={stil.midt}>
         <Notis tone="fare">
           <Tekst halvfet>Fikk ikke hentet arrangementet</Tekst>
           <Tekst variant="liten" farget="myk">
@@ -79,14 +91,18 @@ export default function Arrangementsside() {
             <Knapp tittel="Prøv igjen" variant="stille" onPress={last} />
           </View>
         </Notis>
+        </View>
       </View>
     );
   }
 
   if (!arrangement) {
     return (
-      <View style={stil.midt}>
-        <ActivityIndicator color={farge.granMyk} />
+      <View style={{ flex: 1 }}>
+        {topplinje}
+        <View style={stil.midt}>
+          <ActivityIndicator color={farge.granMyk} />
+        </View>
       </View>
     );
   }
@@ -97,7 +113,7 @@ export default function Arrangementsside() {
 
   return (
     <>
-      <Stack.Screen options={{ title: arrangement.tittel }} />
+      {topplinje}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -600,6 +616,15 @@ function Stengt({ grunn }: { grunn: "stengt" | "nok" | "over" }) {
 
 const stil = StyleSheet.create({
   innhold: { padding: rom.l, paddingBottom: rom.xxxl * 2, gap: rom.xl },
+  // Står fast øverst, slik systemets header gjorde — en tilbakeknapp som
+  // ruller bort er ubrukelig akkurat når man leter etter den.
+  topplinje: {
+    backgroundColor: farge.kalk,
+    borderBottomWidth: 1,
+    borderBottomColor: farge.strekSvak,
+    paddingHorizontal: rom.m,
+    paddingBottom: rom.xs,
+  },
   midt: { flex: 1, alignItems: "center", justifyContent: "center", padding: rom.l },
   bilde: {
     width: "100%",

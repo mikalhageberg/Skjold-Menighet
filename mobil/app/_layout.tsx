@@ -80,13 +80,11 @@ export default function Rot() {
       >
         <Stack.Screen name="(faner)" options={{ headerShown: false }} />
         <Stack.Screen name="velkommen" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="arrangement/[slug]"
-          options={({ route }) => ({
-            title: "",
-            headerBackTitle: (route.params as { fra?: string } | undefined)?.fra || "Tilbake",
-          })}
-        />
+        {/* Arrangementssiden har sin egen tilbakeknapp. Systemets henter
+            teksten fra forrige skjerm, og fanene har ingen header å hente
+            den fra — og kommer man hit fra et varsel, er det ingen skjerm
+            bak i det hele tatt. */}
+        <Stack.Screen name="arrangement/[slug]" options={{ headerShown: false }} />
       </Stack>
       {!harProfil && <Redirect href="/velkommen" />}
     </>
