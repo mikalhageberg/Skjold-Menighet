@@ -20,7 +20,7 @@ import { genererBilde } from "@/lib/gemini";
 import { krevAdmin, demomodus } from "@/lib/auth";
 import { signIn, signOut } from "@/auth";
 import { AuthError } from "next-auth";
-import { lagSlug } from "@skjold/delt";
+import { fraInputVerdi, lagSlug } from "@skjold/delt";
 
 export type Svar = { ok: boolean; melding?: string };
 
@@ -68,10 +68,10 @@ function lesArrangement(data: FormData): ArrangementUtenSlug | string {
     const v = String(data.get(n) ?? "").trim();
     return v === "" ? null : v;
   };
-  const tid = (n: string) => {
-    const v = String(data.get(n) ?? "").trim();
-    return v === "" ? null : new Date(v).toISOString();
-  };
+  // Klokkeslettene i skjemaet er norsk tid. Serveren står i UTC, så de må
+  // regnes om her — ikke overlates til new Date(), som ville tolket dem i
+  // serverens egen tidssone og flyttet tidspunktet to timer.
+  const tid = (n: string) => fraInputVerdi(String(data.get(n) ?? "").trim());
 
   const trengs = tall("trengs");
   if (trengs !== null && (!Number.isInteger(trengs) || trengs < 1))
@@ -81,7 +81,7 @@ function lesArrangement(data: FormData): ArrangementUtenSlug | string {
     tittel,
     ingress: tekst("ingress"),
     beskrivelse: tekst("beskrivelse"),
-    starter: new Date(starter).toISOString(),
+    starter: fraInputVerdi(starter)!,
     slutter: tid("slutter"),
     sted: String(data.get("sted") ?? "").trim() || "Skjold kirke",
     trengs,
@@ -227,12 +227,10 @@ export async function lagreArrangementAction(_forrige: Svar, data: FormData): Pr
   let forsteId: string | null = null;
   try {
     for (const dagerOffset of gjentakelse) {
-      const starter = new Date(skyvDager(raStarter, dagerOffset)).toISOString();
-      const slutter = raSlutter
-        ? new Date(skyvDager(raSlutter, dagerOffset)).toISOString()
-        : null;
+      const starter = fraInputVerdi(skyvDager(raStarter, dagerOffset))!;
+      const slutter = raSlutter ? fraInputVerdi(skyvDager(raSlutter, dagerOffset)) : null;
       const pameldingStenger = raFrist
-        ? new Date(skyvDager(raFrist, dagerOffset)).toISOString()
+        ? fraInputVerdi(skyvDager(raFrist, dagerOffset))
         : null;
 
       const slug = await finnLedigSlug(lagSlug(resultat.tittel) || "arrangement");

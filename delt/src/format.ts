@@ -64,6 +64,47 @@ export function nartid(d: Date, na = new Date()) {
   return `om ${Math.round(diff / 7)} uker`;
 }
 
+/** Hvor mange millisekunder Oslo ligger foran UTC på et gitt tidspunkt. */
+function osloForskjell(ms: number): number {
+  const deler = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).format(new Date(ms));
+  return Date.parse(deler.replace(" ", "T") + "Z") - ms;
+}
+
+/**
+ * Motstykket til tilInputVerdi: tar «2026-09-16T14:00» fra et skjemafelt og
+ * gir tidspunktet som ISO-tekst.
+ *
+ * Klokkeslettet i feltet er alltid ment som norsk tid — det er det den
+ * ansvarlige ser på veggklokka. `new Date("2026-09-16T14:00")` ville tolket
+ * det i serverens tidssone, og serveren står i UTC. Da ble 14:00 lagret som
+ * 14:00Z og vist som 16:00, og tidspunktet flyttet seg to timer for hver
+ * lagring. Lokalt merket man det ikke, fordi utviklingsmaskinen står i Oslo.
+ *
+ * To runder holder også over sommertidsskiftet: første gjetning kan lande
+ * på feil side av skiftet, den andre retter det opp.
+ */
+export function fraInputVerdi(naiv: string): string | null {
+  if (!naiv) return null;
+  const [datoDel, klokkeDel = "00:00"] = naiv.split("T");
+  const [aar, maned, dag] = datoDel.split("-").map(Number);
+  const [time, minutt] = klokkeDel.split(":").map(Number);
+  if ([aar, maned, dag, time, minutt].some((n) => !Number.isFinite(n))) return null;
+
+  const gjett = Date.UTC(aar, maned - 1, dag, time, minutt);
+  let ms = gjett - osloForskjell(gjett);
+  ms = gjett - osloForskjell(ms);
+  return new Date(ms).toISOString();
+}
+
 /** For datetime-local-felt i admin. */
 export function tilInputVerdi(iso: string | null) {
   if (!iso) return "";
