@@ -160,6 +160,10 @@ butikkene).
   ingen strekking. Andre mål står i `--hjelp`.
 
 Ikonene ligger i `mobil/assets/` og lages av `mobil/verktoy/lag-ikoner.py`.
+Grafikken butikkene vil ha, men som ikke ligger i appen — Play-ikonet på 512 og
+promografikken på 1024 × 500 — lages av `mobil/verktoy/lag-butikkgrafikk.py` og
+havner i `verktoy/butikk/`, utenfor git. Begge låner kirkevinduet fra
+ikon-skriptet, så merket bare finnes ett sted.
 Merket er et kirkevindu med kirkeåret som en farget søyle inni.
 
 **Om Apples «minimum functionality»:** Apple avviser apper som bare er en
