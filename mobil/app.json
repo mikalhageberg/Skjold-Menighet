@@ -27,6 +27,7 @@
     },
     "android": {
       "package": "no.skjoldmenighet.app",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#16302A"

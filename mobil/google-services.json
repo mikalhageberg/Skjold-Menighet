@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "730513989272",
+    "project_id": "skjold-menighet",
+    "storage_bucket": "skjold-menighet.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:730513989272:android:0fd9ec8299aff8f931faed",
+        "android_client_info": {
+          "package_name": "no.skjoldmenighet.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBoyM4n_-1k-9__CgMYPapCiPjAhOHOtdQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
