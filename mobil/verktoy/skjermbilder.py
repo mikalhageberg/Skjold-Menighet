@@ -32,6 +32,10 @@ MAAL = {
     "6.5-alt": (1242, 2688),
     "6.9": (1290, 2796),
     "ipad": (2048, 2732),
+    # Google Play vil ha 16:9 eller 9:16 på nettbrett. Appen er låst til
+    # stående, så da er det 9:16.
+    "play-7": (1080, 1920),
+    "play-10": (1440, 2560),
 }
 
 UT = Path(__file__).parent / "skjermbilder"
