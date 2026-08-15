@@ -1,5 +1,5 @@
 import "server-only";
-import { klokka, ukedag } from "@skjold/delt";
+import { klokka, langDato, ukedag } from "@skjold/delt";
 
 /**
  * Push-varsler via Expo. Vi sender til Expos tjeneste, som videresender til
@@ -85,10 +85,24 @@ type Oppgave = {
   sted: string;
 };
 
-/** «torsdag kl. 11.00» — samme innmat i alle tre varslene. */
+/**
+ * «torsdag kl. 11.00» — nok når varselet handler om noe nært i tid, og
+ * mottakeren alt vet hvilken dag det er snakk om.
+ */
 function nar(starter: string) {
   const start = new Date(starter);
   return `${ukedag(start)} kl. ${klokka(start).replace(":", ".")}`;
+}
+
+/**
+ * «torsdag 16. august kl. 11.00» — med dato.
+ *
+ * Varselet om en ny oppgave kan gjelde noe som er flere uker unna, og da
+ * sier «torsdag» ingenting om hvilken torsdag. Da må datoen med, ellers må
+ * man åpne appen bare for å finne ut om det er aktuelt.
+ */
+function narMedDato(starter: string) {
+  return langDato(new Date(starter));
 }
 
 /** Påminnelsen dagen før, til dem som har sagt ja. */
@@ -115,10 +129,10 @@ export function varsleNyOppgave(
     tittel: "Det trengs frivillige",
     tekst:
       antallISerie > 1
-        ? `${oppgave.tittel} — ${antallISerie} ganger framover, første gang ${nar(
+        ? `${oppgave.tittel} — ${antallISerie} ganger framover, første gang ${narMedDato(
             oppgave.starter,
           )}. Se om det passer for deg.`
-        : `${oppgave.tittel}, ${nar(oppgave.starter)} i ${oppgave.sted}. Se om det passer for deg.`,
+        : `${oppgave.tittel}, ${narMedDato(oppgave.starter)} i ${oppgave.sted}. Se om det passer for deg.`,
     data: { type: "ny-oppgave", slug: oppgave.slug },
   });
 }
