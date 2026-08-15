@@ -1,6 +1,10 @@
 import { Tabs } from "expo-router";
 import { StyleSheet, View, type ColorValue } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { farge, skrift, storrelse } from "@/design/tema";
+
+/** Høyden fanelinja trenger til ikon og etikett, uten systemlinja. */
+const FANEHOYDE = 72;
 
 /**
  * To faner er nok: det som trenger folk, og det du har sagt ja til.
@@ -8,6 +12,12 @@ import { farge, skrift, storrelse } from "@/design/tema";
  * (kirkeårets knute) og en hake.
  */
 export default function Faner() {
+  // Android tegner kant-til-kant, så navigasjonslinja nederst ligger oppå
+  // appen. Den plassen må legges til høyden, ikke tas fra den: React
+  // Navigation regner den inn selv, men bare når «height» ikke er satt —
+  // en fast høyde kortslutter hele utregningen (se BottomTabBar).
+  const insets = useSafeAreaInsets();
+
   return (
     <Tabs
       screenOptions={{
@@ -24,8 +34,9 @@ export default function Faner() {
         tabBarStyle: {
           backgroundColor: farge.kalk,
           borderTopColor: farge.strek,
-          height: 88,
+          height: FANEHOYDE + insets.bottom,
           paddingTop: 10,
+          paddingBottom: insets.bottom,
         },
         tabBarLabelStyle: {
           fontFamily: skrift.tekstMedium,
