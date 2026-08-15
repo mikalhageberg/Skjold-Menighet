@@ -141,6 +141,9 @@ export function varsleNyOppgave(
  * Beskjed når noen har meldt avbud. Den som melder avbud skal slippe å
  * ringe rundt selv — det er hele grunnen til at avbud er en knapp og ikke
  * en telefonsamtale.
+ *
+ * Datoen må med av samme grunn som i varselet om en ny oppgave: et avbud
+ * kan gjelde noe som er uker unna, og da sier ukedagen ingenting.
  */
 export function varsleAvbud(
   oppgave: Oppgave,
@@ -152,8 +155,8 @@ export function varsleAvbud(
     tittel: "En frivillig har meldt avbud",
     tekst:
       mangler === null
-        ? `${oppgave.tittel}, ${nar(oppgave.starter)}. Kan du steppe inn?`
-        : `${oppgave.tittel}, ${nar(oppgave.starter)}. Det mangler nå ${mangler} ${
+        ? `${oppgave.tittel}, ${narMedDato(oppgave.starter)}. Kan du steppe inn?`
+        : `${oppgave.tittel}, ${narMedDato(oppgave.starter)}. Det mangler nå ${mangler} ${
             mangler === 1 ? "frivillig" : "frivillige"
           }.`,
     data: { type: "avbud", slug: oppgave.slug },
