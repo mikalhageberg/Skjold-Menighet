@@ -39,3 +39,8 @@ web/data/
 mobil/verktoy/skjermbilder/
 mobil/verktoy/butikk/
 __pycache__/
+
+# Firebase-nøkler. Tjenestekontonøkkelen er en hemmelighet — den kan sende
+# varsler i menighetens navn — og skal aldri i git. Den ligger hos EAS.
+mobil/*firebase-adminsdk*.json
+mobil/google-services.json
