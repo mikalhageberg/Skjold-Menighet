@@ -217,9 +217,15 @@ Lokalt holder det å peke den på en mappe i prosjektet, f.eks.
 npm run ny-admin
 ```
 
-Spør om e-post, navn og passord, og legger personen i `administratorer`.
-Passordet lagres aldri — bare en argon2-hash. Kjører du den med en e-post som
+Spør om brukernavn, navn og passord, og legger personen i `administratorer`.
+Brukernavnet er ikke en e-postadresse — adressen ble aldri brukt til å sende
+noe, bare til å logge inn med, og et brukernavn er kortere å taste. Passordet
+lagres aldri, bare en argon2-hash. Kjører du den med et brukernavn som
 allerede finnes, settes nytt passord i stedet.
+
+Administratorer som ble opprettet før dette logger fortsatt inn med
+e-postadressen sin — den er brukernavnet deres nå, og migreringen døper bare
+om kolonnen.
 
 Det finnes med vilje ingen selvbetjent registrering. Folk kommer inn her, av noen
 som allerede har tilgang til serveren.

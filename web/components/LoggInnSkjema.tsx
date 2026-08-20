@@ -18,15 +18,18 @@ export function LoggInnSkjema() {
       )}
 
       <div className="felt">
-        <label className="felt__etikett" htmlFor="epost">
-          E-post
+        <label className="felt__etikett" htmlFor="brukernavn">
+          Brukernavn
         </label>
         <input
-          id="epost"
-          name="epost"
-          type="email"
+          id="brukernavn"
+          name="brukernavn"
+          type="text"
           className="felt__inn"
           autoComplete="username"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           required
         />
       </div>

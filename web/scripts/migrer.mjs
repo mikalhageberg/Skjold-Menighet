@@ -91,6 +91,7 @@ try {
   dopOm("pameldinger", "kontakt_telefon", "telefon");
   dopOm("pameldinger", "kontakt_epost", "epost");
   dopOm("pameldinger", "melding", "bidrag");
+  dopOm("administratorer", "epost", "brukernavn");
 
   leggTilKolonne("arrangementer", "bilde", "blob");
   leggTilKolonne("arrangementer", "bilde_type", "text");

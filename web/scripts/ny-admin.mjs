@@ -55,8 +55,11 @@ const db = new Database(filsti);
 db.pragma("foreign_keys = ON");
 
 try {
-  const epost = (await les.question("E-post: ")).trim().toLowerCase();
-  if (!epost.includes("@")) throw new Error("Det ser ikke ut som en e-postadresse.");
+  const brukernavn = (await les.question("Brukernavn: ")).trim().toLowerCase();
+  // Vidt nok til at gamle e-postadresser fortsatt går inn — de er
+  // brukernavn nå, og folk skal ikke låses ute av en navneendring.
+  if (brukernavn.length < 3) throw new Error("Brukernavnet må være minst 3 tegn.");
+  if (/\s/.test(brukernavn)) throw new Error("Brukernavnet kan ikke inneholde mellomrom.");
 
   const navn = (await les.question("Navn: ")).trim();
 
@@ -69,21 +72,25 @@ try {
   const passordHash = await hash(passord);
   const na = new Date().toISOString();
 
-  const eksisterende = db.prepare(`select id from administratorer where epost = ?`).get(epost);
+  const eksisterende = db
+    .prepare(`select id from administratorer where brukernavn = ?`)
+    .get(brukernavn);
 
   if (eksisterende) {
-    db.prepare(`update administratorer set passord_hash = ?, navn = coalesce(?, navn) where epost = ?`).run(
+    db.prepare(
+      `update administratorer set passord_hash = ?, navn = coalesce(?, navn) where brukernavn = ?`,
+    ).run(
       passordHash,
       navn || null,
-      epost,
+      brukernavn,
     );
-    console.log(`\nPassordet til ${epost} er endret.`);
+    console.log(`\nPassordet til ${brukernavn} er endret.`);
   } else {
     db.prepare(
-      `insert into administratorer (id, epost, navn, passord_hash, opprettet)
+      `insert into administratorer (id, brukernavn, navn, passord_hash, opprettet)
        values (?, ?, ?, ?, ?)`,
-    ).run(randomUUID(), epost, navn || null, passordHash, na);
-    console.log(`\n${epost} kan nå logge inn på /admin.`);
+    ).run(randomUUID(), brukernavn, navn || null, passordHash, na);
+    console.log(`\n${brukernavn} kan nå logge inn på /admin.`);
   }
 } catch (feil) {
   console.error("\n" + feil.message);

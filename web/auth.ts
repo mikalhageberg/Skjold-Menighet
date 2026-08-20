@@ -6,9 +6,14 @@ import { harDatabase, hentDb } from "@/lib/db";
 /**
  * Innlogging for admin.
  *
- * E-post og passord mot vår egen `administratorer`-tabell. Passordet lagres
- * aldri — bare en argon2-hash. Økten ligger i en signert cookie, så det
- * trengs ingen tabell for økter.
+ * Brukernavn og passord mot vår egen `administratorer`-tabell. Passordet
+ * lagres aldri — bare en argon2-hash. Økten ligger i en signert cookie, så
+ * det trengs ingen tabell for økter.
+ *
+ * Brukernavnet er bevisst ikke en e-postadresse. Adressen ble aldri brukt
+ * til å sende noe, bare til å logge inn med, og et brukernavn er kortere å
+ * taste. Gamle innlogginger virker som før — der er e-postadressen
+ * fortsatt brukernavnet.
  *
  * Brukere legges til med `npm run ny-admin`; det finnes med vilje ingen
  * selvbetjent registrering.
@@ -22,23 +27,23 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
   providers: [
     Credentials({
-      credentials: { epost: {}, passord: {} },
+      credentials: { brukernavn: {}, passord: {} },
       async authorize(oppgitt) {
         if (!harDatabase()) return null;
 
-        const epost = String(oppgitt?.epost ?? "").trim().toLowerCase();
+        const brukernavn = String(oppgitt?.brukernavn ?? "").trim().toLowerCase();
         const passord = String(oppgitt?.passord ?? "");
-        if (!epost || !passord) return null;
+        if (!brukernavn || !passord) return null;
 
         const admin = hentDb()
           .prepare(
-            `select id, epost, navn, passord_hash
+            `select id, brukernavn, navn, passord_hash
                from administratorer
-              where lower(epost) = ?
+              where lower(brukernavn) = ?
               limit 1`,
           )
-          .get(epost) as
-          | { id: string; epost: string; navn: string | null; passord_hash: string }
+          .get(brukernavn) as
+          | { id: string; brukernavn: string; navn: string | null; passord_hash: string }
           | undefined;
         if (!admin) return null;
 
@@ -54,7 +59,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           .prepare(`update administratorer set sist_innlogget = ? where id = ?`)
           .run(new Date().toISOString(), admin.id);
 
-        return { id: admin.id, email: admin.epost, name: admin.navn };
+        // Auth.js har ingen plass til et brukernavn, og «email» ville vært
+        // et misvisende sted å legge det. Navnet er det eneste vi viser,
+        // så brukernavnet trer inn når personen ikke har oppgitt noe navn.
+        return { id: admin.id, name: admin.navn ?? admin.brukernavn };
       },
     }),
   ],

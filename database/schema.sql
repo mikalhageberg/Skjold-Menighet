@@ -105,12 +105,14 @@ create index if not exists pameldinger_paaminnelse_idx
   where avmeldt is null and paaminnelse_sendt is null;
 
 -- ── Administratorer ───────────────────────────────────────────────────
--- De som skal inn på /admin. Passordet lagres aldri, bare en argon2-hash.
+-- De som skal inn på /admin. Brukernavn og passord — ingen e-post, for
+-- adressen ble aldri brukt til noe annet enn å logge inn med.
+-- Passordet lagres aldri, bare en argon2-hash.
 -- Legg til folk med:  npm run ny-admin
 
 create table if not exists administratorer (
   id             text primary key,
-  epost          text not null unique,
+  brukernavn     text not null unique,
   navn           text,
   passord_hash   text not null,
   opprettet      text not null,

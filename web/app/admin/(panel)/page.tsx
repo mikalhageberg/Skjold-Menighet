@@ -24,7 +24,7 @@ export default async function AdminOversikt() {
     <section className="adm">
       <header className="adm__hode">
         <div>
-          <p className="merke">Innlogget som {admin.navn ?? admin.epost}</p>
+          <p className="merke">Innlogget som {admin.navn}</p>
           <h1 className="adm__tittel">Oversikt</h1>
         </div>
         <Link href="/admin/arrangement/nytt" className="knapp knapp--liten">

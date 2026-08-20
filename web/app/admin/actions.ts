@@ -29,16 +29,17 @@ export type Svar = { ok: boolean; melding?: string };
 export async function loggInn(_forrige: Svar, data: FormData): Promise<Svar> {
   if (demomodus()) return { ok: false, melding: "Databasen er ikke satt opp ennå." };
 
-  const epost = String(data.get("epost") ?? "").trim();
+  const brukernavn = String(data.get("brukernavn") ?? "").trim();
   const passord = String(data.get("passord") ?? "");
-  if (!epost || !passord) return { ok: false, melding: "Fyll inn e-post og passord." };
+  if (!brukernavn || !passord)
+    return { ok: false, melding: "Fyll inn brukernavn og passord." };
 
   try {
-    await signIn("credentials", { epost, passord, redirectTo: "/admin" });
+    await signIn("credentials", { brukernavn, passord, redirectTo: "/admin" });
   } catch (feil) {
     // signIn kaster en omdirigering ved suksess — den skal boble videre.
     if (feil instanceof AuthError) {
-      return { ok: false, melding: "Feil e-post eller passord." };
+      return { ok: false, melding: "Feil brukernavn eller passord." };
     }
     throw feil;
   }

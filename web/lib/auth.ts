@@ -8,20 +8,16 @@ export function demomodus() {
   return !harDatabase();
 }
 
-export type Innlogget = { id: string; epost: string; navn: string | null };
+export type Innlogget = { id: string; navn: string };
 
 /** Krever innlogget administrator. Sender til innlogging hvis ikke. */
 export async function krevAdmin(): Promise<Innlogget> {
   if (demomodus()) {
-    return { id: "demo", epost: "demo@skjold-menighet.no", navn: "Demovisning" };
+    return { id: "demo", navn: "Demovisning" };
   }
 
   const økt = await auth();
   if (!økt?.user) redirect("/admin/logg-inn");
 
-  return {
-    id: økt.user.id ?? "",
-    epost: økt.user.email ?? "",
-    navn: økt.user.name ?? null,
-  };
+  return { id: økt.user.id ?? "", navn: økt.user.name ?? "Administrator" };
 }
