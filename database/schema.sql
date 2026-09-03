@@ -129,11 +129,14 @@ create table if not exists administratorer (
 -- nøyaktig det CSV-fila inneholder — den tømmer seg selv når de er lagt inn.
 
 create table if not exists android_testere (
-  id        text primary key,
+  id            text primary key,
   -- Alltid småbokstaver, så samme adresse ikke kommer inn to ganger.
-  epost     text not null unique,
-  opprettet text not null,
-  lagt_til  text
+  epost         text not null unique,
+  opprettet     text not null,
+  lagt_til      text,
+  -- Tidspunktet den ansvarlige fikk beskjed om at denne meldte seg.
+  -- Timesjobben samler opp de umerkede og sender én e-post om dem.
+  admin_varslet text
 );
 
 -- Brukes av CSV-fila og av utsendingen: finn dem som ennå ikke er lagt inn.

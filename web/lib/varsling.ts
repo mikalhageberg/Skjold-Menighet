@@ -1,6 +1,9 @@
 import "server-only";
 import type { ArrangementMedAntall } from "@skjold/delt";
 import { hentAlleTokens, hentUvarsledeArrangementer, merkNyhetsvarselSendt } from "./data";
+import { hentUvarsledeTestere, merkAdminVarslet } from "./testere";
+import { sendNyeTestere } from "./brevo";
+import { nettstedUrl } from "./lenker";
 import { varsleNyOppgave } from "./push";
 
 /**
@@ -11,6 +14,15 @@ import { varsleNyOppgave } from "./push";
  */
 export function harCronNokkel() {
   return Boolean(process.env.CRON_SECRET);
+}
+
+/**
+ * Adressen som skal ha beskjed når noen ber om Android-appen. Uten den
+ * sendes ingenting, og admin sier fra om at den mangler.
+ */
+export function varselEpost() {
+  const verdi = (process.env.VARSEL_EPOST ?? "").trim();
+  return verdi.includes("@") ? verdi : null;
 }
 
 /**
@@ -59,4 +71,37 @@ export async function varsleOmNyeOppgaver(
   }
 
   return sendt;
+}
+
+/**
+ * «Noen har bedt om Android-appen.»
+ *
+ * Kjøres av timesjobben. Alle som har meldt seg siden sist samles i én
+ * e-post, og det sendes ingenting når det ikke er kommet noen — en tom
+ * innboks er selv beskjeden om at ingenting har skjedd.
+ *
+ * De merkes bare når e-posten faktisk gikk av gårde, så en Brevo som er
+ * nede gir en beskjed en time senere i stedet for ingen beskjed.
+ */
+export async function varsleOmNyeTestere(): Promise<number> {
+  const til = varselEpost();
+  if (!til) return 0;
+
+  const nye = await hentUvarsledeTestere();
+  if (nye.length === 0) return 0;
+
+  const base = nettstedUrl();
+  const svar = await sendNyeTestere(
+    til,
+    nye.map((t) => t.epost),
+    base ? `${base}/android` : null,
+  );
+
+  if (!svar.sendt) {
+    console.error(`[varsel] Beskjed om ${nye.length} nye testere gikk ikke: ${svar.grunn}`);
+    return 0;
+  }
+
+  await merkAdminVarslet(nye.map((t) => t.id));
+  return nye.length;
 }

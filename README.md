@@ -208,6 +208,14 @@ Runden gjøres fra **`/android`**, bak samme innlogging som resten av admin:
    alle på lista, og de merkes som lagt inn — som er det samme som at fila
    nullstilles, siden fila er nettopp de umerkede.
 
+Du trenger ikke se innom sida for å oppdage at noen har meldt seg. Timesjobben
+sender én samlet beskjed til `VARSEL_EPOST` — «3 har bedt om Android-appen»,
+med adressene og en lenke rett hit — og ingenting når det ikke er kommet noen.
+Den samles opp i stedet for å gå med én gang fordi skjemaet på `/app` ligger
+åpent uten innlogging: en bot ville ellers kunne fylle innboksen og bruke opp
+Brevo-kvoten. Står `VARSEL_EPOST` tom, går det ingen beskjed, og `/android` sier
+fra om det.
+
 E-postene sendes én om gangen, ikke som én e-post med mange mottakere, og hver
 adresse merkes først når den faktisk gikk av gårde. En adresse Brevo ikke fikk
 sendt til blir stående på lista og kommer med neste gang knappen trykkes, i
@@ -325,10 +333,11 @@ CSV når hun skal handle inn.
 
 ### Påminnelser og utsending
 
-`GET /api/varsler/paaminnelser` gjør to ting: sender påminnelsen til alle som har
-en vakt som starter om mellom 20 og 28 timer, og tar igjen «det trengs
-frivillige»-varsler som ikke kom av gårde da arrangementet ble publisert. Begge
-merkes som sendt, så ingenting går ut to ganger. Ruta er beskyttet av
+`GET /api/varsler/paaminnelser` gjør tre ting: sender påminnelsen til alle som
+har en vakt som starter om mellom 20 og 28 timer, tar igjen «det trengs
+frivillige»-varsler som ikke kom av gårde da arrangementet ble publisert, og
+sender beskjed til `VARSEL_EPOST` om hvem som har bedt om Android-appen siden
+sist. Alle tre merkes som sendt, så ingenting går ut to ganger. Ruta er beskyttet av
 `CRON_SECRET` og skal kjøres én gang i timen — se cron-jobben under utrullingen
 nedenfor.
 
@@ -364,6 +373,8 @@ butikkene og hører ikke hjemme på serveren.
    | `BREVO_SENDER_EMAIL` | en **verifisert** avsender i Brevo |
    | `APP_STORE_URL` | lenken til appen i App Store — vises på `/app` |
    | `GOOGLE_PLAY_URL` | lenken til den lukkede testen i Google Play |
+   | `VARSEL_EPOST` | hvem som skal ha beskjed når noen ber om Android-appen |
+   | `NETTSTED_URL` | valgfri; `https://skjold.online`, så lenkene i e-post blir pene |
 
    `PORT` settes av Railway selv. Ikke rør den.
 5. **Generer en adresse** under *Settings* → *Networking* → *Generate Domain*.

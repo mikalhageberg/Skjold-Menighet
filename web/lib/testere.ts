@@ -20,6 +20,8 @@ export type Androidtester = {
   epost: string;
   opprettet: string;
   lagt_til: string | null;
+  /** Tidspunktet den ansvarlige fikk beskjed om at denne meldte seg. */
+  admin_varslet: string | null;
 };
 
 /* ── Demomodus ───────────────────────────────────────────────────────── */
@@ -58,7 +60,7 @@ export async function hentTestere(): Promise<Testeroversikt> {
   const alle = harDatabase()
     ? (hentDb()
         .prepare(
-          `select id, epost, opprettet, lagt_til
+          `select id, epost, opprettet, lagt_til, admin_varslet
              from android_testere
             order by opprettet`,
         )
@@ -95,15 +97,15 @@ export async function meldPaaTest(ra: string): Promise<Paameldingssvar> {
   if (!harDatabase()) {
     const lager = demolager();
     if (lager.some((t) => t.epost === epost)) return { ok: true, ny: false };
-    lager.push({ id: randomUUID(), epost, opprettet: na, lagt_til: null });
+    lager.push({ id: randomUUID(), epost, opprettet: na, lagt_til: null, admin_varslet: null });
     return { ok: true, ny: true };
   }
 
   try {
     const resultat = hentDb()
       .prepare(
-        `insert into android_testere (id, epost, opprettet, lagt_til)
-         values (?, ?, ?, null)
+        `insert into android_testere (id, epost, opprettet, lagt_til, admin_varslet)
+         values (?, ?, ?, null, null)
          on conflict(epost) do nothing`,
       )
       .run(randomUUID(), epost, na);
@@ -134,6 +136,50 @@ export async function merkLagtTil(ider: string[]) {
 
   const db = hentDb();
   const setning = db.prepare(`update android_testere set lagt_til = ? where id = ?`);
+  const alle = db.transaction((liste: string[]) => {
+    for (const id of liste) setning.run(na, id);
+  });
+  alle(ider);
+}
+
+/* ── Beskjed til den ansvarlige ──────────────────────────────────────── */
+
+/**
+ * De som har meldt seg uten at noen har fått beskjed om det ennå.
+ *
+ * Timesjobben samler dem opp og sender én e-post om alle sammen. Å sende i
+ * det øyeblikket noen trykker ville gitt én e-post per påmelding fra et
+ * skjema som ligger åpent uten innlogging — og da kan en bot fylle
+ * innboksen og bruke opp Brevo-kvoten.
+ */
+export async function hentUvarsledeTestere(): Promise<Androidtester[]> {
+  if (!harDatabase()) {
+    return demolager().filter((t) => !t.admin_varslet);
+  }
+  return hentDb()
+    .prepare(
+      `select id, epost, opprettet, lagt_til, admin_varslet
+         from android_testere
+        where admin_varslet is null
+        order by opprettet`,
+    )
+    .all() as Androidtester[];
+}
+
+/** Merker at det er gitt beskjed, så de samme ikke kommer med neste time. */
+export async function merkAdminVarslet(ider: string[]) {
+  if (ider.length === 0) return;
+  const na = new Date().toISOString();
+
+  if (!harDatabase()) {
+    for (const t of demolager()) {
+      if (ider.includes(t.id)) t.admin_varslet = na;
+    }
+    return;
+  }
+
+  const db = hentDb();
+  const setning = db.prepare(`update android_testere set admin_varslet = ? where id = ?`);
   const alle = db.transaction((liste: string[]) => {
     for (const id of liste) setning.run(na, id);
   });

@@ -1,16 +1,17 @@
 import { NextResponse } from "next/server";
 import { hentForfaltePaaminnelser, merkPaaminnelseSendt } from "@/lib/data";
 import { varslePaaminnelse } from "@/lib/push";
-import { varsleOmNyeOppgaver } from "@/lib/varsling";
+import { varsleOmNyeOppgaver, varsleOmNyeTestere } from "@/lib/varsling";
 
 export const dynamic = "force-dynamic";
 
 /**
  * Det som skal ut av seg selv: push-påminnelse dagen før til dem som har
- * sagt ja, og etternølere av «det trengs frivillige»-varselet som ikke kom
- * av gårde da arrangementet ble publisert. Kjøres av en cron-jobb én gang i
- * timen; se README. Beskyttet med CRON_SECRET så ingen andre kan utløse
- * utsending.
+ * sagt ja, etternølere av «det trengs frivillige»-varselet som ikke kom av
+ * gårde da arrangementet ble publisert, og beskjed på e-post til den
+ * ansvarlige om hvem som har bedt om Android-appen siden sist. Kjøres av en
+ * cron-jobb én gang i timen; se README. Beskyttet med CRON_SECRET så ingen
+ * andre kan utløse utsending.
  */
 export async function GET(forespørsel: Request) {
   const hemmelighet = process.env.CRON_SECRET;
@@ -22,10 +23,11 @@ export async function GET(forespørsel: Request) {
   }
 
   const nyeOppgaver = await varsleOmNyeOppgaver();
+  const nyeTestere = await varsleOmNyeTestere();
 
   const forfalte = await hentForfaltePaaminnelser();
   if (forfalte.length === 0) {
-    return NextResponse.json({ sendt: 0, paaminnelser: 0, nyeOppgaver });
+    return NextResponse.json({ sendt: 0, paaminnelser: 0, nyeOppgaver, nyeTestere });
   }
 
   // Én melding per arrangement, til alle telefonene som skal ha den.
@@ -51,5 +53,5 @@ export async function GET(forespørsel: Request) {
 
   await merkPaaminnelseSendt(sendteIder);
 
-  return NextResponse.json({ sendt, paaminnelser: forfalte.length, nyeOppgaver });
+  return NextResponse.json({ sendt, paaminnelser: forfalte.length, nyeOppgaver, nyeTestere });
 }

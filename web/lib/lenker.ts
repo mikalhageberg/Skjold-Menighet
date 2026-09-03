@@ -26,3 +26,19 @@ export function appStoreLenke() {
 export function googlePlayLenke() {
   return les("GOOGLE_PLAY_URL");
 }
+
+/**
+ * Adressen til nettsida, brukt til å lage lenker i e-post — der finnes det
+ * ingen forespørsel å lese verten av.
+ *
+ * Railway setter RAILWAY_PUBLIC_DOMAIN selv, så lenken virker uten at noen
+ * gjør noe. Sett NETTSTED_URL når dere har et eget domene, ellers peker
+ * lenkene på railway.app-adressen.
+ */
+export function nettstedUrl() {
+  const oppgitt = les("NETTSTED_URL");
+  if (oppgitt) return oppgitt.replace(/\/+$/, "");
+
+  const railway = (process.env.RAILWAY_PUBLIC_DOMAIN ?? "").trim();
+  return railway ? `https://${railway}` : null;
+}

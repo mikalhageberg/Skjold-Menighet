@@ -4,6 +4,7 @@ import { krevAdmin, demomodus } from "@/lib/auth";
 import { harBrevo } from "@/lib/brevo";
 import { googlePlayLenke } from "@/lib/lenker";
 import { hentTestere } from "@/lib/testere";
+import { harCronNokkel, varselEpost } from "@/lib/varsling";
 import { LeggTilAlle } from "@/components/LeggTilAlle";
 import { dato, klokka } from "@skjold/delt";
 
@@ -20,6 +21,7 @@ export default async function Androidtestere() {
   await krevAdmin();
   const { ventende, ferdige } = await hentTestere();
   const harLenke = Boolean(googlePlayLenke());
+  const varselTil = varselEpost();
 
   return (
     <div className="side">
@@ -55,6 +57,21 @@ export default async function Androidtestere() {
           </p>
         )}
 
+        {!varselTil && (
+          <p className="notis" style={{ marginTop: "1.5rem" }}>
+            <strong>Ingen får beskjed om nye.</strong> <code>VARSEL_EPOST</code> er ikke satt
+            på serveren, så du må se innom denne sida selv for å oppdage at noen har meldt
+            seg.
+          </p>
+        )}
+
+        {varselTil && !harCronNokkel() && (
+          <p className="notis notis--fare" role="alert" style={{ marginTop: "1.5rem" }}>
+            <strong>Beskjeden går ikke ut.</strong> <code>CRON_SECRET</code> mangler, så
+            timesjobben som sender den blir avvist.
+          </p>
+        )}
+
         <div className="adm__tall">
           <p className="adm__tall-post">
             <span className="adm__verdi">{ventende.length}</span>
@@ -78,6 +95,14 @@ export default async function Androidtestere() {
               lenken til appen på e-post, og lista er tom og klar for neste runde.
             </li>
           </ol>
+
+          {varselTil && (
+            <p className="felt__hjelp" style={{ marginTop: "-1rem", marginBottom: "1.75rem" }}>
+              Du trenger ikke se innom: melder noen seg, kommer det en e-post til{" "}
+              <strong>{varselTil}</strong> — én samlet beskjed i timen, og ingenting når det
+              ikke er kommet noen.
+            </p>
+          )}
 
           {ventende.length === 0 ? (
             <p className="felt__hjelp">

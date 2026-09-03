@@ -202,3 +202,52 @@ export async function sendTestlenke(epost: string, lenke: string) {
     ),
   });
 }
+
+/**
+ * «Noen har bedt om Android-appen» — beskjeden til den ansvarlige.
+ *
+ * Går fra timesjobben, ikke fra selve påmeldingen, og samler alle som har
+ * meldt seg siden sist i én e-post. Adressene står i den, så man ser om
+ * det er folk fra menigheten eller søppel uten å måtte logge inn først.
+ */
+export async function sendNyeTestere(
+  mottaker: string,
+  adresser: string[],
+  adminLenke: string | null,
+) {
+  const antall = adresser.length;
+  const emne =
+    antall === 1
+      ? "Én har bedt om Android-appen"
+      : `${antall} har bedt om Android-appen`;
+
+  const liste = adresser
+    .map(
+      (e) =>
+        `<li style="margin-bottom:6px;font-family:Helvetica,Arial,sans-serif;font-size:15px">${esc(
+          e,
+        )}</li>`,
+    )
+    .join("");
+
+  const knapp = adminLenke
+    ? `<p style="margin:0 0 14px">
+         <a href="${esc(adminLenke)}" style="display:inline-block;background:#16302A;color:#FAFBF8;text-decoration:none;padding:14px 24px;font-family:Helvetica,Arial,sans-serif;font-size:16px">Åpne lista</a>
+       </p>`
+    : `<p style="margin:0 0 14px;line-height:1.6">Lista ligger på <strong>/android</strong>.</p>`;
+
+  return sendEpost({
+    til: { email: mottaker },
+    emne,
+    html: ramme(
+      `
+      <p style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#3E5B53;margin:0 0 8px;font-family:Helvetica,Arial,sans-serif">Lukket test i Google Play</p>
+      <h1 style="font-size:24px;margin:0 0 20px;font-weight:600">${esc(emne)}</h1>
+      <ul style="margin:0 0 20px;padding-left:20px">${liste}</ul>
+      ${knapp}
+      <p style="margin:0;line-height:1.6;font-size:14px;color:#3E5B53">Last ned CSV-fila, last den opp i Play Console, og trykk «Lagt til alle foreløpige e-poster». Da får de lenken til appen.</p>
+    `,
+      "Du får denne fordi du står som ansvarlig for appen.",
+    ),
+  });
+}

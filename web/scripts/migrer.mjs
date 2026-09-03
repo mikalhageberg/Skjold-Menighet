@@ -100,6 +100,7 @@ try {
   leggTilKolonne("arrangementer", "nyhetsvarsel_sendt", "text");
   leggTilKolonne("pameldinger", "bidrag", "text");
   leggTilKolonne("pameldinger", "del_nummer", "integer not null default 0");
+  leggTilKolonne("android_testere", "admin_varslet", "text");
 
   // Arrangementer som fantes før varselet om nye oppgaver ble laget, skal
   // ikke utløse et varsel med det samme jobben neste gang kjører.
