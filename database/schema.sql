@@ -118,3 +118,25 @@ create table if not exists administratorer (
   opprettet      text not null,
   sist_innlogget text
 );
+
+-- ── Android-testere ───────────────────────────────────────────────────
+-- Android-appen ligger i lukket test hos Google Play, og bare adresser som
+-- er lastet opp i Play Console slipper inn. Her ligger de som har bedt om
+-- lenken på /app, i den rekkefølgen de meldte seg.
+--
+-- lagt_til står tom helt til den ansvarlige har lastet opp lista i Play
+-- Console og trykt «Lagt til alle foreløpige e-poster». De tomme er altså
+-- nøyaktig det CSV-fila inneholder — den tømmer seg selv når de er lagt inn.
+
+create table if not exists android_testere (
+  id        text primary key,
+  -- Alltid småbokstaver, så samme adresse ikke kommer inn to ganger.
+  epost     text not null unique,
+  opprettet text not null,
+  lagt_til  text
+);
+
+-- Brukes av CSV-fila og av utsendingen: finn dem som ennå ikke er lagt inn.
+create index if not exists android_testere_ventende_idx
+  on android_testere (opprettet)
+  where lagt_til is null;

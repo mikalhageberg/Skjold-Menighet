@@ -127,7 +127,13 @@ try {
       where serie_id is not null
   `);
 
-  const tabeller = ["arrangementer", "pameldinger", "enheter", "administratorer"];
+  const tabeller = [
+    "arrangementer",
+    "pameldinger",
+    "enheter",
+    "administratorer",
+    "android_testere",
+  ];
   const finnes = tabeller.filter((navn) =>
     db.prepare(`select 1 from sqlite_master where type = 'table' and name = ?`).get(navn),
   );

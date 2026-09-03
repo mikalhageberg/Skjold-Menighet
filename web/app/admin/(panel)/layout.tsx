@@ -22,6 +22,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <Link href="/admin/arrangement/nytt" className="admnav__lenke">
           Nytt arrangement
         </Link>
+        <Link href="/android" className="admnav__lenke">
+          Android-testere
+        </Link>
         <form action={loggUt} className="admnav__ut">
           <button type="submit" className="tekstknapp">
             Logg ut

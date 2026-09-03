@@ -1123,6 +1123,107 @@ img {
   margin-bottom: 0.5rem;
 }
 
+/* ── Nedlastingssiden ────────────────────────────────────────────────
+   Sida vi deler på kirkebakken og i menighetsbladet. Én skjerm, to valg,
+   ingenting å bla i. Alt er lagt opp for en telefon holdt i én hånd, så
+   knappene er stablet og høye nok til å treffes med tommelen.          */
+
+.nedlastside {
+  max-width: 30rem;
+  padding-top: clamp(2.5rem, 9vw, 4.5rem);
+}
+
+.nedlastside__tittel {
+  font-size: var(--t-stor);
+  margin: 0.4rem 0 1rem;
+}
+
+.nedlastside__ingress {
+  color: var(--gran-myk);
+  margin-bottom: 2.25rem;
+}
+
+.nedlast__valg {
+  display: grid;
+  gap: 0.85rem;
+}
+
+/* To linjer i hver knapp: hvilken telefon den gjelder, og hva som skjer
+   når man trykker. Da slipper man å lese en forklaring ved siden av. */
+.nedlast__knapp {
+  width: 100%;
+  min-height: 4.5rem;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.15rem;
+  padding: 0.9rem 1.5rem;
+  text-align: left;
+}
+
+.nedlast__for {
+  font-size: var(--t-etikett);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  font-weight: 500;
+  opacity: 0.75;
+}
+
+.nedlast__hva {
+  font-size: 1.1875rem;
+}
+
+/* Mangler butikklenken, står plassen igjen som en tom ramme i stedet for
+   en knapp som ikke fører noe sted. */
+.nedlast__venter {
+  display: grid;
+  align-content: center;
+  gap: 0.15rem;
+  min-height: 4.5rem;
+  padding: 0.9rem 1.5rem;
+  border: 1px dashed var(--strek);
+  border-radius: var(--radius);
+  color: var(--gran-myk);
+}
+
+.nedlast__venter .nedlast__hva {
+  font-size: var(--t-liten);
+}
+
+.nedlast__android {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--strek);
+}
+
+.nedlast__tittel {
+  font-family: var(--font-display), Georgia, serif;
+  font-variation-settings: "SOFT" 20, "WONK" 1, "opsz" 40;
+  font-size: var(--t-mellom);
+}
+
+/* ── Android-testere i admin ─────────────────────────────────────────── */
+
+.testere {
+  margin-top: 2.25rem;
+}
+
+.framgang {
+  max-width: 44rem;
+  margin: 0.75rem 0 1.75rem;
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 0.5rem;
+  font-size: var(--t-brod);
+  color: var(--gran-myk);
+}
+
+.utsending {
+  display: grid;
+  gap: 1rem;
+  justify-items: start;
+}
+
 /* ── Responsivt ──────────────────────────────────────────────────────── */
 
 @media (max-width: 60rem) {

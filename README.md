@@ -184,6 +184,39 @@ Nettadressen til et arrangement lages av tittelen og settes én gang. Den står
 fast når tittelen endres senere, slik at lenker folk har delt fortsetter å virke.
 Heter to arrangementer det samme, får det andre et tall bak: `/kirkekaffe-2`.
 
+### Nedlastingssiden og den lukkede Android-testen
+
+`/app` er sida vi deler på kirkebakken og i menighetsbladet: to knapper, laget
+for en telefon holdt i én hånd. Butikklenkene er miljøvariabler
+(`APP_STORE_URL`, `GOOGLE_PLAY_URL`), ikke kode — App Store-lenken finnes ikke
+før appen er godkjent, og Play-lenken byttes den dagen testen går over til åpen
+utgivelse. Mangler en av dem, faller knappen bort i stedet for å lenke til
+ingenting.
+
+iPhone går rett i App Store. Android kan ikke det så lenge appen ligger i lukket
+test: Google slipper bare inn adresser som er lastet opp i Play Console på
+forhånd. Derfor åpner Android-knappen et felt for e-postadressen, og lenken
+kommer på e-post etterpå. **Play-lenken vises aldri på nettsiden** — da ville
+folk møtt en butikkside som ikke slipper dem inn.
+
+Runden gjøres fra **`/android`**, bak samme innlogging som resten av admin:
+
+1. Last ned CSV-fila. Den er én adresse per linje uten overskriftsrad, som er
+   det Play Console vil ha — alt annet blir lest som en adresse og avvist.
+2. Last den opp i Play Console under *Testing → Closed testing → Testers*.
+3. Trykk **«Lagt til alle foreløpige e-poster»**. Lenken går ut på e-post til
+   alle på lista, og de merkes som lagt inn — som er det samme som at fila
+   nullstilles, siden fila er nettopp de umerkede.
+
+E-postene sendes én om gangen, ikke som én e-post med mange mottakere, og hver
+adresse merkes først når den faktisk gikk av gårde. En adresse Brevo ikke fikk
+sendt til blir stående på lista og kommer med neste gang knappen trykkes, i
+stedet for å bli glemt. Å laste opp den samme adressen to ganger i Play Console
+gjør ingen skade.
+
+Adressene ligger i tabellen `android_testere` og brukes ikke til noe annet enn
+å gi tilgang til appen.
+
 ### Databasen
 
 SQLite — én fil, ikke en egen tjeneste å sette opp eller betale for. Fila skal
@@ -329,6 +362,8 @@ butikkene og hører ikke hjemme på serveren.
    | `BREVO_API_KEY` | fra Brevo |
    | `BREVO_SENDER_NAME` | Skjold menighet |
    | `BREVO_SENDER_EMAIL` | en **verifisert** avsender i Brevo |
+   | `APP_STORE_URL` | lenken til appen i App Store — vises på `/app` |
+   | `GOOGLE_PLAY_URL` | lenken til den lukkede testen i Google Play |
 
    `PORT` settes av Railway selv. Ikke rør den.
 5. **Generer en adresse** under *Settings* → *Networking* → *Generate Domain*.

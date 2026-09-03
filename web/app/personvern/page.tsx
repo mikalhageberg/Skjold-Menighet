@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 };
 
 /** Datoen teksten sist ble endret. Oppdater den når innholdet endres. */
-const SIST_ENDRET = "14. august 2026";
+const SIST_ENDRET = "3. september 2026";
 
 /**
  * Personvernerklæringen. Både App Store og Google Play krever at den ligger
@@ -81,6 +81,20 @@ export default function Personvern() {
           kan trekke det tilbake ved å melde avbud i appen eller ta kontakt med oss.
         </p>
 
+        <h2>Hvis du ber om Android-appen</h2>
+        <p>
+          Android-appen er ennå på test hos Google Play, og Google slipper bare inn
+          adresser som er meldt inn på forhånd. Ber du om den på nedlastingssiden, lagrer
+          vi e-postadressen din, og tidspunktet du oppga den.
+        </p>
+        <p>
+          Adressen brukes til to ting og ikke noe annet: å gi deg tilgang til testen, og å
+          sende deg lenken til appen. Den lastes opp i Play Console, som er Googles verktøy
+          for utviklere. Vil du ut av lista igjen, ta kontakt, så sletter vi adressen.
+          Behandlingsgrunnlaget er samtykket ditt — du oppgir adressen selv, for å få
+          appen.
+        </p>
+
         <h2>Varsler</h2>
         <p>
           Sier du ja til varsler, lagrer vi en kode som identifiserer akkurat den
@@ -138,15 +152,17 @@ export default function Personvern() {
             <tr>
               <th scope="row">Brevo</th>
               <td>
-                Sender e-post, og bare når en ansvarlig selv skriver og sender en melding.
-                Ingen e-post går ut automatisk.
+                Sender e-post — meldinger en ansvarlig selv skriver, og lenken til
+                Android-appen til dem som har bedt om den. Begge deler sendes ved at en
+                ansvarlig trykker på en knapp; ingen e-post går ut av seg selv.
               </td>
             </tr>
             <tr>
               <th scope="row">Google</th>
               <td>
-                Lager illustrasjonsbildet til en oppgave ut fra navnet på den. Ingen
-                personopplysninger sendes dit.
+                Lager illustrasjonsbildet til en oppgave ut fra navnet på den — dit sendes
+                ingen personopplysninger. Har du bedt om Android-appen, lastes e-postadressen din i
+                tillegg opp i Google Play Console, som er der testgruppen administreres.
               </td>
             </tr>
           </tbody>
@@ -163,12 +179,21 @@ export default function Personvern() {
           teksten i varselet — ikke navnet ditt. Vil du unngå det, kan du la være å si ja til
           varsler, og bruke appen som før.
         </p>
+        <p>
+          Det samme gjelder e-postadressen din hvis du har bedt om Android-appen: den
+          lastes opp i Google Play Console for at Google skal slippe deg inn i testen.
+        </p>
 
         <h2>Hvor lenge vi lagrer det</h2>
         <p>
           Påmeldingen din blir stående så lenge oppgaven finnes, slik at menigheten vet hvem
           som stilte. Oppgaver slettes normalt ett til to døgn etter at de har vært, og da
           forsvinner lista over frivillige sammen med dem.
+        </p>
+        <p>
+          Har du bedt om Android-appen, blir e-postadressen din stående så lenge appen er
+          på lukket test — Google må ha lista for at du skal beholde tilgangen. Går appen
+          ut i vanlig utgivelse, trengs den ikke lenger, og den slettes.
         </p>
 
         <h2>Rettighetene dine</h2>

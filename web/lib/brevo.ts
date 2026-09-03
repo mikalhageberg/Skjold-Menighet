@@ -78,13 +78,13 @@ export async function sendEpost({ til, emne, html, svarTil }: Utsending) {
 
 /* ── Maler ───────────────────────────────────────────────────────────── */
 
-function ramme(innhold: string) {
+function ramme(innhold: string, fotnote = "Du får denne fordi du står oppført som frivillig.") {
   return `<div style="font-family:Georgia,'Times New Roman',serif;color:#16302A;background:#EFF2EE;padding:32px 16px">
   <div style="max-width:520px;margin:0 auto;background:#FAFBF8;border:1px solid #D2DAD4;padding:32px">
     ${innhold}
     <hr style="border:none;border-top:1px solid #D2DAD4;margin:28px 0 16px">
     <p style="font-size:13px;color:#3E5B53;margin:0;font-family:Helvetica,Arial,sans-serif">
-      Skjold menighet · Du får denne fordi du står oppført som frivillig.
+      Skjold menighet · ${fotnote}
     </p>
   </div>
 </div>`;
@@ -119,5 +119,35 @@ export async function sendTilFrivillige(
       <h1 style="font-size:24px;margin:0 0 20px;font-weight:600">${esc(emne)}</h1>
       ${avsnitt}
     `),
+  });
+}
+
+/**
+ * Lenken til Android-appen, til én som er lagt inn i den lukkede testen.
+ *
+ * Sendes til én om gangen, ikke som én e-post med mange mottakere — folk
+ * som ber om appen skal ikke få se adressen til alle de andre.
+ */
+export async function sendTestlenke(epost: string, lenke: string) {
+  const trygg = esc(lenke);
+
+  return sendEpost({
+    til: [{ email: epost }],
+    emne: "Her er lenken til Skjold menighet-appen",
+    html: ramme(
+      `
+      <p style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#3E5B53;margin:0 0 8px;font-family:Helvetica,Arial,sans-serif">Skjold menighet</p>
+      <h1 style="font-size:24px;margin:0 0 20px;font-weight:600">Appen er klar til deg</h1>
+      <p style="margin:0 0 14px;line-height:1.6">Du er lagt inn som tester, og kan nå hente appen i Google Play.</p>
+      <p style="margin:0 0 20px">
+        <a href="${trygg}" style="display:inline-block;background:#16302A;color:#FAFBF8;text-decoration:none;padding:14px 24px;font-family:Helvetica,Arial,sans-serif;font-size:16px">Hent appen i Google Play</a>
+      </p>
+      <p style="margin:0 0 14px;line-height:1.6">Åpne lenken på telefonen din, og pass på at Google Play er logget inn med <strong>${esc(
+        epost,
+      )}</strong> — det er den adressen som er lagt inn i testen. Med en annen adresse finner ikke Play appen.</p>
+      <p style="margin:0;line-height:1.6;font-size:14px;color:#3E5B53">Virker ikke knappen, kan du kopiere denne adressen inn i nettleseren:<br>${trygg}</p>
+    `,
+      "Du får denne fordi du ba om lenken til appen på nettsidene våre.",
+    ),
   });
 }
