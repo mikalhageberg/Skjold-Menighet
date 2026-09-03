@@ -321,18 +321,33 @@ export async function sendMeldingAction(_forrige: Svar, data: FormData): Promise
       melding: `Demovisning: meldingen ville gått til ${mottakere.length} mottakere.`,
     };
 
+  // Én e-post per mottaker, så ingen ser adressen til de andre. Da kan noen
+  // av dem slå feil mens resten går gjennom — det skal den ansvarlige få vite.
   const svar = await sendTilFrivillige(arrangement, mottakere, emne, tekst);
-  if (!svar.sendt)
+
+  if (svar.grunn === "ikke konfigurert")
+    return {
+      ok: false,
+      melding: "Brevo er ikke satt opp. Legg inn BREVO_API_KEY i miljøvariablene.",
+    };
+  if (svar.grunn === "ingen mottakere")
+    return { ok: false, melding: "Meldingen ble ikke sendt: fant ingen mottakere." };
+
+  if (svar.feilet.length > 0) {
+    const liste = svar.feilet.map((f) => `${f.epost} (${f.grunn})`).join(", ");
     return {
       ok: false,
       melding:
-        svar.grunn === "ikke konfigurert"
-          ? "Brevo er ikke satt opp. Legg inn BREVO_API_KEY i miljøvariablene."
-          : `Meldingen ble ikke sendt (${svar.grunn}).`,
+        svar.sendt === 0
+          ? `Meldingen kom ikke fram til noen: ${liste}.`
+          : `Sendt til ${svar.sendt} av ${mottakere.length}. Disse fikk den ikke: ${liste}. ` +
+            "Ta kontakt med dem på vanlig vis — sender du hele meldingen på nytt, " +
+            "får de andre den to ganger.",
     };
+  }
 
   return {
     ok: true,
-    melding: `Sendt til ${mottakere.length} ${mottakere.length === 1 ? "mottaker" : "mottakere"}.`,
+    melding: `Sendt til ${svar.sendt} ${svar.sendt === 1 ? "mottaker" : "mottakere"}.`,
   };
 }

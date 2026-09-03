@@ -16,11 +16,28 @@ const API = "https://api.brevo.com/v3/smtp/email";
 
 type Mottaker = { email: string; name?: string };
 
+type Grunn =
+  | "ingen mottakere"
+  | "ugyldig adresse"
+  | "ikke konfigurert"
+  | "avvist av brevo"
+  | "nettverksfeil";
+
 type Utsending = {
-  til: Mottaker[];
+  til: Mottaker;
   emne: string;
   html: string;
   svarTil?: Mottaker;
+};
+
+/**
+ * Én utsending til mange: hvor mange kom fram, hvem som ikke fikk den — og
+ * `grunn` når ingenting i det hele tatt ble forsøkt sendt.
+ */
+export type Utsendingssvar = {
+  sendt: number;
+  feilet: { epost: string; grunn: Grunn }[];
+  grunn?: "ingen mottakere" | "ikke konfigurert";
 };
 
 export function harBrevo() {
@@ -34,16 +51,18 @@ function avsender() {
   };
 }
 
-export async function sendEpost({ til, emne, html, svarTil }: Utsending) {
-  const gyldige = til.filter((m) => m.email && m.email.includes("@"));
-  if (gyldige.length === 0) return { sendt: false, grunn: "ingen mottakere" as const };
+/** Én e-post til én mottaker. Flere om gangen går gjennom sendTilHver. */
+export async function sendEpost({
+  til,
+  emne,
+  html,
+  svarTil,
+}: Utsending): Promise<{ sendt: true } | { sendt: false; grunn: Grunn }> {
+  if (!til.email || !til.email.includes("@"))
+    return { sendt: false, grunn: "ugyldig adresse" as const };
 
   if (!harBrevo()) {
-    console.info(
-      `[brevo] Ikke konfigurert. Ville sendt «${emne}» til ${gyldige
-        .map((m) => m.email)
-        .join(", ")}`,
-    );
+    console.info(`[brevo] Ikke konfigurert. Ville sendt «${emne}» til ${til.email}`);
     return { sendt: false, grunn: "ikke konfigurert" as const };
   }
 
@@ -57,7 +76,7 @@ export async function sendEpost({ til, emne, html, svarTil }: Utsending) {
       },
       body: JSON.stringify({
         sender: avsender(),
-        to: gyldige,
+        to: [til],
         subject: emne,
         htmlContent: html,
         ...(svarTil ? { replyTo: svarTil } : {}),
@@ -74,6 +93,44 @@ export async function sendEpost({ til, emne, html, svarTil }: Utsending) {
     console.error("[brevo] Nettverksfeil", feil);
     return { sendt: false, grunn: "nettverksfeil" as const };
   }
+}
+
+/**
+ * Samme melding til flere — som én e-post per mottaker, ikke én e-post med
+ * hele lista i `to`. Brevo setter alle adressene i `to` i To-feltet, så en
+ * felles utsending ville vist e-postadressen til hver frivillig til alle de
+ * andre. Vi lover det motsatte på /personvern.
+ *
+ * Lista er kort — de som har sagt ja til én oppgave — så det holder å sende
+ * dem etter tur. Faller én ut, går resten likevel, og den som ikke fikk
+ * meldingen kommer tilbake i svaret så den ansvarlige kan ta den for hånd.
+ */
+async function sendTilHver(
+  mottakere: Mottaker[],
+  utsending: Omit<Utsending, "til">,
+): Promise<Utsendingssvar> {
+  if (mottakere.length === 0) return { sendt: 0, feilet: [], grunn: "ingen mottakere" };
+
+  // Er ikke Brevo satt opp, sier vi det én gang i stedet for én gang per navn.
+  if (!harBrevo()) {
+    console.info(
+      `[brevo] Ikke konfigurert. Ville sendt «${utsending.emne}» til ${mottakere
+        .map((m) => m.email)
+        .join(", ")} — én e-post hver.`,
+    );
+    return { sendt: 0, feilet: [], grunn: "ikke konfigurert" };
+  }
+
+  let sendt = 0;
+  const feilet: { epost: string; grunn: Grunn }[] = [];
+
+  for (const til of mottakere) {
+    const svar = await sendEpost({ ...utsending, til });
+    if (svar.sendt) sendt++;
+    else feilet.push({ epost: til.email, grunn: svar.grunn });
+  }
+
+  return { sendt, feilet };
 }
 
 /* ── Maler ───────────────────────────────────────────────────────────── */
@@ -106,8 +163,7 @@ export async function sendTilFrivillige(
     .map((p) => `<p style="margin:0 0 14px;line-height:1.6">${esc(p).replace(/\n/g, "<br>")}</p>`)
     .join("");
 
-  return sendEpost({
-    til: mottakere,
+  return sendTilHver(mottakere, {
     emne,
     svarTil: arrangement.ansvarlig_epost
       ? { email: arrangement.ansvarlig_epost, name: arrangement.ansvarlig_navn ?? undefined }
@@ -122,17 +178,12 @@ export async function sendTilFrivillige(
   });
 }
 
-/**
- * Lenken til Android-appen, til én som er lagt inn i den lukkede testen.
- *
- * Sendes til én om gangen, ikke som én e-post med mange mottakere — folk
- * som ber om appen skal ikke få se adressen til alle de andre.
- */
+/** Lenken til Android-appen, til én som er lagt inn i den lukkede testen. */
 export async function sendTestlenke(epost: string, lenke: string) {
   const trygg = esc(lenke);
 
   return sendEpost({
-    til: [{ email: epost }],
+    til: { email: epost },
     emne: "Her er lenken til Skjold menighet-appen",
     html: ramme(
       `
