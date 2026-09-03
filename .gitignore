@@ -3,8 +3,6 @@ node_modules
 out
 dist
 .expo
-ios
-android
 .env
 .env.local
 .DS_Store
@@ -12,6 +10,10 @@ android
 next-env.d.ts
 
 # Expo
+# Mappene prebuild lager. Med vilje bundet til mobil/ — «android» alene traff
+# også web/app/android, og gjemte helt vanlig kode for git.
+mobil/ios/
+mobil/android/
 .expo-shared
 *.jks
 *.p8
