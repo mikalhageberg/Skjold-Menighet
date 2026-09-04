@@ -655,3 +655,31 @@ export async function merkNyhetsvarselSendt(ider: string[]) {
 function tellDemo(pameldinger: Pamelding[], arrangementId: string) {
   return pameldinger.filter((p) => p.arrangement_id === arrangementId && !p.avmeldt).length;
 }
+
+/* ── Jobbkjøringer ───────────────────────────────────────────────────── */
+
+/**
+ * Kvitteringen fra timesjobben: den skriver hit hver gang den kommer
+ * gjennom, og admin leser det for å kunne si fra når det er for lenge
+ * siden sist. Uten dette er en cron-jobb som aldri ble satt opp helt
+ * usynlig — se merknaden i schema.sql.
+ */
+export async function merkJobbKjort(navn: string) {
+  if (!harDatabase()) return;
+  hentDb()
+    .prepare(
+      `insert into jobbkjoringer (navn, sist_kjort)
+       values (?, ?)
+       on conflict(navn) do update set sist_kjort = excluded.sist_kjort`,
+    )
+    .run(navn, new Date().toISOString());
+}
+
+/** Når jobben sist kom gjennom, eller null om den aldri har gjort det. */
+export async function hentSistKjort(navn: string): Promise<string | null> {
+  if (!harDatabase()) return new Date().toISOString();
+  const rad = hentDb()
+    .prepare(`select sist_kjort from jobbkjoringer where navn = ?`)
+    .get(navn) as { sist_kjort: string } | undefined;
+  return rad?.sist_kjort ?? null;
+}

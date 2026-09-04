@@ -1,6 +1,11 @@
 import "server-only";
 import type { ArrangementMedAntall } from "@skjold/delt";
-import { hentAlleTokens, hentUvarsledeArrangementer, merkNyhetsvarselSendt } from "./data";
+import {
+  hentAlleTokens,
+  hentSistKjort,
+  hentUvarsledeArrangementer,
+  merkNyhetsvarselSendt,
+} from "./data";
 import { hentUvarsledeTestere, merkAdminVarslet } from "./testere";
 import { sendNyeTestere } from "./brevo";
 import { nettstedUrl } from "./lenker";
@@ -14,6 +19,43 @@ import { varsleNyOppgave } from "./push";
  */
 export function harCronNokkel() {
   return Boolean(process.env.CRON_SECRET);
+}
+
+/** Navnet timesjobben kvitterer under i jobbkjoringer. */
+export const TIMESJOBB = "paaminnelser";
+
+/**
+ * Hvor lenge det får gå før admin sier fra. Jobben skal kjøre hver time;
+ * tre timer tåler at en kjøring eller to blir hengende uten at det ropes
+ * varsku for tidlig. GitHub sine planlagte kjøringer er dessuten sjelden
+ * helt presise.
+ */
+const TAALT_STILLE_TIMER = 3;
+
+export type Driftsstatus =
+  | { ok: true; sistKjort: string }
+  | { ok: false; grunn: "mangler nøkkel" }
+  | { ok: false; grunn: "aldri kjørt" }
+  | { ok: false; grunn: "for lenge siden"; sistKjort: string; timer: number };
+
+/**
+ * Om timesjobben faktisk kjører.
+ *
+ * At CRON_SECRET er satt sier bare at ruta ville sluppet noen inn — ikke
+ * at noen kaller den. Det var nettopp forskjellen som gjorde at
+ * påminnelsen dagen før aldri gikk ut uten at noen merket det.
+ */
+export async function timesjobbStatus(): Promise<Driftsstatus> {
+  if (!harCronNokkel()) return { ok: false, grunn: "mangler nøkkel" };
+
+  const sistKjort = await hentSistKjort(TIMESJOBB);
+  if (!sistKjort) return { ok: false, grunn: "aldri kjørt" };
+
+  const timer = (Date.now() - new Date(sistKjort).getTime()) / 3600_000;
+  if (timer > TAALT_STILLE_TIMER) {
+    return { ok: false, grunn: "for lenge siden", sistKjort, timer: Math.floor(timer) };
+  }
+  return { ok: true, sistKjort };
 }
 
 /**

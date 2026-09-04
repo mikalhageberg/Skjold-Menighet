@@ -1,0 +1,66 @@
+# Timesjobben som holder varslingen i gang.
+#
+# Kaller /api/varsler/paaminnelser én gang i timen. Den ruta sender
+# påminnelsen dagen før til de frivillige, tar igjen «det trengs
+# frivillige»-varsler som ikke kom av gårde, og gir beskjed på e-post når
+# noen har bedt om Android-appen.
+#
+# Ligger her og ikke i Railway-panelet fordi den da står i repoet, med
+# historikk, og fordi et mislykket kall sender en e-post fra GitHub av seg
+# selv. En cron-jobb ingen husker at finnes, er nettopp det som gjorde at
+# påminnelsene ikke gikk ut den første måneden.
+#
+# Krever to ting under Settings på repoet:
+#   Secrets and variables → Actions → Secrets:   CRON_SECRET
+#   Secrets and variables → Actions → Variables: APP_URL (f.eks. https://skjold.online)
+
+name: Timesjobb
+
+on:
+  schedule:
+    # Hver time. GitHub kjører planlagte jobber litt på etterskudd når det
+    # er travelt, ofte noen minutter. Det gjør ingenting her: påminnelsen
+    # hentes for alt som starter om mellom 20 og 28 timer, så vinduet er
+    # åtte timer bredt.
+    - cron: "0 * * * *"
+  # Lar deg kjøre den for hånd fra Actions-fanen, uten å vente på timen.
+  workflow_dispatch:
+
+# To kjøringer samtidig ville ikke skadet — alt som sendes merkes som
+# sendt — men det er ingen grunn til å la dem stå i kø heller.
+concurrency:
+  group: timesjobb
+  cancel-in-progress: false
+
+jobs:
+  kall:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Kall varslingsruta
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          APP_URL: ${{ vars.APP_URL }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "CRON_SECRET mangler. Legg den inn under Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          if [ -z "${APP_URL:-}" ]; then
+            echo "APP_URL mangler. Legg den inn som variabel samme sted, f.eks. https://skjold.online"
+            exit 1
+          fi
+
+          # --fail gjør at en 401 eller 500 stopper jobben, slik at GitHub
+          # sender deg en e-post om det i stedet for at det blir stille.
+          # --retry tar en server som hikker eller er midt i en utrulling.
+          # Bevisst uten --retry-all-errors: en 401 er feil oppsett, og skal
+          # feile med en gang i stedet for å prøves fire ganger.
+          svar=$(curl --fail --silent --show-error --max-time 120 \
+            --retry 3 --retry-delay 10 \
+            -H "authorization: Bearer $CRON_SECRET" \
+            "${APP_URL%/}/api/varsler/paaminnelser")
+
+          echo "$svar"

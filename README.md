@@ -353,12 +353,13 @@ CSV når hun skal handle inn.
 har en vakt som starter om mellom 20 og 28 timer, tar igjen «det trengs
 frivillige»-varsler som ikke kom av gårde da arrangementet ble publisert, og
 sender beskjed til `VARSEL_EPOST` om hvem som har bedt om Android-appen siden
-sist. Alle tre merkes som sendt, så ingenting går ut to ganger. Ruta er beskyttet av
-`CRON_SECRET` og skal kjøres én gang i timen — se cron-jobben under utrullingen
-nedenfor.
+sist. Alle tre merkes som sendt, så ingenting går ut to ganger. Ruta er beskyttet
+av `CRON_SECRET` og skal kalles én gang i timen — se **Timesjobben** under
+utrullingen nedenfor. Hver vellykket kjøring skriver tidspunktet sitt, så admin
+kan si fra når den stopper.
 
 Varselet om en ny oppgave sendes til vanlig med én gang den ansvarlige
-publiserer, ikke av cron-jobben. Jobben er sikkerhetsnettet.
+publiserer, ikke av timesjobben. Jobben er sikkerhetsnettet.
 
 ### Legge det ut på Railway
 
@@ -409,17 +410,50 @@ sekunders avbrudd per deploy, ikke noe en menighet merker. Skulle dere en dag
 trenge flere samtidige instanser av `web`, er det tidspunktet å vurdere en
 ekte databasetjeneste i stedet.
 
-#### Cron-jobben
+#### Timesjobben
 
-Påminnelsene trenger et kall hver time. I Railway: *New* →
-*Cron Job* i samme prosjekt, med tidsplan `0 * * * *` og kommando:
+`/api/varsler/paaminnelser` gjør ingenting av seg selv — noen må kalle den hver
+time. Uten det går verken påminnelsen dagen før eller beskjeden om nye
+Android-testere ut, mens resten av appen ser ut til å virke: varselet om en ny
+oppgave sendes jo ved publisering. Den fella kostet oss den første måneden med
+påminnelser.
+
+**Slik den settes opp:** `.github/workflows/timesjobb.yml` kjører kallet hver
+time. Den trenger to ting under *Settings* på repoet, begge under *Secrets and
+variables → Actions*:
+
+| Hva | Hvor | Verdi |
+| --- | --- | --- |
+| `CRON_SECRET` | Secrets | samme verdi som på web-tjenesten i Railway |
+| `APP_URL` | Variables | `https://skjold.online` |
+
+Kjør den så én gang for hånd fra *Actions*-fanen (*Timesjobb* → *Run workflow*)
+for å se at den blir grønn. Feiler kallet, stopper jobben med feil, og GitHub
+sender deg en e-post — så et brudd blir ikke stille.
+
+To ting å vite om GitHub sine planlagte kjøringer: de kommer gjerne noen
+minutter på etterskudd når det er travelt, og de **skrus av automatisk etter 60
+dager uten aktivitet i repoet**. Det første gjør ingenting — påminnelsen hentes
+for alt som starter om mellom 20 og 28 timer, så vinduet er åtte timer bredt.
+Det andre fanges opp av varselet i admin, som sier fra når jobben har vært
+stille i mer enn tre timer.
+
+**Alternativet** er en cron-jobb i Railway: *New* → *Cron Job* i samme prosjekt,
+tidsplan `0 * * * *`, med `CRON_SECRET` og `APP_URL` satt på den tjenesten:
 
 ```bash
 curl -fsS -H "authorization: Bearer $CRON_SECRET" "$APP_URL/api/varsler/paaminnelser"
 ```
 
-Sett `CRON_SECRET` til det samme som på web-tjenesten, og `APP_URL` til adressen
-fra punkt 4.
+Bare én av delene skal kjøre. Går begge, skjer det ikke noe galt — alt som
+sendes merkes som sendt — men da er det to steder å lete når noe stopper.
+
+#### Når jobben stopper
+
+Hver vellykket kjøring skriver tidspunktet til tabellen `jobbkjoringer`. Admin
+leser det og setter et varsel øverst på *Oversikt* og på *Android-testere* når
+jobben aldri har kjørt, eller ikke har kjørt på over tre timer. Det er der en
+manglende cron-jobb blir synlig — ikke i en logg noen leser.
 
 #### Appen mot serveren
 

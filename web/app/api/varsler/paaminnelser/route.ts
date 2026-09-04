@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { hentForfaltePaaminnelser, merkPaaminnelseSendt } from "@/lib/data";
+import { hentForfaltePaaminnelser, merkJobbKjort, merkPaaminnelseSendt } from "@/lib/data";
 import { varslePaaminnelse } from "@/lib/push";
-import { varsleOmNyeOppgaver, varsleOmNyeTestere } from "@/lib/varsling";
+import { TIMESJOBB, varsleOmNyeOppgaver, varsleOmNyeTestere } from "@/lib/varsling";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +27,9 @@ export async function GET(forespørsel: Request) {
 
   const forfalte = await hentForfaltePaaminnelser();
   if (forfalte.length === 0) {
+    // Kvitteringen settes selv om det ikke var noe å sende. Poenget er å
+    // vite at jobben går, ikke at den hadde noe å gjøre.
+    await merkJobbKjort(TIMESJOBB);
     return NextResponse.json({ sendt: 0, paaminnelser: 0, nyeOppgaver, nyeTestere });
   }
 
@@ -52,6 +55,7 @@ export async function GET(forespørsel: Request) {
   }
 
   await merkPaaminnelseSendt(sendteIder);
+  await merkJobbKjort(TIMESJOBB);
 
   return NextResponse.json({ sendt, paaminnelser: forfalte.length, nyeOppgaver, nyeTestere });
 }

@@ -4,8 +4,9 @@ import { krevAdmin, demomodus } from "@/lib/auth";
 import { harBrevo } from "@/lib/brevo";
 import { googlePlayLenke } from "@/lib/lenker";
 import { hentTestere } from "@/lib/testere";
-import { harCronNokkel, varselEpost } from "@/lib/varsling";
+import { varselEpost } from "@/lib/varsling";
 import { LeggTilAlle } from "@/components/LeggTilAlle";
+import { Driftsvarsel } from "@/components/Driftsvarsel";
 import { dato, klokka } from "@skjold/delt";
 
 export const dynamic = "force-dynamic";
@@ -42,6 +43,8 @@ export default async function Androidtestere() {
           </div>
         </header>
 
+        <Driftsvarsel />
+
         {!harLenke && (
           <p className="notis notis--fare" role="alert" style={{ marginTop: "1.5rem" }}>
             <strong>Ingen Play-lenke.</strong> <code>GOOGLE_PLAY_URL</code> er ikke satt på
@@ -65,12 +68,7 @@ export default async function Androidtestere() {
           </p>
         )}
 
-        {varselTil && !harCronNokkel() && (
-          <p className="notis notis--fare" role="alert" style={{ marginTop: "1.5rem" }}>
-            <strong>Beskjeden går ikke ut.</strong> <code>CRON_SECRET</code> mangler, så
-            timesjobben som sender den blir avvist.
-          </p>
-        )}
+
 
         <div className="adm__tall">
           <p className="adm__tall-post">

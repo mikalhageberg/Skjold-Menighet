@@ -143,3 +143,16 @@ create table if not exists android_testere (
 create index if not exists android_testere_ventende_idx
   on android_testere (opprettet)
   where lagt_til is null;
+
+-- ── Jobbkjøringer ─────────────────────────────────────────────────────
+-- Når timesjobben sist kom gjennom. Én rad, som oppdateres.
+--
+-- Finnes fordi en cron-jobb som aldri ble satt opp er usynlig: alt ser ut
+-- til å virke, varselet om nye oppgaver går jo ut ved publisering, og så
+-- oppdager ingen at påminnelsen dagen før aldri har gått. Admin leser
+-- denne og sier fra når det er for lenge siden sist.
+
+create table if not exists jobbkjoringer (
+  navn       text primary key,
+  sist_kjort text not null
+);

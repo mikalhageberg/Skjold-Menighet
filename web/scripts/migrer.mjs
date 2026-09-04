@@ -134,6 +134,7 @@ try {
     "enheter",
     "administratorer",
     "android_testere",
+    "jobbkjoringer",
   ];
   const finnes = tabeller.filter((navn) =>
     db.prepare(`select 1 from sqlite_master where type = 'table' and name = ?`).get(navn),
