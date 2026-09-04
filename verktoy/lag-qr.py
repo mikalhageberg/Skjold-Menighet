@@ -31,9 +31,17 @@ KALK = "#EFF2EE"
 UT = Path(__file__).resolve().parent / "qr"
 
 
+def kode_for(adresse: str) -> segno.QRCode:
+    """
+    Selve koden, uten å skrive noe til disk — plakatskriptet låner den her,
+    så adressen og feilkorreksjonen er bestemt ett sted.
+    """
+    return segno.make_qr(adresse, error="h")
+
+
 def lag(adresse: str) -> None:
     UT.mkdir(parents=True, exist_ok=True)
-    kode = segno.make_qr(adresse, error="h")
+    kode = kode_for(adresse)
 
     # border=4 er stillesonen standarden krever. Uten den leser mange
     # telefoner koden tregere, og noen ikke i det hele tatt.

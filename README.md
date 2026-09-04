@@ -225,6 +225,22 @@ gjør ingen skade.
 Adressene ligger i tabellen `android_testere` og brukes ikke til noe annet enn
 å gi tilgang til appen.
 
+QR-koden til `/app` lages av `verktoy/lag-qr.py` (SVG til trykk, PNG til
+skjerm), og plakaten som henger i kirken av `verktoy/lag-plakat.py` — A4
+stående i 300 dpi, som PDF og PNG:
+
+```bash
+python3 verktoy/lag-plakat.py
+```
+
+Plakaten viser appikonet, koden og tre linjer om hvordan man skanner den. Den
+sier med vilje ingenting om App Store eller lukket test: det er `/app` sin
+jobb å velge riktig vei ut fra hvilken telefon man har, og en plakat på veggen
+henger lenger enn appen blir stående på samme steg. Teksten ligger samlet
+øverst i skriptet. Begge skriptene krever `segno`, plakaten dessuten `Pillow`
+og at `npm install` er kjørt — skriftene hentes fra `node_modules`. Bildene
+havner utenfor git, som butikkgrafikken.
+
 ### Databasen
 
 SQLite — én fil, ikke en egen tjeneste å sette opp eller betale for. Fila skal

@@ -41,6 +41,7 @@ web/data/
 mobil/verktoy/skjermbilder/
 mobil/verktoy/butikk/
 verktoy/qr/
+verktoy/plakat/
 __pycache__/
 
 # Tjenestekontonøkkelen fra Firebase er en hemmelighet — den kan sende
