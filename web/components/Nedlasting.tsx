@@ -23,12 +23,12 @@ export function Nedlasting({ appStore }: { appStore: string | null }) {
       <div className="nedlast__valg">
         {appStore ? (
           <a className="knapp nedlast__knapp" href={appStore}>
-            <span className="nedlast__for">iPhone og iPad</span>
+            <span className="nedlast__for">iPhone</span>
             <span className="nedlast__hva">Hent i App Store</span>
           </a>
         ) : (
           <p className="nedlast__venter">
-            <span className="nedlast__for">iPhone og iPad</span>
+            <span className="nedlast__for">iPhone</span>
             <span className="nedlast__hva">Appen er ikke i App Store ennå.</span>
           </p>
         )}
@@ -63,15 +63,20 @@ export function Nedlasting({ appStore }: { appStore: string | null }) {
                 <h2 className="nedlast__tittel">Vi sender deg lenken på e-post</h2>
                 <p className="felt__hjelp">
                   Android-appen er ennå på test, og da må du oppgi e-post for å få
-                  tilsendt lenken til appen på mail. Bruk den samme adressen som du
-                  har på telefonen din.
+                  tilsendt lenken til appen på mail. Google slipper bare inn den
+                  adressen du er logget inn med i Play-butikken — en annen virker
+                  ikke.
                 </p>
               </div>
 
               <div className="felt">
                 <label className="felt__etikett" htmlFor="epost">
-                  E-postadressen din
+                  E-postadressen du bruker i Google Play
                 </label>
+                <p className="felt__hjelp">
+                  Er du usikker på hvilken det er: åpne Play-butikken og trykk på det
+                  runde bildet øverst til høyre. Adressen står der.
+                </p>
                 <input
                   id="epost"
                   name="epost"
