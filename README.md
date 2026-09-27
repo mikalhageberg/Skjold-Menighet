@@ -385,10 +385,10 @@ CSV når hun skal handle inn.
 har en vakt som starter om mellom 20 og 28 timer, tar igjen «det trengs
 frivillige»-varsler som ikke kom av gårde da arrangementet ble publisert, og
 sender beskjed til `VARSEL_EPOST` om hvem som har bedt om Android-appen siden
-sist. Alle tre merkes som sendt, så ingenting går ut to ganger. Ruta er beskyttet
-av `CRON_SECRET` og skal kalles én gang i timen — se **Timesjobben** under
-utrullingen nedenfor. Hver vellykket kjøring skriver tidspunktet sitt, så admin
-kan si fra når den stopper.
+sist. Alle tre merkes som sendt, så ingenting går ut to ganger. Serveren kjører
+den selv hver time, og GitHub Actions kaller ruta som sikkerhetsnett — se
+**Timesjobben** under utrullingen nedenfor. Hver vellykket kjøring skriver
+tidspunktet sitt, så admin kan si fra når den stopper.
 
 Varselet om en ny oppgave sendes til vanlig med én gang den ansvarlige
 publiserer, ikke av timesjobben. Jobben er sikkerhetsnettet.
@@ -444,41 +444,37 @@ ekte databasetjeneste i stedet.
 
 #### Timesjobben
 
-`/api/varsler/paaminnelser` gjør ingenting av seg selv — noen må kalle den hver
-time. Uten det går verken påminnelsen dagen før eller beskjeden om nye
-Android-testere ut, mens resten av appen ser ut til å virke: varselet om en ny
-oppgave sendes jo ved publisering. Den fella kostet oss den første måneden med
-påminnelser.
+Påminnelsen dagen før og beskjeden om nye Android-testere går ikke av seg selv
+— noe må kjøre jobben hver time. Mens den står, ser resten av appen ut til å
+virke: varselet om en ny oppgave sendes jo ved publisering. Den fella har slått
+til to ganger. Først var jobben aldri satt opp, og påminnelsene gikk ikke ut på
+en måned. Så gikk den fra GitHub Actions, som kjører planlagte jobber bare når
+det er ledig kapasitet — det ble seks kjøringer i døgnet i stedet for 24.
 
-**Slik den settes opp:** `.github/workflows/timesjobb.yml` kjører kallet hver
-time. Den trenger to ting under *Settings* på repoet, begge under *Secrets and
-variables → Actions*:
+**Serveren kjører den selv.** `web/instrumentation.ts` starter en tidtaker når
+serveren starter: første runde et minutt etter oppstart, så hver time. Det
+trengs ikke noe oppsett for det; det følger med hver utrulling. Tidtakeren går
+bare i den ekte serveren, ikke under `npm run web`, der den ellers ville sendt
+ekte påminnelser fra en utviklingsmaskin.
+
+**GitHub Actions er sikkerhetsnettet.** `.github/workflows/timesjobb.yml` kaller
+`/api/varsler/paaminnelser` kvart over hver time, så jobben går selv om
+tidtakeren i serveren skulle stoppe. Kvart over og ikke hel time, fordi GitHub
+dropper flest planlagte jobber på hel time. Den trenger to ting under
+*Settings* på repoet, begge under *Secrets and variables → Actions*:
 
 | Hva | Hvor | Verdi |
 | --- | --- | --- |
 | `CRON_SECRET` | Secrets | samme verdi som på web-tjenesten i Railway |
 | `APP_URL` | Variables | `https://skjold.online` |
 
-Kjør den så én gang for hånd fra *Actions*-fanen (*Timesjobb* → *Run workflow*)
-for å se at den blir grønn. Feiler kallet, stopper jobben med feil, og GitHub
-sender deg en e-post — så et brudd blir ikke stille.
+Feiler kallet, stopper jobben med feil, og GitHub sender deg en e-post. Planlagte
+kjøringer der skrus av automatisk etter 60 dager uten aktivitet i repoet — da
+går den videre i serveren, og det er bare reserven som er borte.
 
-To ting å vite om GitHub sine planlagte kjøringer: de kommer gjerne noen
-minutter på etterskudd når det er travelt, og de **skrus av automatisk etter 60
-dager uten aktivitet i repoet**. Det første gjør ingenting — påminnelsen hentes
-for alt som starter om mellom 20 og 28 timer, så vinduet er åtte timer bredt.
-Det andre fanges opp av varselet i admin, som sier fra når jobben har vært
-stille i mer enn tre timer.
-
-**Alternativet** er en cron-jobb i Railway: *New* → *Cron Job* i samme prosjekt,
-tidsplan `0 * * * *`, med `CRON_SECRET` og `APP_URL` satt på den tjenesten:
-
-```bash
-curl -fsS -H "authorization: Bearer $CRON_SECRET" "$APP_URL/api/varsler/paaminnelser"
-```
-
-Bare én av delene skal kjøre. Går begge, skjer det ikke noe galt — alt som
-sendes merkes som sendt — men da er det to steder å lete når noe stopper.
+Kommer serveren og GitHub samtidig, slipper serveren bare én runde til om
+gangen. Det går an fordi det aldri kjører mer enn én server: volumet med
+databasen kan bare festes til én beholder.
 
 #### Når jobben stopper
 

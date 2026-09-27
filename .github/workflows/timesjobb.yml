@@ -1,14 +1,15 @@
-# Timesjobben som holder varslingen i gang.
+# Sikkerhetsnettet for timesjobben.
 #
-# Kaller /api/varsler/paaminnelser én gang i timen. Den ruta sender
-# påminnelsen dagen før til de frivillige, tar igjen «det trengs
-# frivillige»-varsler som ikke kom av gårde, og gir beskjed på e-post når
-# noen har bedt om Android-appen.
+# Serveren kjører timesjobben selv hver time (web/lib/timesjobb.ts). Denne
+# kaller /api/varsler/paaminnelser i tillegg, så jobben går selv om
+# tidtakeren i serveren skulle stoppe — og et mislykket kall sender en
+# e-post fra GitHub av seg selv, så et brudd ikke blir stille.
 #
-# Ligger her og ikke i Railway-panelet fordi den da står i repoet, med
-# historikk, og fordi et mislykket kall sender en e-post fra GitHub av seg
-# selv. En cron-jobb ingen husker at finnes, er nettopp det som gjorde at
-# påminnelsene ikke gikk ut den første måneden.
+# Den var eneste kilde en stund, men GitHub kjører planlagte jobber bare
+# når det er ledig kapasitet: det ble seks kjøringer i døgnet i stedet for
+# 24, med opptil 6,6 timer mellom. Derfor er den ikke lenger det eneste.
+# To kall samtidig gjør ingenting — serveren slipper bare én runde til om
+# gangen, og alt som sendes merkes.
 #
 # Krever to ting under Settings på repoet:
 #   Secrets and variables → Actions → Secrets:   CRON_SECRET
@@ -18,11 +19,9 @@ name: Timesjobb
 
 on:
   schedule:
-    # Hver time. GitHub kjører planlagte jobber litt på etterskudd når det
-    # er travelt, ofte noen minutter. Det gjør ingenting her: påminnelsen
-    # hentes for alt som starter om mellom 20 og 28 timer, så vinduet er
-    # åtte timer bredt.
-    - cron: "0 * * * *"
+    # Kvart over hver time, ikke hel time. GitHub dropper flest planlagte
+    # jobber på hel time, når alle andre også har lagt sine.
+    - cron: "17 * * * *"
   # Lar deg kjøre den for hånd fra Actions-fanen, uten å vente på timen.
   workflow_dispatch:
 

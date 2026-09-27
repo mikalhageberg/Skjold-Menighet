@@ -11,43 +11,28 @@ import { sendNyeTestere } from "./brevo";
 import { nettstedUrl } from "./lenker";
 import { varsleNyOppgave } from "./push";
 
-/**
- * Om cron-jobben kan slippe til. Uten CRON_SECRET svarer
- * /api/varsler/paaminnelser 500, og da stopper påminnelsen dagen før —
- * uten at noen merker det før en frivillig ikke dukker opp. Derfor sier
- * admin fra om den mangler, på samme måte som med Brevo-nøkkelen.
- */
-export function harCronNokkel() {
-  return Boolean(process.env.CRON_SECRET);
-}
-
 /** Navnet timesjobben kvitterer under i jobbkjoringer. */
 export const TIMESJOBB = "paaminnelser";
 
 /**
- * Hvor lenge det får gå før admin sier fra. Jobben skal kjøre hver time;
- * tre timer tåler at en kjøring eller to blir hengende uten at det ropes
- * varsku for tidlig. GitHub sine planlagte kjøringer er dessuten sjelden
- * helt presise.
+ * Hvor lenge det får gå før admin sier fra. Jobben kjører hver time i
+ * serveren; tre timer tåler en omstart eller en treg runde uten at det
+ * ropes varsku for tidlig.
  */
 const TAALT_STILLE_TIMER = 3;
 
 export type Driftsstatus =
   | { ok: true; sistKjort: string }
-  | { ok: false; grunn: "mangler nøkkel" }
   | { ok: false; grunn: "aldri kjørt" }
   | { ok: false; grunn: "for lenge siden"; sistKjort: string; timer: number };
 
 /**
- * Om timesjobben faktisk kjører.
- *
- * At CRON_SECRET er satt sier bare at ruta ville sluppet noen inn — ikke
- * at noen kaller den. Det var nettopp forskjellen som gjorde at
- * påminnelsen dagen før aldri gikk ut uten at noen merket det.
+ * Om timesjobben faktisk kjører — målt på når den sist kom gjennom, ikke
+ * på om noe er satt opp. Det var nettopp forskjellen som først gjorde at
+ * påminnelsen dagen før aldri gikk ut, og deretter at den gikk hver fjerde
+ * time, uten at noen merket det.
  */
 export async function timesjobbStatus(): Promise<Driftsstatus> {
-  if (!harCronNokkel()) return { ok: false, grunn: "mangler nøkkel" };
-
   const sistKjort = await hentSistKjort(TIMESJOBB);
   if (!sistKjort) return { ok: false, grunn: "aldri kjørt" };
 

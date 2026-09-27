@@ -18,25 +18,18 @@ export async function Driftsvarsel() {
 
   return (
     <p className="notis notis--fare" role="alert" style={{ marginTop: "1.5rem" }}>
-      {status.grunn === "mangler nøkkel" ? (
+      {status.grunn === "aldri kjørt" ? (
         <>
-          <strong>Timesjobben blir avvist.</strong> <code>CRON_SECRET</code> er ikke satt på
-          serveren, så kallet slipper ikke inn. Påminnelsen dagen før går da ikke ut, og du
-          får ingen beskjed når noen ber om Android-appen.
-        </>
-      ) : status.grunn === "aldri kjørt" ? (
-        <>
-          <strong>Timesjobben har aldri kjørt.</strong> Ingen kaller{" "}
-          <code>/api/varsler/paaminnelser</code>. Påminnelsen dagen før har dermed ikke gått
-          ut til noen, og du får ingen beskjed når noen ber om Android-appen. Se{" "}
-          <code>README.md</code> — den skal settes opp én gang, i GitHub Actions eller som en
-          cron-jobb på Railway.
+          <strong>Timesjobben har aldri kjørt.</strong> Serveren skal kjøre den selv et
+          minutt etter oppstart og så hver time. Til den gjør det, går ingen påminnelser ut
+          dagen før, og du får ingen beskjed når noen ber om Android-appen.
         </>
       ) : (
         <>
           <strong>Timesjobben har stoppet.</strong> Den kjørte sist for {status.timer}{" "}
           {status.timer === 1 ? "time" : "timer"} siden, og skal gå hver time. Så lenge den
-          står, går ingen påminnelser ut dagen før.
+          står, går ingen påminnelser ut dagen før. Sjekk at web-tjenesten kjører på
+          Railway.
         </>
       )}
     </p>
