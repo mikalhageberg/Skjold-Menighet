@@ -216,7 +216,7 @@ function Fakta({
 }) {
   return (
     <View style={stil.faktarad}>
-      <Tekst variant="liten" farget="myk" style={stil.faktanavn}>
+      <Tekst variant="liten" farget="myk">
         {navn}
       </Tekst>
       <View style={stil.faktaverdi}>
@@ -641,7 +641,6 @@ const stil = StyleSheet.create({
     borderBottomColor: farge.strekSvak,
     gap: 2,
   },
-  faktanavn: { width: 120 },
   faktaverdi: { flexDirection: "row", alignItems: "center", gap: rom.s },
   prikk: { width: 8, height: 8, borderRadius: 4 },
   nummer: { alignSelf: "flex-start", paddingVertical: 2 },

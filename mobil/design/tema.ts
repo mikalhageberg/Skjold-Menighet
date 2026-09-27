@@ -58,3 +58,25 @@ export const radius = {
   knapp: 4,
   liten: 2,
 } as const;
+
+/* ── Tekststørrelsen på telefonen ────────────────────────────────────── */
+// Appen følger tekststørrelsen brukeren har valgt i innstillingene. Mange
+// av dem som skal bruke dette har skrudd den opp, og da skal det de leser
+// faktisk bli større — ikke kuttes av med «…».
+
+/**
+ * Hvor mye titler og navigasjon får vokse. Brødteksten vokser fritt; det er
+ * den som skal leses. Titlene er store fra før, og Apple gjør det samme i
+ * sitt eget system: overskrifter vokser mindre enn brødtekst. Uten taket
+ * brekkes lange ord som «Formiddagstreff» midt i allerede ved 1,5×, for
+ * ett ord alene blir bredere enn hele kortet.
+ */
+export const MAKS_TITTELSKALA = 1.5;
+
+/**
+ * Fra denne tekststørrelsen legges ting under hverandre i stedet for ved
+ * siden av. Største vanlige trinn på iPhone er 1,35 og nest største på
+ * Android 1,3; norske sammensatte ord begynner å brekke rundt der når de
+ * deler bredden med noe annet.
+ */
+export const STOR_TEKST = 1.3;

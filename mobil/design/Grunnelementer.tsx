@@ -8,7 +8,7 @@ import {
   View,
   type ViewProps,
 } from "react-native";
-import { farge, radius, rom, skrift, storrelse, TREFF } from "./tema";
+import { farge, MAKS_TITTELSKALA, radius, rom, skrift, storrelse, TREFF } from "./tema";
 
 /* ── Tekst ───────────────────────────────────────────────────────────── */
 
@@ -28,6 +28,9 @@ export function Tekst({
   const erDisplay = variant === "mega" || variant === "stor" || variant === "mellom";
   return (
     <Text
+      // Titlene vokser med tekststørrelsen på telefonen, men mindre enn
+      // brødteksten — se MAKS_TITTELSKALA.
+      maxFontSizeMultiplier={erDisplay ? MAKS_TITTELSKALA : undefined}
       style={[
         {
           fontFamily: erDisplay
@@ -220,6 +223,10 @@ const stil = StyleSheet.create({
   knapp: {
     minHeight: TREFF,
     paddingHorizontal: rom.xl,
+    // Merkes bare med stor tekst — ved normal størrelse er det minstehøyden
+    // som bestemmer. Uten den ligger teksten klistret mot kantene når den
+    // har vokst til nesten hele knappens høyde.
+    paddingVertical: rom.m,
     borderRadius: radius.knapp,
     borderWidth: 1,
     alignItems: "center",
@@ -233,6 +240,9 @@ const stil = StyleSheet.create({
   knappTekst: {
     fontFamily: skrift.tekstMedium,
     fontSize: storrelse.brod,
+    // Blir knappeteksten så stor at den må over to linjer, skal den stå
+    // midt i knappen og ikke til venstre.
+    textAlign: "center",
   },
   felt: {
     minHeight: TREFF,

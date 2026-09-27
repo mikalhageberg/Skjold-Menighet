@@ -12,7 +12,8 @@ import {
   type ArrangementMedAntall,
 } from "@skjold/delt";
 import { Tekst } from "@/design/Grunnelementer";
-import { farge, radius, rom, skrift } from "@/design/tema";
+import { farge, MAKS_TITTELSKALA, radius, rom, skrift } from "@/design/tema";
+import { useTekstskala } from "@/design/tekstskala";
 import { API_BASE } from "@/lib/api";
 
 /**
@@ -35,6 +36,7 @@ export function Arrangementskort({
   fra?: string;
 }) {
   const router = useRouter();
+  const { stor } = useTekstskala();
   const start = new Date(arrangement.starter);
   const sesong = sesongFor(start);
   const status = pameldingsstatus(arrangement);
@@ -69,9 +71,17 @@ export function Arrangementskort({
             />
           ) : null}
 
-          <View style={stil.topp}>
-            <View style={stil.dato}>
-              <Tekst style={stil.datoTall} numberOfLines={1}>
+          {/* Med stor tekst legger datoen seg over tittelen i stedet for ved
+              siden av, så tittelen får hele bredden. Ellers brekkes lange
+              ord som «Formiddagstreff» midt i. Tittel, tid og sted kuttes
+              aldri av — det er nettopp det man trenger for å bestemme seg. */}
+          <View style={stor ? stil.toppStor : stil.topp}>
+            <View style={stor ? stil.datoStor : stil.dato}>
+              <Tekst
+                style={stil.datoTall}
+                numberOfLines={1}
+                maxFontSizeMultiplier={MAKS_TITTELSKALA}
+              >
                 {dag(start)}
               </Tekst>
               <Tekst variant="etikett" farget="myk">
@@ -80,20 +90,23 @@ export function Arrangementskort({
             </View>
 
             <View style={stil.tittelfelt}>
-              <Tekst variant="mellom" halvfet numberOfLines={2}>
+              <Tekst variant="mellom" halvfet>
                 {arrangement.tittel}
               </Tekst>
-              <Tekst variant="liten" farget="myk" numberOfLines={1}>
+              <Tekst variant="liten" farget="myk">
                 {tidsrom(start, arrangement.slutter ? new Date(arrangement.slutter) : null)}
               </Tekst>
-              <Tekst variant="liten" farget="myk" numberOfLines={1}>
+              <Tekst variant="liten" farget="myk">
                 {arrangement.sted}
               </Tekst>
             </View>
           </View>
 
+          {/* Ingressen er en smakebit; hele står på arrangementssiden. Med
+              stor tekst rommer tre linjer bare en håndfull ord, så den får
+              litt mer plass. */}
           {arrangement.ingress ? (
-            <Tekst variant="liten" farget="myk" numberOfLines={3}>
+            <Tekst variant="liten" farget="myk" numberOfLines={stor ? 5 : 3}>
               {arrangement.ingress}
             </Tekst>
           ) : null}
@@ -134,7 +147,9 @@ const stil = StyleSheet.create({
     backgroundColor: farge.kalkDyp,
   },
   topp: { flexDirection: "row", gap: rom.l, alignItems: "flex-start" },
+  toppStor: { gap: rom.s },
   dato: { minWidth: 32, alignItems: "center" },
+  datoStor: { flexDirection: "row", alignItems: "baseline", gap: rom.s },
   datoTall: {
     fontFamily: skrift.display,
     fontSize: 28,

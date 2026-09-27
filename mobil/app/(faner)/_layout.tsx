@@ -1,10 +1,15 @@
 import { Tabs } from "expo-router";
-import { StyleSheet, View, type ColorValue } from "react-native";
+import { Platform, StyleSheet, Text, View, type ColorValue } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { farge, skrift, storrelse } from "@/design/tema";
+import { farge, MAKS_TITTELSKALA, skrift, storrelse } from "@/design/tema";
+import { Tekst } from "@/design/Grunnelementer";
+import { useTekstskala } from "@/design/tekstskala";
 
 /** Høyden fanelinja trenger til ikon og etikett, uten systemlinja. */
 const FANEHOYDE = 72;
+
+/** Linjehøyden til faneetiketten ved normal tekststørrelse. */
+const ETIKETTLINJE = 17;
 
 /**
  * To faner er nok: det som trenger folk, og det du har sagt ja til.
@@ -18,30 +23,44 @@ export default function Faner() {
   // en fast høyde kortslutter hele utregningen (se BottomTabBar).
   const insets = useSafeAreaInsets();
 
+  // Faneetikettene er navigasjon, og vokser som titlene: med, men bare
+  // til MAKS_TITTELSKALA. «Vi trenger deg» får ellers ikke plass på en
+  // vanlig Android-telefon med største tekst. På iPhone vokser de ikke i
+  // det hele tatt — der vises de forstørret når man holder fingeren på
+  // fanen, slik Apple gjør det selv. Linja må vokse like mye som
+  // etiketten, ellers klippes den i bunnen av den faste høyden.
+  const { skala } = useTekstskala();
+  const etikettskala = Platform.OS === "ios" ? 1 : Math.min(skala, MAKS_TITTELSKALA);
+  const ekstra = Math.ceil(ETIKETTLINJE * (etikettskala - 1));
+
   return (
     <Tabs
       screenOptions={{
         headerStyle: { backgroundColor: farge.kalk },
         headerShadowVisible: false,
-        headerTitleStyle: {
-          fontFamily: skrift.display,
-          fontSize: storrelse.mellom,
-          color: farge.gran,
-        },
         headerTitleAlign: "left",
         tabBarActiveTintColor: farge.gran,
         tabBarInactiveTintColor: farge.granSvak,
         tabBarStyle: {
           backgroundColor: farge.kalk,
           borderTopColor: farge.strek,
-          height: FANEHOYDE + insets.bottom,
+          height: FANEHOYDE + ekstra + insets.bottom,
           paddingTop: 10,
           paddingBottom: insets.bottom,
         },
-        tabBarLabelStyle: {
-          fontFamily: skrift.tekstMedium,
-          fontSize: storrelse.etikett + 1,
-        },
+        // Egen etikett i stedet for React Navigation sin, fordi den ikke tar
+        // imot noe tak på tekststørrelsen. Forstørrelsen ved langt trykk på
+        // iPhone settes på selve fanen, og virker like fullt.
+        tabBarLabel: ({ color, children }) => (
+          <Text
+            style={[stil.etikett, { color }]}
+            numberOfLines={1}
+            allowFontScaling={Platform.OS !== "ios"}
+            maxFontSizeMultiplier={MAKS_TITTELSKALA}
+          >
+            {children}
+          </Text>
+        ),
         sceneStyle: { backgroundColor: farge.kalk },
       }}
     >
@@ -49,7 +68,7 @@ export default function Faner() {
         name="index"
         options={{
           title: "Vi trenger deg",
-          headerTitle: "Skjold menighet",
+          headerTitle: overskrift("Skjold menighet"),
           tabBarIcon: ({ color }) => <Ring farge={color} />,
         }}
       />
@@ -57,12 +76,31 @@ export default function Faner() {
         name="mine"
         options={{
           title: "Mine vakter",
-          headerTitle: "Mine vakter",
+          headerTitle: overskrift("Mine vakter"),
           tabBarIcon: ({ color }) => <Hake farge={color} />,
         }}
       />
     </Tabs>
   );
+}
+
+/**
+ * Overskriften øverst på fanen. Tegnes med Tekst, så den får samme skrift og
+ * samme tak på tekststørrelsen som de andre titlene — overskriften har fast
+ * høyde, og uten taket kuttes den både i bunnen og i enden.
+ *
+ * Settes per fane fordi overskriften og fanenavnet er forskjellige («Skjold
+ * menighet» over, «Vi trenger deg» under), og en tekst per fane ville
+ * overstyrt en felles funksjon.
+ */
+function overskrift(tekst: string) {
+  return function Overskrift() {
+    return (
+      <Tekst variant="mellom" accessibilityRole="header" numberOfLines={1}>
+        {tekst}
+      </Tekst>
+    );
+  };
 }
 
 function Ring({ farge: f }: { farge: ColorValue }) {
@@ -78,6 +116,12 @@ function Hake({ farge: f }: { farge: ColorValue }) {
 }
 
 const stil = StyleSheet.create({
+  etikett: {
+    fontFamily: skrift.tekstMedium,
+    fontSize: storrelse.etikett + 1,
+    lineHeight: ETIKETTLINJE,
+    textAlign: "center",
+  },
   ring: { width: 20, height: 20, borderRadius: 10, borderWidth: 2.5 },
   hakefelt: { width: 24, height: 24, alignItems: "center", justifyContent: "center" },
   hake: {
