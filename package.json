@@ -13,7 +13,8 @@
     "db:migrer": "npm run db:migrer --workspace=web",
     "ny-admin": "npm run ny-admin --workspace=web",
     "bygg": "npm run build --workspace=web",
-    "start": "npm run db:migrer && npm run start --workspace=web"
+    "start": "npm run db:migrer && npm run start --workspace=web",
+    "oppdater": "node mobil/verktoy/send-oppdatering.mjs"
   },
   "overrides": {
     "react": "19.1.0",

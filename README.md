@@ -131,6 +131,38 @@ Fire profiler i `eas.json`: `utvikling` (development client mot localhost),
 betalt Apple-medlemskap), `test` (intern distribusjon) og `produksjon` (til
 butikkene).
 
+### Oppdatere appen over lufta
+
+Endringer som bare er JavaScript og bilder — tekst, oppsett, feilrettinger —
+kan sendes rett til telefonene med EAS Update, uten nytt bygg og uten å vente på
+App Store eller Google Play. Appen henter oppdateringen når den åpnes, og tar
+den i bruk neste gang den startes.
+
+```bash
+npm run oppdater -- "Større tekst uten avkutting"
+```
+
+Skriptet (`mobil/verktoy/send-oppdatering.mjs`) sjekker først at native-koden er
+den samme som i siste produksjonsbygg, ved å sammenligne fingeravtrykket for
+Android og iOS. Er noe native endret — en ny modul, en ny tillatelse, noe i
+`app.json` som havner i selve appen — stopper det, for en oppdatering som
+trenger native-kode appen ikke har, krasjer den ved oppstart hos alle som får
+den. Da må `version` i `app.json` økes og appen bygges og sendes inn på nytt.
+Vil du bare se om det er trygt, uten å sende noe:
+
+```bash
+npm run oppdater -- --sjekk
+```
+
+Det sender også med miljøvariablene fra produksjonsprofilen i `eas.json`.
+`eas update` leser dem ikke selv, men tar det som ligger i skallet — og en
+`EXPO_PUBLIC_API_BASE` som peker på en maskin på hjemmenettet ville ellers gått
+ut til alle.
+
+Kommandoen ligger i rot-`package.json`, ikke i `mobil/`. Skriptene i
+`mobil/package.json` er med i fingeravtrykket, så å legge den der ville i seg
+selv gjort at ingen oppdatering passet til byggene som er ute.
+
 **Dette trenger dere før innsending:**
 
 - Apple Developer Program, 99 USD i året, og en App Store Connect-app med
