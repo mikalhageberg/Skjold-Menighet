@@ -1,0 +1,392 @@
+<!doctype html>
+<!--
+  Flygebladet om appen: ett A4-ark, tosidig, brettet på midten til et
+  hefte i A5. Skrives ut på A3 blir heftet A4 — alt er i mm og pt, så det
+  skalerer rent.
+
+  Ark 1 er utsiden (bakside til venstre, forside til høyre), ark 2 er
+  innsiden. Skriv ut tosidig og vend på kortsiden.
+
+  Lages om til PDF av lag-flygeblad.py — ikke åpne denne direkte, {{…}}
+  fylles inn der.
+-->
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<title>Flygeblad – Skjold menighet</title>
+<style>
+  @font-face { font-family: Fraunces; font-weight: 500; src: url("{{FONTER}}/fraunces/500Medium/Fraunces_500Medium.ttf"); }
+  @font-face { font-family: Fraunces; font-weight: 600; src: url("{{FONTER}}/fraunces/600SemiBold/Fraunces_600SemiBold.ttf"); }
+  @font-face { font-family: Schibsted; font-weight: 400; src: url("{{FONTER}}/schibsted-grotesk/400Regular/SchibstedGrotesk_400Regular.ttf"); }
+  @font-face { font-family: Schibsted; font-weight: 500; src: url("{{FONTER}}/schibsted-grotesk/500Medium/SchibstedGrotesk_500Medium.ttf"); }
+  @font-face { font-family: Schibsted; font-weight: 600; src: url("{{FONTER}}/schibsted-grotesk/600SemiBold/SchibstedGrotesk_600SemiBold.ttf"); }
+
+  /* Fargene fra mobil/design/tema.ts og delt/src/kirkeaar.ts */
+  :root {
+    --kalk: #EFF2EE; --kalk-dyp: #E5EAE5; --papir: #FAFBF8;
+    --gran: #16302A; --gran-myk: #3F5B53; --gran-svak: #748982;
+    --strek: #D3DBD5; --messing: #8F6716; --messing-lys: #ECDFC2; --rod: #99332A;
+    --fiolett: #59468c; --gull: #a07a1c; --rodt: #99332a; --gronn: #3d6b55;
+  }
+
+  @page { size: A4 landscape; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--kalk); }
+  body {
+    font-family: Schibsted, sans-serif; color: var(--gran);
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    font-size: 10.5pt; line-height: 1.45;
+  }
+
+  .ark { width: 297mm; height: 210mm; display: grid; grid-template-columns: 1fr 1fr; break-after: page; overflow: hidden; }
+  .ark:last-child { break-after: auto; }
+  .side { position: relative; padding: 14mm 13mm 13mm; display: flex; flex-direction: column; overflow: hidden; }
+
+  .merke { font-weight: 500; font-size: 8pt; letter-spacing: .16em; text-transform: uppercase; color: var(--gran-myk); }
+  h1, h2, h3 { font-family: Fraunces, serif; font-weight: 600; line-height: 1.12; letter-spacing: -.005em; }
+  h2 { font-size: 21pt; margin-top: 2mm; }
+  .ingress { color: var(--gran-myk); font-size: 10.5pt; margin-top: 2mm; }
+  .myk { color: var(--gran-myk); }
+  em.knapp { font-style: normal; font-weight: 600; white-space: nowrap; }
+
+  /* Kirkeåret som stripe — samme tråd som kanten på kortene i appen */
+  .kirkeaar { display: flex; height: 3.2mm; }
+  .kirkeaar i { flex: 1; }
+  .kirkeaar i:nth-child(1) { background: var(--fiolett); }
+  .kirkeaar i:nth-child(2) { background: var(--gull); }
+  .kirkeaar i:nth-child(3) { background: var(--rodt); }
+  .kirkeaar i:nth-child(4) { background: var(--gronn); }
+
+  /* ── Forsiden ─────────────────────────────────────────────── */
+  .forside { background: var(--gran); color: var(--kalk); align-items: center; text-align: center; padding-top: 17mm; }
+  .forside .merke { color: #B9C7C0; margin-top: 7mm; }
+  .forside .ikon { width: 13mm; height: 21mm; }
+  .forside h1 { font-size: 25pt; font-weight: 500; line-height: 1.14; margin-top: 5mm; max-width: 112mm; }
+  .forside h1 b { font-weight: 600; white-space: nowrap; }
+  .qrkort { margin-top: 10mm; background: var(--papir); padding: 3mm; border-radius: 1.2mm; }
+  .qrkort svg { display: block; width: 52mm; height: 52mm; }
+  .adresse { font-family: Fraunces, serif; font-weight: 500; font-size: 15pt; margin-top: 5mm; }
+  .forside .hjelp { font-size: 10pt; color: #C9D4CE; margin-top: 2mm; max-width: 96mm; }
+  .forside .kirkeaar { position: absolute; left: 0; right: 0; bottom: 0; height: 4mm; }
+
+  /* ── Innsiden ─────────────────────────────────────────────── */
+  .inne { background: var(--kalk); }
+  .inne .kirkeaar.topp { position: absolute; top: 0; left: 0; right: 0; height: 2.2mm; }
+  .steg { list-style: none; margin-top: 6mm; display: flex; flex-direction: column; gap: 4.4mm; flex: 1; }
+  .steg > li { display: grid; grid-template-columns: 7.5mm 1fr 58mm; gap: 3mm; align-items: start; }
+  .steg .nr { font-family: Fraunces, serif; font-weight: 600; font-size: 19pt; line-height: 1; color: var(--messing); padding-top: .4mm; }
+  .steg h3 { font-size: 12pt; margin-bottom: 1mm; }
+  .steg p { font-size: 9.6pt; line-height: 1.42; color: var(--gran-myk); }
+  .steg p + p { margin-top: 1.4mm; }
+
+  /* Utsnitt av appen, tegnet med appens egne mål (tema.ts) nedskalert */
+  .app { font-size: 7.4pt; line-height: 1.4; }
+  .app .papir { background: var(--papir); border: .25mm solid var(--strek); border-radius: .9mm; }
+  .app .etikett { font-size: 5.6pt; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--gran-myk); }
+  .app .tittel { font-family: Fraunces, serif; font-weight: 600; font-size: 9.2pt; line-height: 1.15; }
+  .app .liten { font-size: 6.6pt; color: var(--gran-myk); }
+  .app .knapp { display: flex; align-items: center; justify-content: center; height: 8mm; border-radius: .9mm; font-weight: 600; font-size: 7.4pt; }
+  .app .knapp.fylt { background: var(--gran); color: var(--papir); }
+  .app .felt { border: .25mm solid var(--strek); background: var(--papir); border-radius: .9mm; padding: 1.6mm 2mm; min-height: 7.4mm; }
+
+  .kort { display: flex; overflow: hidden; }
+  .kort .kant { width: 1mm; flex: none; }
+  .kort .innhold { flex: 1; padding: 2.4mm; display: flex; flex-direction: column; gap: 1.6mm; }
+  .kort img { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: .5mm; display: block; }
+  .kort .topp { display: flex; gap: 2.4mm; align-items: flex-start; }
+  .kort .dato { text-align: center; min-width: 6mm; }
+  .kort .dato b { display: block; font-family: Fraunces, serif; font-weight: 500; font-size: 13pt; line-height: 1; }
+
+  .meg { display: flex; align-items: center; padding: 1.8mm 2.4mm; }
+  .meg > div { flex: 1; }
+  .endre { color: var(--messing); font-weight: 600; }
+
+  .kvittert { background: var(--papir); border: .25mm solid var(--strek); border-left: .8mm solid var(--gronn); border-radius: .9mm; padding: 3mm; text-align: center; }
+  .hake { width: 7mm; height: 7mm; border-radius: 50%; background: var(--gronn); margin: 0 auto 1.4mm; display: grid; place-items: center; }
+
+  .faner { display: flex; background: var(--kalk); border-top: .25mm solid var(--strek); padding: 2.4mm 0 2.8mm; }
+  .faner > div { flex: 1; display: flex; align-items: center; justify-content: center; gap: 1.4mm; font-weight: 500; color: var(--gran-svak); }
+  .faner .aktiv { color: var(--gran); font-weight: 600; }
+  .faner .aktiv span { border-bottom: .5mm solid var(--messing); padding-bottom: .3mm; }
+  .faner svg { width: 3.4mm; height: 3.4mm; }
+
+  .vakt .innhold { gap: .6mm; }
+  .vakt .bidrag { margin-top: 1.2mm; padding-top: 1.2mm; border-top: .25mm solid var(--strek); }
+  .vakt .avmeld { margin-top: 2mm; color: var(--rod); font-size: 6.8pt; font-weight: 500; display: inline-block; outline: .45mm solid var(--rod); outline-offset: .9mm; border-radius: .3mm; }
+
+  .dialog { background: #F4F5F3; border-radius: 2.4mm; text-align: center; overflow: hidden; box-shadow: 0 .6mm 2.4mm rgba(22,48,42,.18); }
+  .dialog .tekst { padding: 3mm 3.4mm 2.6mm; }
+  .dialog .tekst b { display: block; font-size: 7.8pt; margin-bottom: .6mm; }
+  .dialog .tekst span { font-size: 6.4pt; color: var(--gran-myk); line-height: 1.35; display: block; }
+  .dialog .valg { display: flex; border-top: .25mm solid var(--strek); }
+  .dialog .valg div { flex: 1; padding: 2mm 0; font-size: 7.4pt; color: #2E6FB0; }
+  .dialog .valg div + div { border-left: .25mm solid var(--strek); color: var(--rod); font-weight: 600; }
+
+  .notis + .notis { margin-top: 3.4mm; }
+  .notis { margin-top: auto; background: var(--papir); border: .25mm solid var(--strek); border-left: 1mm solid var(--gronn); border-radius: .9mm; padding: 3.4mm 4mm; }
+  .notis h3 { font-size: 11pt; margin-bottom: 1mm; }
+  .notis p { font-size: 9.4pt; line-height: 1.42; color: var(--gran-myk); }
+  .notis p + p { margin-top: 1.6mm; }
+
+  /* ── Baksiden ─────────────────────────────────────────────── */
+  .bakside { background: var(--kalk); }
+  .lagres { margin-top: 5mm; display: flex; flex-direction: column; gap: 3.2mm; }
+  .lagres section { background: var(--papir); border: .25mm solid var(--strek); border-radius: .9mm; display: flex; overflow: hidden; }
+  .lagres .kant { width: 1mm; flex: none; }
+  .lagres .innhold { padding: 2.8mm 3.6mm; }
+  .lagres h3 { font-size: 10.8pt; margin-bottom: .8mm; }
+  .lagres p, .lagres li { font-size: 9pt; line-height: 1.42; color: var(--gran-myk); }
+  .lagres ul { list-style: none; }
+  .lagres li { padding-left: 3mm; position: relative; }
+  .lagres li::before { content: ""; position: absolute; left: 0; top: .62em; width: 1.2mm; height: 1.2mm; border-radius: 50%; background: var(--gran-svak); }
+  .lagres li b { color: var(--gran); font-weight: 600; }
+
+  .lesmer { display: flex; gap: 4mm; align-items: center; margin-top: 4.4mm; }
+  .lesmer svg { width: 19mm; height: 19mm; flex: none; }
+  .lesmer p { font-size: 9.4pt; color: var(--gran-myk); }
+  .lesmer .adr { font-family: Fraunces, serif; font-weight: 500; font-size: 12.5pt; color: var(--gran); display: block; margin-top: .4mm; }
+
+  .utvikler { margin-top: auto; padding-top: 4mm; border-top: .25mm solid var(--strek); text-align: center; font-size: 7.2pt; color: var(--gran-myk); }
+  .utvikler img { display: block; height: 10.5mm; margin: 2.2mm auto 2mm; }
+</style>
+</head>
+<body>
+
+<!-- ═════════ ARK 1 · UTSIDEN: bakside | forside ═════════ -->
+<div class="ark">
+
+  <!-- Side 4 · baksiden -->
+  <div class="side bakside">
+    <p class="merke">Personvern</p>
+    <h2>Hva appen lagrer om deg</h2>
+    <p class="ingress">Vi lagrer så lite som mulig. Kort fortalt:</p>
+
+    <div class="lagres">
+      <section>
+        <div class="kant" style="background: var(--gronn)"></div>
+        <div class="innhold">
+          <h3>Bare på telefonen din</h3>
+          <p>Navnet du skriver første gang, og telefon og e-post hvis du vil. Ingenting av dette sendes noe sted før du selv sier ja til en oppgave.</p>
+        </div>
+      </section>
+      <section>
+        <div class="kant" style="background: var(--gull)"></div>
+        <div class="innhold">
+          <h3>Når du sier ja til en oppgave</h3>
+          <ul>
+            <li><b>Navnet ditt</b> — det står på lista, slik at andre ser hvem som stiller.</li>
+            <li><b>Telefon eller e-post</b> — bare når oppgaven krever det.</li>
+            <li><b>Det du skriver</b> under «Jeg bidrar med», om du skriver noe.</li>
+            <li><b>Når</b> du meldte deg, og eventuelt når du meldte avbud.</li>
+          </ul>
+        </div>
+      </section>
+      <section>
+        <div class="kant" style="background: var(--fiolett)"></div>
+        <div class="innhold">
+          <h3>Varsler</h3>
+          <p>Sier du ja til varsler, lagres en kode for telefonen — ikke knyttet til navnet ditt.</p>
+        </div>
+      </section>
+      <section>
+        <div class="kant" style="background: var(--rodt)"></div>
+        <div class="innhold">
+          <h3>Aldri</h3>
+          <p>Ingen reklame, ingen sporing, ingenting selges videre. Opplysningene ligger i Europa, og lista slettes kort tid etter at oppgaven har vært.</p>
+        </div>
+      </section>
+    </div>
+
+    <div class="lesmer">
+      {{QR_PERSONVERN}}
+      <p>Hele personvernerklæringen, og hvordan du får innsyn eller sletting:
+        <span class="adr">skjold.online/personvern</span></p>
+    </div>
+
+    <div class="utvikler">
+      Appen er utviklet og vedlikeholdes av Hageberg Solutions:
+      <img src="{{LOGO}}" alt="Hageberg Solutions">
+      Kontakt: mikal.hageberg@gmail.com
+    </div>
+  </div>
+
+  <!-- Side 1 · forsiden -->
+  <div class="side forside">
+    <!-- Buen fra appikonet, tegnet på nytt så den ligger rett på granbunnen -->
+    <svg class="ikon" viewBox="334 225 356 573" aria-hidden="true">
+      <path d="M334 798V400a178 178 0 0 1 356 0v398z" fill="#EFF2EE"/>
+      <rect x="488" y="331" width="47" height="103" fill="#59468c"/>
+      <rect x="488" y="434" width="47" height="103" fill="#a07a1c"/>
+      <rect x="488" y="537" width="47" height="103" fill="#99332a"/>
+      <rect x="488" y="640" width="47" height="102" fill="#3d6b55"/>
+    </svg>
+    <p class="merke">Skjold menighet</p>
+    <h1>Nå kan du melde deg som frivillig gjennom appen <b>«Skjold menighet»</b></h1>
+    <div class="qrkort">{{QR_APP}}</div>
+    <p class="adresse">skjold.online/app</p>
+    <p class="hjelp">Hold kameraet på telefonen mot koden, og trykk på lenken som kommer opp.</p>
+    <div class="kirkeaar"><i></i><i></i><i></i><i></i></div>
+  </div>
+</div>
+
+<!-- ═════════ ARK 2 · INNSIDEN: side 2 | side 3 ═════════ -->
+<div class="ark">
+
+  <!-- Side 2 · melde seg -->
+  <div class="side inne">
+    <div class="kirkeaar topp"><i></i><i></i><i></i><i></i></div>
+    <p class="merke">Slik gjør du</p>
+    <h2>Meld deg som frivillig</h2>
+
+    <ol class="steg">
+      <li>
+        <span class="nr">1</span>
+        <div>
+          <h3>Skriv navnet ditt</h3>
+          <p>Første gang du åpner appen, skriver du navnet ditt og trykker <em class="knapp">Kom i gang</em>. Du trenger ikke passord.</p>
+          <p>Vil du, kan du også legge inn telefonnummer og e-post. Det er frivillig, men da er det fylt ut når en oppgave trenger det.</p>
+        </div>
+        <div class="app">
+          <div class="etikett" style="margin-bottom:1mm">Hva heter du?</div>
+          <div class="felt">Kari Nordmann</div>
+          <div class="etikett" style="margin:1.6mm 0 1mm">Telefon (valgfritt)</div>
+          <div class="felt" style="color: var(--gran-svak)">&nbsp;</div>
+          <div class="etikett" style="margin:1.6mm 0 1mm">E-post (valgfritt)</div>
+          <div class="felt" style="color: var(--gran-svak)">&nbsp;</div>
+          <div class="knapp fylt" style="margin-top:1.8mm">Kom i gang</div>
+        </div>
+      </li>
+
+      <li>
+        <span class="nr">2</span>
+        <div>
+          <h3>Finn noe som passer</h3>
+          <p>Under <em class="knapp">Vi trenger deg</em> ser du det menigheten trenger hjelp til. Trykk på et kort for å se mer.</p>
+          <p>Fargen langs kanten viser tiden i kirkeåret.</p>
+        </div>
+        <div class="app">
+          <div class="papir kort">
+            <div class="kant" style="background: var(--gronn)"></div>
+            <div class="innhold">
+              <img src="{{ILLUSTRASJON}}" alt="">
+              <div class="topp">
+                <div class="dato"><b>18</b><span class="etikett">søn</span></div>
+                <div>
+                  <div class="tittel">Kirkekaffe etter gudstjenesten</div>
+                  <div class="liten">kl. 12.00–13.00 · Skjold kirke</div>
+                </div>
+              </div>
+              <div class="liten" style="color: var(--rod)">1 av 4 — mangler 3</div>
+            </div>
+          </div>
+        </div>
+      </li>
+
+      <li>
+        <span class="nr">3</span>
+        <div>
+          <h3>Trykk «Jeg kan hjelpe»</h3>
+          <p>Skriv gjerne hva du tar med — en kake, for eksempel. Så trykker du <em class="knapp">Jeg kan hjelpe</em>.</p>
+        </div>
+        <div class="app">
+          <div class="papir meg">
+            <div><div class="etikett">Du melder deg som</div><div class="tittel" style="font-size:8.4pt">Kari Nordmann</div></div>
+            <span class="endre">Endre</span>
+          </div>
+          <div class="etikett" style="margin:1.8mm 0 .8mm">Jeg bidrar med</div>
+          <div class="felt">Eplekake</div>
+          <div class="knapp fylt" style="margin-top:1.8mm">Jeg kan hjelpe</div>
+        </div>
+      </li>
+
+      <li>
+        <span class="nr">4</span>
+        <div>
+          <h3>Du står på lista</h3>
+          <p>Vakta ligger nå under <em class="knapp">Mine vakter</em>, og du får en påminnelse dagen før.</p>
+        </div>
+        <div class="app">
+          <div class="kvittert">
+            <div class="hake"><svg viewBox="0 0 24 24" width="4mm" height="4mm"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FAFBF8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <div class="etikett">Du står på lista</div>
+            <div class="tittel">Takk for at du stiller.</div>
+          </div>
+        </div>
+      </li>
+    </ol>
+  </div>
+
+  <!-- Side 3 · melde avbud -->
+  <div class="side inne">
+    <div class="kirkeaar topp"><i></i><i></i><i></i><i></i></div>
+    <p class="merke">Blir du forhindret?</p>
+    <h2>Meld avbud</h2>
+
+    <ol class="steg" style="flex: none; gap: 8mm">
+      <li>
+        <span class="nr">1</span>
+        <div>
+          <h3>Gå til «Mine vakter»</h3>
+          <p>Trykk på <em class="knapp">Mine vakter</em> nederst på skjermen. Der ligger alt du har sagt ja til.</p>
+        </div>
+        <div class="app">
+          <div class="papir" style="overflow:hidden">
+            <div class="faner">
+              <div><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>Vi trenger deg</div>
+              <div class="aktiv"><svg viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Mine vakter</span></div>
+            </div>
+          </div>
+        </div>
+      </li>
+
+      <li>
+        <span class="nr">2</span>
+        <div>
+          <h3>Trykk «Meld avbud»</h3>
+          <p>Finn vakta du ikke kan ta, og trykk på den røde teksten <em class="knapp">Meld avbud</em>.</p>
+        </div>
+        <div class="app">
+          <div class="papir kort vakt">
+            <div class="kant" style="background: var(--gronn)"></div>
+            <div class="innhold">
+              <div class="etikett">om 3 uker</div>
+              <div class="tittel">Kirkekaffe etter gudstjenesten</div>
+              <div class="liten">søndag 18. oktober kl. 12.00 · Skjold kirke</div>
+              <div class="bidrag"><div class="etikett">Du bidrar med</div><div style="font-size:6.8pt">Eplekake</div></div>
+              <div><span class="avmeld">Meld avbud</span></div>
+            </div>
+          </div>
+        </div>
+      </li>
+
+      <li>
+        <span class="nr">3</span>
+        <div>
+          <h3>Bekreft</h3>
+          <p>Appen spør om du er sikker. Trykk <em class="knapp">Meld avbud</em> en gang til, så er du tatt av lista.</p>
+        </div>
+        <div class="app" style="padding: 0 3mm">
+          <div class="dialog">
+            <div class="tekst">
+              <b>Melde avbud?</b>
+              <span>Du tas av lista til «Kirkekaffe etter gudstjenesten», og de andre med appen får beskjed om at det trengs en avløser.</span>
+            </div>
+            <div class="valg"><div>Avbryt</div><div>Meld avbud</div></div>
+          </div>
+        </div>
+      </li>
+    </ol>
+
+    <div class="notis">
+      <h3>Du slipper å ringe rundt</h3>
+      <p>Når du melder avbud, får de andre med appen beskjed om at det trengs en avløser.</p>
+    </div>
+    <div class="notis" style="border-left-color: var(--messing)">
+      <h3>Står du fast?</h3>
+      <p>Har du meldt avbud ved en feil, eller får du det ikke til? Ta kontakt med den som er ansvarlig for oppgaven — navnet står som regel på oppgaven i appen.</p>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
