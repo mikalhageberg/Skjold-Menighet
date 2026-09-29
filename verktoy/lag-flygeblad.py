@@ -56,6 +56,7 @@ def main() -> None:
     for navn, verdi in {
         "{{FONTER}}": fonter.as_uri(),
         "{{LOGO}}": (HER / "hageberg-logo.png").as_uri(),
+        "{{LOGO_KIRKA}}": (HER / "dnk-skjold-logo.png").as_uri(),
         "{{ILLUSTRASJON}}": (HER / "kirkekaffe.jpg").as_uri(),
         "{{QR_APP}}": svg(qr.kode_for(qr.ADRESSE), PAPIR),
         "{{QR_PERSONVERN}}": svg(qr.segno.make_qr(PERSONVERN, error="h"), KALK),

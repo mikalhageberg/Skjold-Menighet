@@ -147,7 +147,10 @@
   .lesmer .adr { font-family: Fraunces, serif; font-weight: 500; font-size: 12.5pt; color: var(--gran); display: block; margin-top: .4mm; }
 
   .utvikler { margin-top: auto; padding-top: 4mm; border-top: .25mm solid var(--strek); text-align: center; font-size: 7.2pt; color: var(--gran-myk); }
-  .utvikler img { display: block; height: 10.5mm; margin: 2.2mm auto 2mm; }
+  .utvikler .logoer { display: flex; align-items: center; justify-content: center; gap: 4mm; margin: 2.4mm 0 2.2mm; }
+  .utvikler img { display: block; height: 9mm; }
+  .utvikler img.kirka { height: 8mm; }
+  .utvikler .logoer span { white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -204,8 +207,12 @@
     </div>
 
     <div class="utvikler">
-      Appen er utviklet og vedlikeholdes av Hageberg Solutions:
-      <img src="{{LOGO}}" alt="Hageberg Solutions">
+      Appen er utviklet og driftes av:
+      <div class="logoer">
+        <img src="{{LOGO}}" alt="Hageberg Solutions">
+        <span>i samarbeid med</span>
+        <img class="kirka" src="{{LOGO_KIRKA}}" alt="Den norske kirke – Skjold menighet">
+      </div>
       Kontakt: mikal.hageberg@gmail.com
     </div>
   </div>
