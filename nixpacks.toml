@@ -2,3 +2,15 @@
 # python3/gcc/gnumake trengs for å bygge better-sqlite3 sin native binding.
 [phases.setup]
 nixPkgs = ["nodejs_20", "python3", "gcc", "gnumake"]
+
+# Bare web (og delt, som den låner fra). Uten --workspace installerte
+# Railway hele mobil-appen også — Expo og React Native, nesten 900 pakker mot 81
+# serveren aldri bruker — og det var det meste av byggetiden.
+[phases.install]
+cmds = ["npm ci --workspace=web --no-audit --no-fund"]
+cacheDirectories = ["/root/.npm"]
+
+# Next sin byggecache ligger under web/, der Nixpacks ikke ser etter den
+# av seg selv. Tas den vare på, bygges bare det som er endret.
+[phases.build]
+cacheDirectories = ["web/.next/cache"]
