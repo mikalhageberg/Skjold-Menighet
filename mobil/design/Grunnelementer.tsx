@@ -1,4 +1,4 @@
-import { forwardRef } from "react";
+import { forwardRef, useRef } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -8,6 +8,7 @@ import {
   View,
   type ViewProps,
 } from "react-native";
+import { useTastaturFokus } from "./Tastatur";
 import { farge, MAKS_TITTELSKALA, radius, rom, skrift, storrelse, TREFF } from "./tema";
 
 /* ── Tekst ───────────────────────────────────────────────────────────── */
@@ -129,11 +130,16 @@ type FeltProps = TextInputProps & {
 };
 
 export const Felt = forwardRef<TextInput, FeltProps>(function Felt(
-  { etikett, hjelp, feil, style, ...resten },
+  { etikett, hjelp, feil, style, onFocus, ...resten },
   ref,
 ) {
+  // Hele feltet — etikett, hjelpetekst og feilmelding — skal fram over
+  // tastaturet, ikke bare selve boksen man skriver i.
+  const helhet = useRef<View>(null);
+  const tastatur = useTastaturFokus();
+
   return (
-    <View style={{ gap: rom.xs }}>
+    <View ref={helhet} style={{ gap: rom.xs }} collapsable={false}>
       <Tekst halvfet>{etikett}</Tekst>
       {hjelp ? (
         <Tekst variant="liten" farget="myk">
@@ -145,6 +151,10 @@ export const Felt = forwardRef<TextInput, FeltProps>(function Felt(
         accessibilityLabel={etikett}
         placeholderTextColor={farge.granSvak}
         style={[stil.felt, feil ? { borderColor: farge.rod } : null, style]}
+        onFocus={(e) => {
+          if (helhet.current) tastatur?.fokus(helhet.current);
+          onFocus?.(e);
+        }}
         {...resten}
       />
       {feil ? (

@@ -3,11 +3,8 @@ import {
   ActivityIndicator,
   Animated,
   Image,
-  KeyboardAvoidingView,
   Linking,
-  Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   View,
 } from "react-native";
@@ -34,6 +31,7 @@ import { hentProfil, lagreProfil } from "@/lib/profil";
 import { hentPushToken } from "@/lib/varsler";
 import { leggIKalender } from "@/lib/kalender";
 import { Tilbakeknapp } from "@/komponenter/Tilbakeknapp";
+import { TastaturRulle } from "@/design/Tastatur";
 import { Avkryss, Felt, Knapp, Notis, Tekst } from "@/design/Grunnelementer";
 import { farge, radius, rom, TREFF } from "@/design/tema";
 
@@ -82,15 +80,15 @@ export default function Arrangementsside() {
       <View style={{ flex: 1 }}>
         {topplinje}
         <View style={stil.midt}>
-        <Notis tone="fare">
-          <Tekst halvfet>Fikk ikke hentet arrangementet</Tekst>
-          <Tekst variant="liten" farget="myk">
-            {lastefeil}
-          </Tekst>
-          <View style={{ marginTop: rom.s }}>
-            <Knapp tittel="Prøv igjen" variant="stille" onPress={last} />
-          </View>
-        </Notis>
+          <Notis tone="fare">
+            <Tekst halvfet>Fikk ikke hentet arrangementet</Tekst>
+            <Tekst variant="liten" farget="myk">
+              {lastefeil}
+            </Tekst>
+            <View style={{ marginTop: rom.s }}>
+              <Knapp tittel="Prøv igjen" variant="stille" onPress={last} />
+            </View>
+          </Notis>
         </View>
       </View>
     );
@@ -114,91 +112,85 @@ export default function Arrangementsside() {
   return (
     <>
       {topplinje}
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={96}
-      >
-        <ScrollView contentContainerStyle={stil.innhold} keyboardShouldPersistTaps="handled">
-          {arrangement.bilde_generert ? (
-            <Image
-              source={{
-                uri: `${API_BASE}/api/offentlig/bilde/${arrangement.id}?v=${encodeURIComponent(arrangement.bilde_generert)}`,
-              }}
-              style={stil.bilde}
-              accessibilityIgnoresInvertColors
-            />
+      <TastaturRulle contentContainerStyle={stil.innhold}>
+        {arrangement.bilde_generert ? (
+          <Image
+            source={{
+              uri: `${API_BASE}/api/offentlig/bilde/${arrangement.id}?v=${encodeURIComponent(arrangement.bilde_generert)}`,
+            }}
+            style={stil.bilde}
+            accessibilityIgnoresInvertColors
+          />
+        ) : null}
+
+        <View style={stil.hode}>
+          <View style={[stil.hodekant, { backgroundColor: sesong.farge }]} />
+          <View style={{ flex: 1, gap: rom.s }}>
+            <Tekst variant="etikett" farget="myk">
+              {ukedag(start)} {dato(start)} · {nartid(start)}
+            </Tekst>
+            <Tekst variant="stor" halvfet>
+              {arrangement.tittel}
+            </Tekst>
+            {arrangement.ingress ? <Tekst farget="myk">{arrangement.ingress}</Tekst> : null}
+          </View>
+        </View>
+
+        <View style={stil.fakta}>
+          <Fakta navn="Når">
+            {ukedag(start)} {dag(start)}. {maned(start).split(" ")[0]},{" "}
+            {tidsrom(start, arrangement.slutter ? new Date(arrangement.slutter) : null)}
+          </Fakta>
+          <Fakta navn="Hvor">{arrangement.sted}</Fakta>
+          {arrangement.pamelding_stenger ? (
+            <Fakta navn="Frist">
+              {ukedag(new Date(arrangement.pamelding_stenger))}{" "}
+              {dato(new Date(arrangement.pamelding_stenger))} kl.{" "}
+              {klokka(new Date(arrangement.pamelding_stenger)).replace(":", ".")}
+            </Fakta>
           ) : null}
+          <Fakta navn="Frivillige">{frivilligtekst(arrangement)}</Fakta>
+          {arrangement.ansvarlig_navn ? (
+            <Fakta navn="Ansvarlig">{arrangement.ansvarlig_navn}</Fakta>
+          ) : null}
+          <Fakta navn="I kirkeåret" prikk={sesong.farge}>
+            {sesong.navn} — {sesong.fargenavn} parament
+          </Fakta>
+        </View>
 
-          <View style={stil.hode}>
-            <View style={[stil.hodekant, { backgroundColor: sesong.farge }]} />
-            <View style={{ flex: 1, gap: rom.s }}>
-              <Tekst variant="etikett" farget="myk">
-                {ukedag(start)} {dato(start)} · {nartid(start)}
-              </Tekst>
-              <Tekst variant="stor" halvfet>
-                {arrangement.tittel}
-              </Tekst>
-              {arrangement.ingress ? <Tekst farget="myk">{arrangement.ingress}</Tekst> : null}
-            </View>
-          </View>
-
-          <View style={stil.fakta}>
-            <Fakta navn="Når">
-              {ukedag(start)} {dag(start)}. {maned(start).split(" ")[0]},{" "}
-              {tidsrom(start, arrangement.slutter ? new Date(arrangement.slutter) : null)}
-            </Fakta>
-            <Fakta navn="Hvor">{arrangement.sted}</Fakta>
-            {arrangement.pamelding_stenger ? (
-              <Fakta navn="Frist">
-                {ukedag(new Date(arrangement.pamelding_stenger))}{" "}
-                {dato(new Date(arrangement.pamelding_stenger))} kl.{" "}
-                {klokka(new Date(arrangement.pamelding_stenger)).replace(":", ".")}
-              </Fakta>
-            ) : null}
-            <Fakta navn="Frivillige">{frivilligtekst(arrangement)}</Fakta>
-            {arrangement.ansvarlig_navn ? (
-              <Fakta navn="Ansvarlig">{arrangement.ansvarlig_navn}</Fakta>
-            ) : null}
-            <Fakta navn="I kirkeåret" prikk={sesong.farge}>
-              {sesong.navn} — {sesong.fargenavn} parament
-            </Fakta>
-          </View>
-
-          {/* Påmeldingen står over beskrivelsen. Den som bare skal si ja,
+        {/* Påmeldingen står over beskrivelsen. Den som bare skal si ja,
               skal slippe å bla gjennom hele teksten for å finne knappen. */}
-          {kvittert ? (
-            <Bekreftelse varsler={kvittert.varsler}>
-              <Kalenderknapp arrangement={arrangement} ramme={false} />
-            </Bekreftelse>
-          ) : alleredePameldt ? (
-            <AlleredeMed arrangement={arrangement} />
-          ) : status.apen ? (
-            <Skjema
-              arrangement={arrangement}
-              onPameldt={(varsler) => {
-                settKvittert({ varsler });
-                last();
-              }}
-            />
-          ) : (
-            <Stengt grunn={status.grunn} />
-          )}
+        {kvittert ? (
+          <Bekreftelse varsler={kvittert.varsler}>
+            <Kalenderknapp arrangement={arrangement} ramme={false} />
+          </Bekreftelse>
+        ) : alleredePameldt ? (
+          <AlleredeMed arrangement={arrangement} />
+        ) : status.apen ? (
+          <Skjema
+            arrangement={arrangement}
+            onPameldt={(varsler) => {
+              settKvittert({ varsler });
+              last();
+            }}
+          />
+        ) : (
+          <Stengt grunn={status.grunn} />
+        )}
 
-          <Frivilligliste frivillige={frivillige} />
+        <Frivilligliste frivillige={frivillige} />
 
-          {arrangement.beskrivelse ? (
-            <>
-              <View style={stil.skille} />
-              {arrangement.beskrivelse.split(/\n{2,}/).map((avsnitt, i) => (
-                <Tekst key={i}>{avsnitt}</Tekst>
-              ))}
-            </>
-          ) : null}
+        {arrangement.beskrivelse ? (
+          <>
+            <View style={stil.skille} />
+            {arrangement.beskrivelse.split(/\n{2,}/).map((avsnitt, i) => (
+              <Tekst key={i}>{avsnitt}</Tekst>
+            ))}
+          </>
+        ) : null}
 
-          <Kalenderknapp arrangement={arrangement} />
-        </ScrollView>
-      </KeyboardAvoidingView>
+        <Kalenderknapp arrangement={arrangement} />
+      </TastaturRulle>
     </>
   );
 }

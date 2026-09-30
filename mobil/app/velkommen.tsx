@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Felt, Knapp, Tekst } from "@/design/Grunnelementer";
+import { TastaturRulle } from "@/design/Tastatur";
 import { farge, rom } from "@/design/tema";
 import { hentProfil, lagreProfil } from "@/lib/profil";
 import { Personvernlenke } from "@/komponenter/Personvernlenke";
@@ -63,91 +64,86 @@ export default function Velkommen() {
           gestureEnabled: redigerer,
         }}
       />
-      <KeyboardAvoidingView
-        style={{ flex: 1, backgroundColor: farge.kalk }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <ScrollView contentContainerStyle={stil.innhold} keyboardShouldPersistTaps="handled">
-          {!redigerer && (
-            <View style={stil.hode}>
-              <View style={stil.merke}>
-                <View style={[stil.stripe, { backgroundColor: "#59468c" }]} />
-                <View style={[stil.stripe, { backgroundColor: "#a07a1c" }]} />
-                <View style={[stil.stripe, { backgroundColor: "#99332a" }]} />
-                <View style={[stil.stripe, { backgroundColor: "#3d6b55" }]} />
-              </View>
-              <Tekst variant="etikett" farget="myk">
-                Velkommen
-              </Tekst>
-              <Tekst variant="stor" halvfet>
-                Skjold menighet
-              </Tekst>
-              <Tekst farget="myk">
-                Her ser du hva menigheten trenger hjelp til, og sier ja til det som passer
-                for deg. Skriv navnet ditt én gang, så slipper du å fylle ut det samme hver
-                gang.
-              </Tekst>
+      <TastaturRulle style={{ backgroundColor: farge.kalk }} contentContainerStyle={stil.innhold}>
+        {!redigerer && (
+          <View style={stil.hode}>
+            <View style={stil.merke}>
+              <View style={[stil.stripe, { backgroundColor: "#59468c" }]} />
+              <View style={[stil.stripe, { backgroundColor: "#a07a1c" }]} />
+              <View style={[stil.stripe, { backgroundColor: "#99332a" }]} />
+              <View style={[stil.stripe, { backgroundColor: "#3d6b55" }]} />
             </View>
+            <Tekst variant="etikett" farget="myk">
+              Velkommen
+            </Tekst>
+            <Tekst variant="stor" halvfet>
+              Skjold menighet
+            </Tekst>
+            <Tekst farget="myk">
+              Her ser du hva menigheten trenger hjelp til, og sier ja til det som passer
+              for deg. Skriv navnet ditt én gang, så slipper du å fylle ut det samme hver
+              gang.
+            </Tekst>
+          </View>
+        )}
+
+        <View style={{ gap: rom.l }}>
+          <Felt
+            etikett="Hva heter du?"
+            value={navn}
+            onChangeText={(t) => {
+              settNavn(t);
+              settFeil(null);
+            }}
+            placeholder="Fornavn og etternavn"
+            autoComplete="name"
+            textContentType="name"
+            autoFocus={!redigerer}
+            feil={feil ?? undefined}
+          />
+
+          <Felt
+            etikett="Telefon (valgfritt)"
+            hjelp="Noen oppgaver trenger et nummer den ansvarlige kan ringe. Da er det allerede utfylt."
+            value={telefon}
+            onChangeText={settTelefon}
+            placeholder="900 00 000"
+            keyboardType="phone-pad"
+            autoComplete="tel"
+            textContentType="telephoneNumber"
+          />
+
+          <Felt
+            etikett="E-post (valgfritt)"
+            hjelp="Brukes bare hvis den ansvarlige må sende ut noe i forkant."
+            value={epost}
+            onChangeText={settEpost}
+            placeholder="navn@eksempel.no"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoComplete="email"
+            textContentType="emailAddress"
+          />
+        </View>
+
+        <View style={{ gap: rom.m, alignItems: "stretch" }}>
+          <Knapp
+            tittel={redigerer ? "Lagre" : "Kom i gang"}
+            onPress={lagre}
+            travel={lagrer}
+            fyllBredde
+          />
+          {!redigerer && (
+            <Tekst variant="liten" farget="svak">
+              Alt du skriver her blir liggende på telefonen din. Vi sender ingenting til
+              menigheten før du sier ja til noe. Etterpå spør vi om lov til å varsle deg
+              når det trengs folk — du kan si nei, og likevel bruke appen.
+            </Tekst>
           )}
 
-          <View style={{ gap: rom.l }}>
-            <Felt
-              etikett="Hva heter du?"
-              value={navn}
-              onChangeText={(t) => {
-                settNavn(t);
-                settFeil(null);
-              }}
-              placeholder="Fornavn og etternavn"
-              autoComplete="name"
-              textContentType="name"
-              autoFocus={!redigerer}
-              feil={feil ?? undefined}
-            />
-
-            <Felt
-              etikett="Telefon (valgfritt)"
-              hjelp="Noen oppgaver trenger et nummer den ansvarlige kan ringe. Da er det allerede utfylt."
-              value={telefon}
-              onChangeText={settTelefon}
-              placeholder="900 00 000"
-              keyboardType="phone-pad"
-              autoComplete="tel"
-              textContentType="telephoneNumber"
-            />
-
-            <Felt
-              etikett="E-post (valgfritt)"
-              hjelp="Brukes bare hvis den ansvarlige må sende ut noe i forkant."
-              value={epost}
-              onChangeText={settEpost}
-              placeholder="navn@eksempel.no"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-              textContentType="emailAddress"
-            />
-          </View>
-
-          <View style={{ gap: rom.m, alignItems: "stretch" }}>
-            <Knapp
-              tittel={redigerer ? "Lagre" : "Kom i gang"}
-              onPress={lagre}
-              travel={lagrer}
-              fyllBredde
-            />
-            {!redigerer && (
-              <Tekst variant="liten" farget="svak">
-                Alt du skriver her blir liggende på telefonen din. Vi sender ingenting til
-                menigheten før du sier ja til noe. Etterpå spør vi om lov til å varsle deg
-                når det trengs folk — du kan si nei, og likevel bruke appen.
-              </Tekst>
-            )}
-
-            <Personvernlenke />
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+          <Personvernlenke />
+        </View>
+      </TastaturRulle>
     </>
   );
 }
