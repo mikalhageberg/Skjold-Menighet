@@ -256,10 +256,12 @@ function Frivilligliste({ frivillige }: { frivillige: Frivillig[] }) {
                   accessibilityRole="link"
                   accessibilityLabel={`Ring ${f.navn} på ${f.telefon}`}
                   style={stil.nummer}
-                  hitSlop={6}
                 >
-                  <Tekst variant="liten" farget="messing">
-                    {f.telefon}
+                  {/* «Tlf.» foran, og understrek: et nummer alene så ut som
+                      en hvilken som helst linje tekst, og det var ikke
+                      opplagt at det gikk an å trykke på det. */}
+                  <Tekst variant="liten" farget="messing" halvfet style={stil.nummertekst}>
+                    Tlf. {pentNummer(f.telefon)}
                   </Tekst>
                 </Pressable>
               ) : null}
@@ -269,6 +271,13 @@ function Frivilligliste({ frivillige }: { frivillige: Frivillig[] }) {
       )}
     </View>
   );
+}
+
+/** 91780801 → 917 80 801, slik norske nummer skrives. Andre lar vi være. */
+function pentNummer(telefon: string) {
+  const siffer = telefon.replace(/\s/g, "");
+  const m = /^(\+47)?(\d{3})(\d{2})(\d{3})$/.exec(siffer);
+  return m ? `${m[1] ? "+47 " : ""}${m[2]} ${m[3]} ${m[4]}` : telefon;
 }
 
 /* ── Legg i kalenderen ───────────────────────────────────────────────── */
@@ -673,7 +682,8 @@ const stil = StyleSheet.create({
   },
   faktaverdi: { flexDirection: "row", alignItems: "center", gap: rom.s },
   prikk: { width: 8, height: 8, borderRadius: 4 },
-  nummer: { alignSelf: "flex-start", paddingVertical: 2 },
+  nummer: { alignSelf: "flex-start", minHeight: TREFF, justifyContent: "center" },
+  nummertekst: { textDecorationLine: "underline" },
   frivillig: {
     gap: 2,
     paddingLeft: rom.m,
