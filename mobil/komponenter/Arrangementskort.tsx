@@ -5,6 +5,7 @@ import {
   frivilligtekst,
   klokka,
   maned,
+  manedKort,
   pameldingsstatus,
   sesongFor,
   tidsrom,
@@ -77,13 +78,20 @@ export function Arrangementskort({
               aldri av — det er nettopp det man trenger for å bestemme seg. */}
           <View style={stor ? stil.toppStor : stil.topp}>
             <View style={stor ? stil.datoStor : stil.dato}>
-              <Tekst
-                style={stil.datoTall}
-                numberOfLines={1}
-                maxFontSizeMultiplier={MAKS_TITTELSKALA}
-              >
-                {dag(start)}
-              </Tekst>
+              {/* Måneden står under tallet, så man ser hvilken 25. det er
+                  uten å lete etter månedsoverskriften over. */}
+              <View style={stil.dagOgManed}>
+                <Tekst
+                  style={stil.datoTall}
+                  numberOfLines={1}
+                  maxFontSizeMultiplier={MAKS_TITTELSKALA}
+                >
+                  {dag(start)}
+                </Tekst>
+                <Tekst variant="etikett" farget="myk">
+                  {manedKort(start)}
+                </Tekst>
+              </View>
               <Tekst variant="etikett" farget="myk">
                 {ukedag(start).slice(0, 3)}
               </Tekst>
@@ -150,6 +158,7 @@ const stil = StyleSheet.create({
   toppStor: { gap: rom.s },
   dato: { minWidth: 32, alignItems: "center" },
   datoStor: { flexDirection: "row", alignItems: "baseline", gap: rom.s },
+  dagOgManed: { alignItems: "center" },
   datoTall: {
     fontFamily: skrift.display,
     fontSize: 28,

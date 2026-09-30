@@ -14,6 +14,11 @@ const klokkeslett = new Intl.DateTimeFormat("nb-NO", {
 });
 const manedOgAr = new Intl.DateTimeFormat("nb-NO", { month: "long", year: "numeric", timeZone: TZ });
 const dagTall = new Intl.DateTimeFormat("nb-NO", { day: "numeric", timeZone: TZ });
+const manedTall = new Intl.DateTimeFormat("en-US", { month: "numeric", timeZone: TZ });
+
+// Skrevet ut for hånd: Intl gir «nov.» med punktum, og ikke alle motorer har
+// de norske forkortelsene.
+const MANEDER_KORT = ["jan", "feb", "mar", "apr", "mai", "jun", "jul", "aug", "sep", "okt", "nov", "des"];
 
 export function ukedag(d: Date) {
   return ukedagLang.format(d);
@@ -34,6 +39,11 @@ export function dag(d: Date) {
 
 export function klokka(d: Date) {
   return klokkeslett.format(d);
+}
+
+/** «nov» */
+export function manedKort(d: Date) {
+  return MANEDER_KORT[Number(manedTall.format(d)) - 1];
 }
 
 export function maned(d: Date) {
