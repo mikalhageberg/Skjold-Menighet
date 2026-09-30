@@ -29,6 +29,8 @@ export async function leggIKalender(arrangement: {
   slutter: string | null;
   sted: string;
   ingress: string | null;
+  /** «Jeg bidrar med», slik man skrev det da man sa ja. */
+  bidrag?: string | null;
 }): Promise<Kalenderresultat> {
   try {
     const { status } = await Calendar.requestCalendarPermissionsAsync();
@@ -42,12 +44,21 @@ export async function leggIKalender(arrangement: {
       ? new Date(arrangement.slutter)
       : new Date(start.getTime() + 2 * 3600_000);
 
+    // Bidraget står under beskrivelsen, så man ser hva man lovet å ta med
+    // uten å måtte åpne appen.
+    const notater = [
+      arrangement.ingress,
+      arrangement.bidrag ? `Du bidrar med: ${arrangement.bidrag}` : null,
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+
     await Calendar.createEventAsync(kalenderId, {
       title: arrangement.tittel,
       startDate: start,
       endDate: slutt,
       location: arrangement.sted,
-      notes: arrangement.ingress ?? undefined,
+      notes: notater || undefined,
       timeZone: "Europe/Oslo",
       alarms: [{ relativeOffset: -60 * 24 }],
     });

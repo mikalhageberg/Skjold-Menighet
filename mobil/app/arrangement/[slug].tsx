@@ -29,7 +29,7 @@ import {
   type Frivillig,
 } from "@skjold/delt";
 import { API_BASE, hentArrangement, meldPa } from "@/lib/api";
-import { husk, erPameldt, minPameldingId } from "@/lib/lager";
+import { husk, erPameldt, hentMine, minPameldingId } from "@/lib/lager";
 import { hentProfil, lagreProfil } from "@/lib/profil";
 import { hentPushToken } from "@/lib/varsler";
 import { leggIKalender } from "@/lib/kalender";
@@ -169,7 +169,7 @@ export default function Arrangementsside() {
               skal slippe å bla gjennom hele teksten for å finne knappen. */}
           {kvittert ? (
             <Bekreftelse varsler={kvittert.varsler}>
-              <Kalenderknapp arrangement={arrangement} />
+              <Kalenderknapp arrangement={arrangement} ramme={false} />
             </Bekreftelse>
           ) : alleredePameldt ? (
             <AlleredeMed arrangement={arrangement} />
@@ -281,28 +281,56 @@ function Frivilligliste({ frivillige }: { frivillige: Frivillig[] }) {
 
 /* ── Legg i kalenderen ───────────────────────────────────────────────── */
 
-function Kalenderknapp({ arrangement }: { arrangement: ArrangementMedAntall }) {
-  const [beskjed, settBeskjed] = useState<string | null>(null);
+function Kalenderknapp({
+  arrangement,
+  ramme = true,
+}: {
+  arrangement: ArrangementMedAntall;
+  /** Uten ramme når knappen står inne i kvitteringen, som alt har én. */
+  ramme?: boolean;
+}) {
+  const [lagtTil, settLagtTil] = useState(false);
+  const [feil, settFeil] = useState<string | null>(null);
 
   async function leggTil() {
-    const resultat = await leggIKalender(arrangement);
-    settBeskjed(
-      resultat.ok
-        ? "Lagt i kalenderen, med påminnelse dagen før."
-        : resultat.grunn === "nektet"
-          ? "Appen har ikke tilgang til kalenderen. Du kan gi tilgang under Innstillinger."
-          : resultat.grunn === "ingen-kalender"
-            ? "Fant ingen kalender å skrive til på denne telefonen."
-            : "Fikk ikke lagt det i kalenderen. Prøv igjen.",
+    settFeil(null);
+    // Bidraget hentes fra det telefonen husket ved påmeldingen, så det
+    // kommer med også når man legger det i kalenderen senere.
+    const mine = await hentMine();
+    const bidrag = mine.find((p) => p.slug === arrangement.slug)?.bidrag ?? null;
+
+    const resultat = await leggIKalender({ ...arrangement, bidrag });
+    if (resultat.ok) {
+      settLagtTil(true);
+      return;
+    }
+    settFeil(
+      resultat.grunn === "nektet"
+        ? "Appen har ikke tilgang til kalenderen. Du kan gi tilgang under Innstillinger."
+        : resultat.grunn === "ingen-kalender"
+          ? "Fant ingen kalender å skrive til på denne telefonen."
+          : "Fikk ikke lagt det i kalenderen. Prøv igjen.",
     );
   }
 
+  if (lagtTil) {
+    const kvittering = (
+      <View style={{ alignSelf: "stretch" }}>
+        <Hake />
+        <Tekst farget="myk" style={{ textAlign: "center" }} accessibilityLiveRegion="polite">
+          Lagt til i telefonens kalender, med varsel én dag før.
+        </Tekst>
+      </View>
+    );
+    return ramme ? <Notis tone="klar">{kvittering}</Notis> : kvittering;
+  }
+
   return (
-    <View style={{ gap: rom.s, alignItems: "flex-start" }}>
+    <View style={{ gap: rom.s, alignItems: ramme ? "flex-start" : "center" }}>
       <Knapp tittel="Legg i kalenderen" variant="stille" onPress={leggTil} />
-      {beskjed ? (
+      {feil ? (
         <Tekst variant="liten" farget="myk" accessibilityLiveRegion="polite">
-          {beskjed}
+          {feil}
         </Tekst>
       ) : null}
     </View>
@@ -342,20 +370,7 @@ function Bekreftelse({
 
   return (
     <Notis tone="klar">
-      {/* Animasjonen bærer ingen informasjon som ikke også står i teksten
-          under, så skjermlesere skal hoppe rett forbi den. */}
-      <View
-        style={stil.hake}
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-      >
-        <LottieView
-          source={require("@/assets/bekreftelse.json")}
-          autoPlay
-          loop={false}
-          style={{ flex: 1 }}
-        />
-      </View>
+      <Hake />
 
       <Animated.View
         style={{
@@ -380,6 +395,29 @@ function Bekreftelse({
         <View style={{ marginTop: rom.s, alignItems: "center" }}>{children}</View>
       </Animated.View>
     </Notis>
+  );
+}
+
+/**
+ * Haken med konfetti, felles for påmeldingen og kalenderen.
+ *
+ * Animasjonen bærer ingen informasjon som ikke også står i teksten ved
+ * siden av, så skjermlesere skal hoppe rett forbi den.
+ */
+function Hake() {
+  return (
+    <View
+      style={stil.hake}
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
+      <LottieView
+        source={require("@/assets/bekreftelse.json")}
+        autoPlay
+        loop={false}
+        style={{ flex: 1 }}
+      />
+    </View>
   );
 }
 
