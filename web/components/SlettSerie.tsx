@@ -9,10 +9,12 @@ export function SlettSerie({
   serieId,
   antall,
   tittel,
+  harKommende,
 }: {
   serieId: string;
   antall: number;
   tittel: string;
+  harKommende: boolean;
 }) {
   const [sporr, settSporr] = useState(false);
 
@@ -23,7 +25,7 @@ export function SlettSerie({
         className="tekstknapp tekstknapp--fare"
         onClick={() => settSporr(true)}
       >
-        Slett hele serien
+        {harKommende ? "Avlys hele serien" : "Slett hele serien"}
       </button>
     );
   }
@@ -32,11 +34,12 @@ export function SlettSerie({
     <form action={slettSerieAction} className="bekreft">
       <input type="hidden" name="serie_id" value={serieId} />
       <p className="bekreft__sporsmal">
-        Slette alle {antall} forekomstene av «{tittel}», og de frivillige på hver av dem? Dette
-        kan ikke angres.
+        {harKommende
+          ? `Avlyse alle ${antall} forekomstene av «${tittel}»? De frivillige som meldte seg i appen, får ett varsel hver, uansett hvor mange av datoene de sto på. Dette kan ikke angres.`
+          : `Slette alle ${antall} forekomstene av «${tittel}», og de frivillige på hver av dem? Dette kan ikke angres.`}
       </p>
       <div className="bekreft__valg">
-        <Bekreft />
+        <Bekreft avlys={harKommende} />
         <button
           type="button"
           className="knapp knapp--stille knapp--liten"
@@ -49,11 +52,13 @@ export function SlettSerie({
   );
 }
 
-function Bekreft() {
+function Bekreft({ avlys }: { avlys: boolean }) {
   const { pending } = useFormStatus();
   return (
     <button type="submit" className="knapp knapp--fare knapp--liten" disabled={pending}>
-      {pending ? "Sletter …" : "Ja, slett alle"}
+      {avlys
+        ? pending ? "Avlyser …" : "Ja, avlys alle"
+        : pending ? "Sletter …" : "Ja, slett alle"}
     </button>
   );
 }

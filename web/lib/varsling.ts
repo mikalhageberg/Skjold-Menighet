@@ -2,6 +2,7 @@ import "server-only";
 import type { ArrangementMedAntall } from "@skjold/delt";
 import {
   hentAlleTokens,
+  hentPameldteISerie,
   hentSistKjort,
   hentUvarsledeArrangementer,
   merkNyhetsvarselSendt,
@@ -9,7 +10,7 @@ import {
 import { hentUvarsledeTestere, merkAdminVarslet } from "./testere";
 import { sendNyeTestere } from "./brevo";
 import { nettstedUrl } from "./lenker";
-import { varsleNyOppgave } from "./push";
+import { varsleAvlysning, varsleNyOppgave } from "./push";
 
 /** Navnet timesjobben kvitterer under i jobbkjoringer. */
 export const TIMESJOBB = "paaminnelser";
@@ -97,6 +98,51 @@ export async function varsleOmNyeOppgaver(
     }
   }
 
+  return sendt;
+}
+
+/**
+ * «Avlyst» til alle som har sagt ja til en av de kommende gangene i en
+ * serie som blir avlyst.
+ *
+ * Hver telefon får ett varsel, uansett hvor mange datoer den står på. Den
+ * som har sagt ja til fire formiddagstreff, skal få én beskjed om at alle
+ * fire er avlyst — ikke fire beskjeder etter hverandre. Telefoner som står
+ * på nøyaktig de samme datoene, deler utsending.
+ */
+export async function varsleOmAvlystSerie(serieId: string): Promise<number> {
+  const na = Date.now();
+  const kommende = (await hentPameldteISerie(serieId)).filter(
+    (r) => new Date(r.starter).getTime() > na,
+  );
+  if (kommende.length === 0) return 0;
+
+  const perTelefon = new Map<string, { tittel: string; starter: string }[]>();
+  for (const r of kommende) {
+    const liste = perTelefon.get(r.expo_token) ?? [];
+    // Samme telefon kan i prinsippet stå to ganger på samme dato.
+    if (!liste.some((x) => x.starter === r.starter)) liste.push(r);
+    perTelefon.set(r.expo_token, liste);
+  }
+
+  type Utsending = { forste: { tittel: string; starter: string }; antall: number; tokens: string[] };
+  const utsendinger = new Map<string, Utsending>();
+  for (const [token, datoer] of perTelefon) {
+    const nokkel = datoer.map((d) => d.starter).join("|");
+    const utsending = utsendinger.get(nokkel) ?? {
+      forste: datoer[0],
+      antall: datoer.length,
+      tokens: [],
+    };
+    utsending.tokens.push(token);
+    utsendinger.set(nokkel, utsending);
+  }
+
+  let sendt = 0;
+  for (const { forste, antall, tokens } of utsendinger.values()) {
+    const resultat = await varsleAvlysning(forste, tokens, { antallGanger: antall });
+    sendt += resultat.sendt;
+  }
   return sendt;
 }
 

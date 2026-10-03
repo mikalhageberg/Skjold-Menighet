@@ -7,7 +7,8 @@ import { klokka, langDato, ukedag } from "@skjold/delt";
  *
  * Dette er den eneste veien menigheten når de frivillige av seg selv. Det
  * er også grunnen til at det er få og korte varsler: én påminnelse dagen
- * før, beskjed når det kommer noe nytt, og beskjed når noen melder avbud.
+ * før, beskjed når det kommer noe nytt, beskjed når noen melder avbud, og
+ * beskjed når noe blir avlyst.
  *
  * En feilet utsending skal aldri velte det som utløste den.
  */
@@ -76,7 +77,7 @@ export async function sendVarsel({ til, tittel, tekst, data }: Varsel) {
   return { sendt, feilet };
 }
 
-/* ── De tre varslene ─────────────────────────────────────────────────── */
+/* ── De fire varslene ─────────────────────────────────────────────────── */
 
 type Oppgave = {
   slug: string;
@@ -160,5 +161,30 @@ export function varsleAvbud(
             mangler === 1 ? "frivillig" : "frivillige"
           }.`,
     data: { type: "avbud", slug: oppgave.slug },
+  });
+}
+
+/**
+ * Beskjed til dem som har sagt ja, når arrangementet blir avlyst. Ingen
+ * skal møte opp til en låst kirkedør fordi lista forsvant i stillhet.
+ *
+ * Varselet har ingen slug med seg: arrangementet er slettet, så det er
+ * ingenting å åpne. Et trykk tar en bare inn i appen.
+ */
+export function varsleAvlysning(
+  oppgave: Pick<Oppgave, "tittel" | "starter">,
+  tokens: string[],
+  { antallGanger = 1 }: { antallGanger?: number } = {},
+) {
+  return sendVarsel({
+    til: tokens,
+    tittel: `Avlyst: ${oppgave.tittel}`,
+    tekst:
+      antallGanger > 1
+        ? `${oppgave.tittel} er dessverre avlyst — alle de ${antallGanger} gangene du hadde sagt ja til, fra ${narMedDato(
+            oppgave.starter,
+          )}. Takk for at du ville stille!`
+        : `${oppgave.tittel}, ${narMedDato(oppgave.starter)}, er dessverre avlyst. Takk for at du ville stille!`,
+    data: { type: "avlyst" },
   });
 }

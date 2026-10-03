@@ -432,6 +432,26 @@ export async function hentArrangementerISerie(
     .all(serieId, unntattId ?? "") as { id: string; tittel: string; starter: string }[];
 }
 
+/**
+ * Hvem som har sagt ja til noe i serien, og til hva. Én rad per påmelding,
+ * så den som står på flere datoer, kommer med flere ganger.
+ */
+export async function hentPameldteISerie(
+  serieId: string,
+): Promise<{ expo_token: string; tittel: string; starter: string }[]> {
+  if (!harDatabase()) return [];
+  return hentDb()
+    .prepare(
+      `select e.expo_token, a.tittel, a.starter
+         from pameldinger p
+         join enheter e on e.id = p.enhet_id
+         join arrangementer a on a.id = p.arrangement_id
+        where a.serie_id = ? and p.avmeldt is null
+        order by a.starter asc`,
+    )
+    .all(serieId) as { expo_token: string; tittel: string; starter: string }[];
+}
+
 /** Sletter alle forekomstene i en serie, inkludert påmeldingene deres. */
 export async function slettSerie(serieId: string) {
   if (!harDatabase()) {

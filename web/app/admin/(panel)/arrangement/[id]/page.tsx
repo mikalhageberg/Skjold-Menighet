@@ -34,6 +34,7 @@ export default async function AdminArrangement({ params, searchParams }: Props) 
   const start = new Date(a.starter);
   const s = sesongFor(start);
   const status = pameldingsstatus(a);
+  const kommer = start.getTime() > Date.now();
 
   return (
     <section className="adm">
@@ -117,6 +118,9 @@ export default async function AdminArrangement({ params, searchParams }: Props) 
             serieId={a.serie_id}
             antall={soskenISerien.length + 1}
             tittel={a.tittel}
+            harKommende={
+              kommer || soskenISerien.some((x) => new Date(x.starter).getTime() > Date.now())
+            }
           />
         </div>
       )}
@@ -216,14 +220,23 @@ export default async function AdminArrangement({ params, searchParams }: Props) 
 
       <div className="fareombraade">
         <div>
-          <h2 className="fareombraade__tittel">Slett arrangementet</h2>
+          <h2 className="fareombraade__tittel">
+            {kommer ? "Avlys arrangementet" : "Slett arrangementet"}
+          </h2>
           <p className="stille">
-            {frivillige.length > 0
-              ? `${frivillige.length} frivillige mister vakten, uten å få beskjed. Last ned lista først hvis du vil beholde den.`
-              : "Arrangementet fjernes for godt."}
+            {kommer && frivillige.length > 0
+              ? `${frivillige.length} frivillige har meldt seg. De som gjorde det i appen, får et varsel om at det dessverre er avlyst — de andre må få beskjed på annen måte. Last ned lista først, så har du numrene.`
+              : frivillige.length > 0
+                ? `Lista over ${frivillige.length} frivillige forsvinner. Last ned lista først hvis du vil beholde den.`
+                : "Arrangementet fjernes for godt."}
           </p>
         </div>
-        <SlettArrangement id={a.id} tittel={a.tittel} antallFrivillige={frivillige.length} />
+        <SlettArrangement
+          id={a.id}
+          tittel={a.tittel}
+          starter={a.starter}
+          antallFrivillige={frivillige.length}
+        />
       </div>
 
       <p className="stille" style={{ padding: "2rem 0" }}>

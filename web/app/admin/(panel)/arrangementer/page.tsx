@@ -113,6 +113,7 @@ function Liste({
                     <SlettArrangement
                       id={a.id}
                       tittel={a.tittel}
+                      starter={a.starter}
                       antallFrivillige={a.antall_frivillige}
                       variant="lenke"
                     />

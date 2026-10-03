@@ -7,6 +7,7 @@ import {
   finnLedigSlug,
   hentArrangementMedId,
   hentPameldinger,
+  hentTokensFor,
   lagreArrangement,
   slettArrangement,
   slettSerie,
@@ -14,8 +15,9 @@ import {
   type BildeEndring,
 } from "@/lib/data";
 import { meldAv } from "@/lib/pamelding";
-import { varsleOmNyeOppgaver } from "@/lib/varsling";
+import { varsleOmAvlystSerie, varsleOmNyeOppgaver } from "@/lib/varsling";
 import { sendTilFrivillige } from "@/lib/brevo";
+import { varsleAvlysning } from "@/lib/push";
 import { genererBilde } from "@/lib/gemini";
 import { krevAdmin, demomodus } from "@/lib/auth";
 import { signIn, signOut } from "@/auth";
@@ -261,6 +263,14 @@ export async function slettSerieAction(data: FormData) {
   await krevAdmin();
   const serieId = String(data.get("serie_id") ?? "");
   if (!serieId) return;
+
+  // Varselet må ut før påmeldingene forsvinner sammen med serien.
+  try {
+    await varsleOmAvlystSerie(serieId);
+  } catch (feil) {
+    console.error(`[varsel] Avlysning av serien «${serieId}» feilet`, feil);
+  }
+
   await slettSerie(serieId);
   revalidatePath("/");
   revalidatePath("/admin");
@@ -268,10 +278,27 @@ export async function slettSerieAction(data: FormData) {
   redirect("/admin/arrangementer");
 }
 
+/**
+ * Avlysning, eller sletting av noe som alt er over. Er det framover i tid,
+ * får de frivillige med appen beskjed før lista forsvinner — tokenene må
+ * hentes først, for de går med i dragsuget når arrangementet slettes.
+ */
 export async function slettArrangementAction(data: FormData) {
   await krevAdmin();
   const id = String(data.get("id") ?? "");
   if (!id) return;
+
+  const arrangement = await hentArrangementMedId(id);
+  if (arrangement && new Date(arrangement.starter).getTime() > Date.now()) {
+    try {
+      const tokens = await hentTokensFor(id);
+      if (tokens.length > 0) await varsleAvlysning(arrangement, tokens);
+    } catch (feil) {
+      // Et varsel som ikke gikk skal ikke stå i veien for avlysningen.
+      console.error(`[varsel] Avlysning av «${arrangement.slug}» feilet`, feil);
+    }
+  }
+
   await slettArrangement(id);
   revalidatePath("/");
   revalidatePath("/admin");
