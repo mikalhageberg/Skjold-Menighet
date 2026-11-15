@@ -18,7 +18,7 @@ import { meldAv } from "@/lib/pamelding";
 import { varsleOmAvlystSerie, varsleOmNyeOppgaver } from "@/lib/varsling";
 import { sendTilFrivillige } from "@/lib/brevo";
 import { varsleAvlysning } from "@/lib/push";
-import { genererBilde } from "@/lib/gemini";
+import { genererBilder } from "@/lib/gemini";
 import { krevAdmin, demomodus } from "@/lib/auth";
 import { signIn, signOut } from "@/auth";
 import { AuthError } from "next-auth";
@@ -107,22 +107,22 @@ function lesBildeEndring(data: FormData): BildeEndring {
 }
 
 /**
- * Genererer et headline-bilde til bruk i BildeVelger, uten å lagre noe —
- * arrangementet finnes kanskje ikke i databasen ennå. Selve bytene sendes
- * tilbake som en data-URL og følger med resten av skjemaet ved lagring.
+ * Genererer tre forslag til headline-bilde for BildeVelger, uten å lagre
+ * noe — arrangementet finnes kanskje ikke i databasen ennå. Bytene sendes
+ * tilbake som data-URL-er; bare det valgte følger med skjemaet ved lagring.
  */
-export async function genererBildeAction(
+export async function genererBilderAction(
   tittel: string,
-): Promise<{ ok: true; dataUrl: string } | { ok: false; feil: string }> {
+): Promise<{ ok: true; dataUrler: string[] } | { ok: false; feil: string }> {
   await krevAdmin();
   if (!tittel.trim()) return { ok: false, feil: "Skriv inn et navn på arrangementet først." };
 
-  const svar = await genererBilde(tittel.trim());
+  const svar = await genererBilder(tittel.trim());
   if (!svar.ok) return { ok: false, feil: svar.grunn };
 
   return {
     ok: true,
-    dataUrl: `data:${svar.bilde.mimeType};base64,${svar.bilde.data.toString("base64")}`,
+    dataUrler: svar.bilder.map((b) => `data:${b.mimeType};base64,${b.data.toString("base64")}`),
   };
 }
 

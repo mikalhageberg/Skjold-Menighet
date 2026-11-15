@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { genererBildeAction } from "@/app/admin/actions";
+import { genererBilderAction } from "@/app/admin/actions";
 
 /**
- * Genererer og forhåndsviser et headline-bilde før arrangementet lagres.
- * Selve bytene sendes ikke til serveren for lagring før hele skjemaet
- * sendes inn — de skjulte feltene her følger med resten av dataene.
+ * Genererer tre forslag til headline-bilde og lar admin velge ett før
+ * arrangementet lagres. Bare det valgte følger med skjemaet — de skjulte
+ * feltene her sendes inn sammen med resten av dataene.
  */
 export function BildeVelger({
   arrangementId,
@@ -17,35 +17,39 @@ export function BildeVelger({
   tittel: string;
   eksisterendeBildeGenerert?: string | null;
 }) {
-  const [forhandsvisning, settForhandsvisning] = useState<string | null>(
+  const eksisterende =
     arrangementId && eksisterendeBildeGenerert
       ? `/api/offentlig/bilde/${arrangementId}?v=${encodeURIComponent(eksisterendeBildeGenerert)}`
-      : null,
-  );
-  const [nyDataUrl, settNyDataUrl] = useState<string | null>(null);
+      : null;
+
+  const [forslag, settForslag] = useState<string[]>([]);
+  const [valgt, settValgt] = useState<number | null>(null);
   const [fjernet, settFjernet] = useState(false);
   const [feil, settFeil] = useState<string | null>(null);
   const [genererer, startGenerering] = useTransition();
 
   const tittelTom = !tittel.trim();
+  const nyDataUrl = valgt !== null ? forslag[valgt] ?? null : null;
+  const visEksisterende = !fjernet && !nyDataUrl && eksisterende;
+  const harBilde = Boolean(nyDataUrl || visEksisterende);
 
   function generer() {
     settFeil(null);
     startGenerering(async () => {
-      const svar = await genererBildeAction(tittel);
+      const svar = await genererBilderAction(tittel);
       if (!svar.ok) {
         settFeil(svar.feil);
         return;
       }
-      settNyDataUrl(svar.dataUrl);
-      settForhandsvisning(svar.dataUrl);
+      settForslag(svar.dataUrler);
+      settValgt(0);
       settFjernet(false);
     });
   }
 
   function fjern() {
-    settForhandsvisning(null);
-    settNyDataUrl(null);
+    settForslag([]);
+    settValgt(null);
     settFjernet(true);
   }
 
@@ -53,11 +57,36 @@ export function BildeVelger({
     <div className="felt">
       <label className="felt__etikett">Headline-bilde</label>
       <p className="felt__hjelp">
-        Et enkelt, stilrent bilde generert med AI ut fra navnet på arrangementet. Valgfritt.
+        Enkle, stilrene bilder generert med AI ut fra navnet på arrangementet. Du får tre
+        forslag å velge mellom. Valgfritt.
       </p>
 
-      {forhandsvisning && (
-        <img src={forhandsvisning} alt="" className="bildevelger__bilde" />
+      {forslag.length > 0 ? (
+        <>
+          <div className="bildevelger__forslag" role="radiogroup" aria-label="Velg bilde">
+            {forslag.map((url, i) => (
+              <button
+                key={url.slice(-40) + i}
+                type="button"
+                role="radio"
+                aria-checked={valgt === i}
+                aria-label={`Forslag ${i + 1}`}
+                className="bildevelger__valg"
+                onClick={() => settValgt(i)}
+                disabled={genererer}
+              >
+                <img src={url} alt="" className="bildevelger__bilde" />
+              </button>
+            ))}
+          </div>
+          <p className="felt__hjelp">
+            {valgt !== null
+              ? `Forslag ${valgt + 1} er valgt. Trykk på et annet bilde for å bytte.`
+              : "Trykk på bildet du vil bruke."}
+          </p>
+        </>
+      ) : (
+        visEksisterende && <img src={eksisterende} alt="" className="bildevelger__bilde" />
       )}
 
       {feil && <p className="felt__feil">{feil}</p>}
@@ -69,9 +98,13 @@ export function BildeVelger({
           onClick={generer}
           disabled={genererer || tittelTom}
         >
-          {genererer ? "Genererer …" : forhandsvisning ? "Generer på nytt" : "Generer bilde med AI"}
+          {genererer
+            ? "Genererer tre forslag …"
+            : forslag.length > 0 || harBilde
+              ? "Generer tre nye forslag"
+              : "Generer bilder med AI"}
         </button>
-        {forhandsvisning && (
+        {harBilde && (
           <button
             type="button"
             className="knapp knapp--stille knapp--liten"
@@ -83,7 +116,7 @@ export function BildeVelger({
         )}
       </div>
 
-      {tittelTom && !forhandsvisning && (
+      {tittelTom && !harBilde && (
         <p className="felt__hjelp">Skriv inn navnet på arrangementet først.</p>
       )}
 

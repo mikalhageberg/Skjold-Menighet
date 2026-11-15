@@ -498,6 +498,44 @@ img {
   background: var(--kalk-dyp);
 }
 
+.bildevelger__forslag {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: 0.75rem;
+  max-width: 44rem;
+}
+
+.bildevelger__valg {
+  display: block;
+  padding: 0;
+  border: 3px solid transparent;
+  border-radius: calc(var(--radius) + 3px);
+  background: none;
+  cursor: pointer;
+}
+
+.bildevelger__valg .bildevelger__bilde {
+  max-width: none;
+}
+
+.bildevelger__valg:hover:not(:disabled) {
+  border-color: var(--strek);
+}
+
+.bildevelger__valg[aria-checked="true"] {
+  border-color: var(--gran);
+}
+
+.bildevelger__valg:focus-visible {
+  outline: 2px solid var(--messing);
+  outline-offset: 2px;
+}
+
+.bildevelger__valg:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
 .bildevelger__knapper {
   display: flex;
   gap: 0.75rem;
