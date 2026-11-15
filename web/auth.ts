@@ -19,8 +19,12 @@ import { harDatabase, hentDb } from "@/lib/db";
  * selvbetjent registrering.
  */
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  // Uten database kjører appen i demomodus, og da logges ingen inn uansett.
-  secret: process.env.AUTH_SECRET ?? "bare-for-utvikling-uten-database",
+  // Reserven gjelder bare demomodus uten database, der ingen kan logge inn
+  // uansett. Med database må AUTH_SECRET være satt: står den tom, er
+  // secret udefinert, og Auth.js nekter å lage eller godta økter i stedet
+  // for å signere dem med en tekst som ligger åpent i repoet.
+  secret:
+    process.env.AUTH_SECRET || (harDatabase() ? undefined : "bare-for-utvikling-uten-database"),
   trustHost: true,
   session: { strategy: "jwt", maxAge: 60 * 60 * 12 },
   pages: { signIn: "/admin/logg-inn" },

@@ -98,6 +98,7 @@ try {
   leggTilKolonne("arrangementer", "bilde_generert", "text");
   leggTilKolonne("arrangementer", "serie_id", "text");
   leggTilKolonne("arrangementer", "nyhetsvarsel_sendt", "text");
+  leggTilKolonne("arrangementer", "avbud_varslet", "text");
   leggTilKolonne("pameldinger", "bidrag", "text");
   leggTilKolonne("pameldinger", "del_nummer", "integer not null default 0");
   leggTilKolonne("android_testere", "admin_varslet", "text");

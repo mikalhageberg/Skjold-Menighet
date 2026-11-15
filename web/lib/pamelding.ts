@@ -8,6 +8,7 @@ import {
 } from "@skjold/delt";
 import {
   avmeldPamelding,
+  reserverAvbudsvarsel,
   harMeldtSeg,
   hentAlleTokens,
   hentArrangementMedId,
@@ -119,12 +120,19 @@ export async function meldAv(pameldingId: string): Promise<AvmeldingSvar> {
   if (!pamelding) return { ok: false, feil: "Fant ikke påmeldingen." };
   if (pamelding.avmeldt) return { ok: true };
 
-  await avmeldPamelding(pameldingId);
+  // Tapte vi kappløpet mot en samtidig avmelding, har den andre alt varslet.
+  const meldteAv = await avmeldPamelding(pameldingId);
+  if (!meldteAv) return { ok: true };
 
   // Hentes etter avmeldingen, så tallet i varselet er det som faktisk mangler.
   const arrangement = await hentArrangementMedId(pamelding.arrangement_id);
 
-  if (arrangement && arrangement.publisert && new Date(arrangement.starter).getTime() > Date.now()) {
+  if (
+    arrangement &&
+    arrangement.publisert &&
+    new Date(arrangement.starter).getTime() > Date.now() &&
+    (await reserverAvbudsvarsel(arrangement.id))
+  ) {
     try {
       const tokens = await hentAlleTokens({
         unntattEnhetId: pamelding.enhet_id,

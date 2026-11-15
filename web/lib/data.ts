@@ -296,16 +296,56 @@ export async function slettPamelding(id: string) {
  * Melder av uten å slette. Den ansvarlige skal fortsatt kunne se hvem som
  * hadde sagt ja, selv om plassen er ledig igjen.
  */
-export async function avmeldPamelding(id: string) {
+/**
+ * Gir `true` bare til den ene forespørselen som faktisk meldte av. To
+ * samtidige avbud for samme påmelding skal ikke gi to varsler.
+ */
+export async function avmeldPamelding(id: string): Promise<boolean> {
   const na = new Date().toISOString();
   if (!harDatabase()) {
     const pamelding = demolager().pameldinger.find((p) => p.id === id);
-    if (pamelding) pamelding.avmeldt = na;
-    return;
+    if (!pamelding || pamelding.avmeldt) return false;
+    pamelding.avmeldt = na;
+    return true;
   }
-  hentDb()
+  const svar = hentDb()
     .prepare(`update pameldinger set avmeldt = ? where id = ? and avmeldt is null`)
     .run(na, id);
+  return svar.changes === 1;
+}
+
+/** Høyst ett avbudsvarsel per arrangement innenfor dette tidsrommet. */
+const AVBUDSVARSEL_PAUSE_MS = 30 * 60 * 1000;
+const avbudVarsletDemo = new Map<string, number>();
+
+/**
+ * Tar plassen for et avbudsvarsel, eller gir `false` hvis det alt har gått
+ * ut ett for arrangementet den siste halvtimen.
+ *
+ * Uten denne kunne hvem som helst melde seg på og av igjen i en løkke og
+ * sende «En frivillig har meldt avbud» til alle med appen hver gang. Ett
+ * varsel er nok til å si at det er blitt en ledig plass; flere avbud like
+ * etter hverandre gjør bare tallet i det større.
+ *
+ * Oppdateringen er betinget i én setning, så to samtidige avbud ikke
+ * begge kan vinne.
+ */
+export async function reserverAvbudsvarsel(arrangementId: string): Promise<boolean> {
+  const na = Date.now();
+  const grense = new Date(na - AVBUDSVARSEL_PAUSE_MS).toISOString();
+  if (!harDatabase()) {
+    const sist = avbudVarsletDemo.get(arrangementId);
+    if (sist !== undefined && sist > na - AVBUDSVARSEL_PAUSE_MS) return false;
+    avbudVarsletDemo.set(arrangementId, na);
+    return true;
+  }
+  const svar = hentDb()
+    .prepare(
+      `update arrangementer set avbud_varslet = ?
+        where id = ? and (avbud_varslet is null or avbud_varslet < ?)`,
+    )
+    .run(new Date(na).toISOString(), arrangementId, grense);
+  return svar.changes === 1;
 }
 
 export type ArrangementInput = Omit<

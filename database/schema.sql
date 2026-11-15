@@ -37,6 +37,10 @@ create table if not exists arrangementer (
   -- Tidspunktet pushvarselet «det trengs frivillige til noe nytt» gikk ut.
   -- Null til det er sendt; sikrer at det bare går én gang per arrangement.
   nyhetsvarsel_sendt text,
+  -- Når det sist gikk ut et avbudsvarsel for arrangementet. Brukes til å
+  -- sende høyst ett per halvtime, så av- og påmelding i en løkke ikke kan
+  -- fylle telefonene til alle med appen.
+  avbud_varslet text,
   -- AI-generert headline-bilde. bilde_generert er null når det ikke finnes
   -- noe bilde; ellers tidspunktet det sist ble satt, brukt som cache-nøkkel.
   bilde             blob,
