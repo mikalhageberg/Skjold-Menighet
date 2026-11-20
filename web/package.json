@@ -15,6 +15,7 @@
     "@node-rs/argon2": "^2.0.2",
     "@skjold/delt": "*",
     "better-sqlite3": "^12.11.1",
+    "exceljs": "^4.4.0",
     "next": "^15.1.12",
     "next-auth": "^5.0.0-beta.32",
     "react": "19.1.0",

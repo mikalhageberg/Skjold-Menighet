@@ -208,8 +208,8 @@ er det tydeligste eksemplet: det er hele grunnen til at appen finnes.
 Samme innhold som appen, for dem som ikke laster ned noe — også lista over hvem
 som har meldt seg. Fra nett får man ingen varsler; det er appen som gjør det.
 Admin ligger på `/admin`: hvor mange som mangler, frivilliglista med kontakt-
-opplysninger, CSV-nedlasting, meldingsutsending og skjema for å opprette og
-redigere arrangementer. Arrangementer slettes fra lista
+opplysninger, nedlasting som Excel-fil, meldingsutsending og skjema for å
+opprette og redigere arrangementer. Arrangementer slettes fra lista
 under **Alle arrangementer** — man trenger ikke åpne dem først.
 
 Nettadressen til et arrangement lages av tittelen og settes én gang. Den står
@@ -376,8 +376,8 @@ Utsending kan aldri velte det som utløste den: feiler e-posten eller pushen, er
 påmeldingen eller avbudet likevel lagret, og feilen logges.
 
 Den ansvarlige får heller ingen oppsummering på e-post lenger. Hun trenger den
-ikke — lista står oppdatert i appen og i admin hele tiden, og kan lastes ned som
-CSV når hun skal handle inn.
+ikke — lista står oppdatert i appen og i admin hele tiden, og kan lastes ned som en
+Excel-fil når hun skal handle inn.
 
 ### Påminnelser og utsending
 

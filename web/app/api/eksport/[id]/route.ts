@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
+import ExcelJS from "exceljs";
 import { hentArrangementMedId, hentPameldinger } from "@/lib/data";
 import { demomodus } from "@/lib/auth";
 import { auth } from "@/auth";
 import { dato, klokka, lagSlug } from "@skjold/delt";
 
-/** Frivilliglista som CSV — én rad per frivillig, klar for utskrift eller regneark. */
+/** Frivilliglista som Excel-fil — én rad per frivillig, klar for utskrift eller regneark. */
 export async function GET(
   _forespørsel: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -19,28 +20,41 @@ export async function GET(
 
   const pameldinger = await hentPameldinger(id);
 
-  const rader = [
-    ["Navn", "Bidrar med", "Telefon", "E-post", "Meldte seg"],
-    ...pameldinger.map((p) => [
-      p.navn,
-      p.bidrag ?? "",
-      p.telefon ?? "",
-      p.epost ?? "",
-      `${dato(new Date(p.opprettet))} ${klokka(new Date(p.opprettet))}`,
-    ]),
-  ];
+  const bok = new ExcelJS.Workbook();
+  const ark = bok.addWorksheet("Frivillige", {
+    views: [{ state: "frozen", ySplit: 1 }],
+    pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0 },
+  });
 
-  const csv = rader
-    .map((rad) => rad.map((celle) => `"${String(celle).replace(/"/g, '""')}"`).join(";"))
-    .join("\r\n");
+  // Telefonnummeret lagres som tekst, så Excel ikke kutter ledende null eller +47.
+  ark.columns = [
+    { header: "Navn", key: "navn", width: 28 },
+    { header: "Bidrar med", key: "bidrag", width: 30 },
+    { header: "Telefon", key: "telefon", width: 16, style: { numFmt: "@" } },
+    { header: "E-post", key: "epost", width: 32 },
+    { header: "Meldte seg", key: "meldte", width: 18 },
+  ];
+  ark.getRow(1).font = { bold: true };
+
+  for (const p of pameldinger) {
+    const opprettet = new Date(p.opprettet);
+    ark.addRow({
+      navn: p.navn,
+      bidrag: p.bidrag ?? "",
+      telefon: p.telefon ?? "",
+      epost: p.epost ?? "",
+      meldte: `${dato(opprettet)} ${klokka(opprettet)}`,
+    });
+  }
+
+  const innhold = await bok.xlsx.writeBuffer();
 
   const start = new Date(arrangement.starter);
-  const filnavn = `${lagSlug(arrangement.tittel)}-${start.toISOString().slice(0, 10)}.csv`;
+  const filnavn = `${lagSlug(arrangement.tittel)}-${start.toISOString().slice(0, 10)}.xlsx`;
 
-  // BOM gjør at Excel leser æ, ø og å riktig.
-  return new NextResponse("﻿" + csv, {
+  return new NextResponse(innhold as ArrayBuffer, {
     headers: {
-      "content-type": "text/csv; charset=utf-8",
+      "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "content-disposition": `attachment; filename="${filnavn}"`,
       "cache-control": "no-store",
     },
