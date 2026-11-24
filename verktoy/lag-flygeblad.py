@@ -14,8 +14,8 @@ A5; skrives samme PDF ut på A3 («tilpass til siden»), blir heftet A4.
 Skriftene er appens egne, hentet fra node_modules. QR-koden til
 nedlastingssiden er den samme som på plakaten (lag-qr.py).
 
-Krever Google Chrome, segno og pymupdf (bare til PNG-ene):
-    python3 -m pip install --user segno pymupdf
+Krever Google Chrome, segno, Pillow og pymupdf (bare til PNG-ene):
+    python3 -m pip install --user segno pillow pymupdf
 """
 
 import importlib.util
@@ -39,6 +39,16 @@ def lag_qr():
     return modul
 
 
+def lag_merke() -> str:
+    """Kirka fra appikonet, så merket bare er tegnet ett sted."""
+    sti = ROT / "mobil" / "verktoy" / "lag-ikoner.py"
+    spec = importlib.util.spec_from_file_location("lag_ikoner", sti)
+    g = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(g)
+    former = g.kirka(g.KALK, g.GRAN, g.KIRKEAARET, g.KORSGULL, frittstaende=True)
+    return g.som_svg(former, "ikon")
+
+
 def svg(kode, lys: str) -> str:
     # border=4 er stillesonen standarden krever — se lag-qr.py.
     return kode.svg_inline(scale=1, border=4, dark=GRAN, light=lys, omitsize=True)
@@ -58,6 +68,7 @@ def main() -> None:
         "{{LOGO}}": (HER / "hageberg-logo.png").as_uri(),
         "{{LOGO_KIRKA}}": (HER / "dnk-skjold-logo.png").as_uri(),
         "{{ILLUSTRASJON}}": (HER / "kirkekaffe.jpg").as_uri(),
+        "{{MERKE}}": lag_merke(),
         "{{QR_APP}}": svg(qr.kode_for(qr.ADRESSE), PAPIR),
         "{{QR_PERSONVERN}}": svg(qr.segno.make_qr(PERSONVERN, error="h"), KALK),
     }.items():

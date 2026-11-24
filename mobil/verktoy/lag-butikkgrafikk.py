@@ -9,8 +9,8 @@ Alt havner i verktoy/butikk/ og kan lastes rett opp:
   play-ikon-512.png     Google Play, appikonet — 512 × 500, 32-bits PNG
   play-promo-1024.png   Google Play, promografikken — 1024 × 500
 
-Merket er det samme kirkevinduet som appikonet, tegnet av lag-ikoner.py,
-med kirkeåret som en farget søyle inni. Skriftene er de appen faktisk
+Merket er den samme kirka som på appikonet, tegnet av lag-ikoner.py, med
+kirkeåret som glass i vinduet. Skriftene er de appen faktisk
 bruker: Fraunces til navnet, Schibsted Grotesk til underteksten.
 
 Promografikken vises i ulike størrelser og blir beskåret i kantene på
@@ -34,7 +34,7 @@ SKALA = 3  # tegn stort og krymp, så kantene blir myke
 
 
 def hent_generator():
-    """Låner tegningen av kirkevinduet fra ikon-skriptet, så merket er ett sted."""
+    """Låner tegningen av kirka fra ikon-skriptet, så merket er ett sted."""
     sti = HER / "lag-ikoner.py"
     spec = importlib.util.spec_from_file_location("lag_ikoner", sti)
     modul = importlib.util.module_from_spec(spec)
@@ -54,7 +54,7 @@ def skrift(familie: str, vekt: str, storrelse: int):
 
 def lag_promo(g, bredde=1024, hoyde=500):
     """
-    Promografikken. Vinduet til venstre, navnet til høyre — samme
+    Promografikken. Kirka til venstre, navnet til høyre — samme
     komposisjon som toppen av appen, bare lagt ned.
     """
     b, h = bredde * SKALA, hoyde * SKALA
@@ -68,15 +68,15 @@ def lag_promo(g, bredde=1024, hoyde=500):
     for i, farge in enumerate(g.KIRKEAARET):
         d.rectangle([i * felt, h - stripe, (i + 1) * felt, h], fill=farge)
 
-    # Vinduet, i samme forhold som på ikonet.
-    vindushoyde = h * 0.52
-    vindusbredde = vindushoyde * 0.62
-    v = b * 0.13
-    t = (h - stripe - vindushoyde) / 2
-    g.tegn_vindu(d, (v, t, v + vindusbredde, t + vindushoyde), g.KALK)
+    # Kirka, frittstående så den ikke trenger kanten av et ikon rundt seg.
+    kirkehoyde = h * 0.62
+    v = b * 0.085
+    t = (h - stripe - kirkehoyde) / 2
+    former = g.kirka(g.KALK, g.GRAN, g.KIRKEAARET, g.KORSGULL, frittstaende=True)
+    kirkebredde = g.tegn_frittstaende(d, former, v, t, kirkehoyde)
 
     # Teksten. Navnet i Fraunces, som titlene i appen.
-    tekst_v = v + vindusbredde + b * 0.075
+    tekst_v = v + kirkebredde + b * 0.055
     navn = skrift("fraunces", "600SemiBold", round(h * 0.135))
     under = skrift("schibsted-grotesk", "400Regular", round(h * 0.062))
 

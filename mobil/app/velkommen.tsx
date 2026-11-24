@@ -156,7 +156,7 @@ const stil = StyleSheet.create({
     gap: rom.xxl,
   },
   hode: { gap: rom.s },
-  // Kirkeåret i miniatyr — samme merke som appikonet.
+  // Kirkeåret i miniatyr — fargene i glasset på appikonet.
   merke: { flexDirection: "row", gap: 3, marginBottom: rom.l },
   stripe: { width: 18, height: 5, borderRadius: 1 },
 });

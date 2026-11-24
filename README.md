@@ -191,12 +191,13 @@ selv gjort at ingen oppdatering passet til byggene som er ute.
   Den skalerer til 1284 × 2778 og klipper midtstilt — noen få piksler i kanten,
   ingen strekking. Andre mål står i `--hjelp`.
 
-Ikonene ligger i `mobil/assets/` og lages av `mobil/verktoy/lag-ikoner.py`.
+Ikonene ligger i `mobil/assets/`, og nettsidens i `web/app/icon.png`. Alle lages av
+`mobil/verktoy/lag-ikoner.py`.
 Grafikken butikkene vil ha, men som ikke ligger i appen — Play-ikonet på 512 og
 promografikken på 1024 × 500 — lages av `mobil/verktoy/lag-butikkgrafikk.py` og
-havner i `verktoy/butikk/`, utenfor git. Begge låner kirkevinduet fra
-ikon-skriptet, så merket bare finnes ett sted.
-Merket er et kirkevindu med kirkeåret som en farget søyle inni.
+havner i `verktoy/butikk/`, utenfor git. Butikkgrafikken og flygebladet
+låner kirka fra ikon-skriptet, så merket bare finnes ett sted.
+Merket er Skjold kirke sett forfra, med kirkeåret som glass i korsvinduet.
 
 **Om Apples «minimum functionality»:** Apple avviser apper som bare er en
 nettside i et skall. Push-varsler og kalenderintegrasjon er grunnen til at dette

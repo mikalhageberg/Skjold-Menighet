@@ -58,7 +58,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/adaptive-icon.png",
+          "icon": "./assets/varsel-ikon.png",
           "color": "#16302A",
           "defaultChannel": "paaminnelser"
         }

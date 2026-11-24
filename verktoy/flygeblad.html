@@ -60,7 +60,7 @@
   /* ── Forsiden ─────────────────────────────────────────────── */
   .forside { background: var(--gran); color: var(--kalk); align-items: center; text-align: center; padding-top: 17mm; }
   .forside .merke { color: #B9C7C0; margin-top: 7mm; }
-  .forside .ikon { width: 13mm; height: 21mm; }
+  .forside .ikon { width: 21mm; height: 23.6mm; }
   .forside h1 { font-size: 25pt; font-weight: 500; line-height: 1.14; margin-top: 5mm; max-width: 112mm; }
   .forside h1 b { font-weight: 600; white-space: nowrap; }
   .qrkort { margin-top: 10mm; background: var(--papir); padding: 3mm; border-radius: 1.2mm; }
@@ -219,14 +219,8 @@
 
   <!-- Side 1 · forsiden -->
   <div class="side forside">
-    <!-- Buen fra appikonet, tegnet på nytt så den ligger rett på granbunnen -->
-    <svg class="ikon" viewBox="334 225 356 573" aria-hidden="true">
-      <path d="M334 798V400a178 178 0 0 1 356 0v398z" fill="#EFF2EE"/>
-      <rect x="488" y="331" width="47" height="103" fill="#59468c"/>
-      <rect x="488" y="434" width="47" height="103" fill="#a07a1c"/>
-      <rect x="488" y="537" width="47" height="103" fill="#99332a"/>
-      <rect x="488" y="640" width="47" height="102" fill="#3d6b55"/>
-    </svg>
+    <!-- Kirka fra appikonet, tegnet av lag-ikoner.py -->
+    {{MERKE}}
     <p class="merke">Skjold menighet</p>
     <h1>Nå kan du melde deg som frivillig gjennom appen <b>«Skjold menighet»</b></h1>
     <div class="qrkort">{{QR_APP}}</div>

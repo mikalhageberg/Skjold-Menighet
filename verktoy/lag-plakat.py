@@ -47,6 +47,7 @@ GRAN_MYK = (63, 91, 83)
 KALK = (239, 242, 238)
 PAPIR = (250, 251, 248)
 STREK = (211, 219, 213)
+KANT = GRAN  # rundt appikonet
 KIRKEAARET = [(89, 70, 140), (160, 122, 28), (153, 51, 42), (61, 107, 85)]
 
 # ── Teksten ──────────────────────────────────────────────────────────
@@ -149,7 +150,12 @@ def lag_plakat() -> Image.Image:
         sys.exit(f"Fant ikke appikonet {ikonfil}.")
     ikon_px = 430
     ikon = Image.open(ikonfil).convert("RGB").resize((ikon_px, ikon_px), Image.LANCZOS)
-    ark.paste(ikon, ((BREDDE - ikon_px) // 2, 220), rundet_maske(ikon_px, round(ikon_px * 0.22)))
+    ikon_v, hjorne = (BREDDE - ikon_px) // 2, round(ikon_px * 0.22)
+    ark.paste(ikon, (ikon_v, 220), rundet_maske(ikon_px, hjorne))
+    # Gavlen på ikonet har samme farge som arket, så hjørnene trenger en kant.
+    d.rounded_rectangle(
+        [ikon_v, 220, ikon_v + ikon_px, 220 + ikon_px], radius=hjorne, outline=KANT, width=4
+    )
 
     y = 220 + ikon_px + 140
 
