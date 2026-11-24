@@ -63,6 +63,13 @@ export function BildeVelger({
 
       {forslag.length > 0 ? (
         <>
+          {nyDataUrl && (
+            <img
+              src={nyDataUrl}
+              alt={`Forslag ${(valgt ?? 0) + 1}, stor visning`}
+              className="bildevelger__bilde bildevelger__bilde--stor"
+            />
+          )}
           <div className="bildevelger__forslag" role="radiogroup" aria-label="Velg bilde">
             {forslag.map((url, i) => (
               <button
@@ -81,7 +88,7 @@ export function BildeVelger({
           </div>
           <p className="felt__hjelp">
             {valgt !== null
-              ? `Forslag ${valgt + 1} er valgt. Trykk på et annet bilde for å bytte.`
+              ? `Forslag ${valgt + 1} er valgt. Trykk på et av de små bildene for å bytte.`
               : "Trykk på bildet du vil bruke."}
           </p>
         </>

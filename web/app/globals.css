@@ -498,9 +498,17 @@ img {
   background: var(--kalk-dyp);
 }
 
+/* Det valgte forslaget i stort, over de små. Står alltid på samme sted, så
+   de små bildene ikke flytter på seg når man prøver et annet. */
+.bildevelger__bilde--stor {
+  max-width: 44rem;
+}
+
+/* Alltid tre ved siden av hverandre, også på telefon, så man ser det store
+   bildet mens man bytter. */
 .bildevelger__forslag {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.75rem;
   max-width: 44rem;
 }
